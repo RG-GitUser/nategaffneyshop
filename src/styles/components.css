@@ -658,6 +658,16 @@
   color: var(--amber);
 }
 
+.offer__error {
+  margin-top: 10px;
+  padding: 8px 11px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--red);
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+  color: var(--red);
+  font-size: 0.8rem;
+}
+
 .offer__cta {
   margin-left: auto;
   display: inline-flex;

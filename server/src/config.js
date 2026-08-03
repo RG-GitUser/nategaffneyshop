@@ -105,6 +105,14 @@ export const config = {
   stripeReverseTransfer: optional('STRIPE_REVERSE_TRANSFER') === 'true',
   stripeRefundApplicationFee: optional('STRIPE_REFUND_APPLICATION_FEE') === 'true',
 
+  /**
+   * Signing secret for the Stripe webhook. Without it the webhook route
+   * refuses every request — an unverified endpoint would accept a forged
+   * "payment succeeded" from anyone who found the URL.
+   * Stripe Dashboard -> Developers -> Webhooks -> your endpoint.
+   */
+  stripeWebhookSecret: optional('STRIPE_WEBHOOK_SECRET'),
+
   // Google Calendar + Meet. Optional — without a client id, bookings fall
   // back to a Meet link pasted in by hand.
   google: {

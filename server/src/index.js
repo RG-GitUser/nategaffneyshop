@@ -15,6 +15,7 @@ import { mediaRouter } from './routes/media.js'
 import { circleRouter } from './routes/circle.js'
 import { chatRouter } from './routes/chat.js'
 import { googleRouter } from './routes/google.js'
+import { checkoutRouter } from './routes/checkout.js'
 
 const app = express()
 
@@ -29,6 +30,15 @@ app.use(
     crossOriginResourcePolicy: { policy: 'cross-origin' },
   }),
 )
+/**
+ * The Stripe webhook must be mounted BEFORE express.json().
+ *
+ * Signature verification hashes the exact bytes Stripe sent. Parsing the
+ * JSON and re-stringifying it produces a different byte sequence and a
+ * different hash, so every event would be rejected as forged.
+ */
+app.use('/api/checkout/webhook', express.raw({ type: 'application/json' }))
+
 app.use(express.json({ limit: '256kb' }))
 app.use(cookieParser())
 
@@ -76,6 +86,7 @@ app.use('/api/media', mediaRouter)
 app.use('/api/circle', circleRouter)
 app.use('/api/chat', chatRouter)
 app.use('/api/google', googleRouter)
+app.use('/api/checkout', checkoutRouter)
 
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }))
 

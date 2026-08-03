@@ -62,8 +62,7 @@ export default function Login({ onSignedIn }) {
         </form>
 
         <p className="adm-login__note">
-          There is no signup and no member accounts. The single admin login is
-          created on the server with <code>npm run create-admin</code>.
+          Contact website administrator for any help.
         </p>
       </div>
     </div>

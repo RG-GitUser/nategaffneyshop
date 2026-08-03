@@ -26,17 +26,7 @@
   --black: #120b07;
   --orange: #c45e18;
   --red: #6c1e05; /* the deep almost-red, used straight */
-
-  /* Dark chocolate, derived from the palette.
-     Darkening the red alone only produced a deeper red — #6C1E05 is
-     heavily red-dominant, and scaling a colour down preserves that. A
-     little bone first lifts the green and blue channels so the hue lands
-     on brown, and only then is it taken down with the near-black. */
-  --chocolate: color-mix(
-    in srgb,
-    #120b07 70%,
-    color-mix(in srgb, #ebe5d8 26%, #6c1e05)
-  );
+  --chocolate: #2b2018; /* warm dark brown — the dark theme's ground */
 
   /* ---- LIGHT (default) ---- */
   --bg: color-mix(in srgb, var(--black) 4%, var(--bone));

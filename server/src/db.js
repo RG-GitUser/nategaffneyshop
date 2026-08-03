@@ -14,6 +14,10 @@ export async function connect() {
   await db.collection('bookings').createIndex({ date: 1, time: 1 })
   await db.collection('bookings').createIndex({ status: 1, createdAt: -1 })
   await db.collection('shopItems').createIndex({ order: 1 })
+  // Stripe can deliver the same event more than once, so the session id is
+  // unique and the handler upserts against it.
+  await db.collection('orders').createIndex({ sessionId: 1 }, { unique: true })
+  await db.collection('orders').createIndex({ createdAt: -1 })
   // One account per address, enforced by the database rather than by
   // remembering to check for duplicates everywhere.
   await db.collection('admins').createIndex({ email: 1 }, { unique: true })
@@ -59,6 +63,7 @@ export const collections = {
   content: () => getDb().collection('content'),
   shopItems: () => getDb().collection('shopItems'),
   bookings: () => getDb().collection('bookings'),
+  orders: () => getDb().collection('orders'),
   circleCodes: () => getDb().collection('circleCodes'),
   circleSessions: () => getDb().collection('circleSessions'),
   chatCodes: () => getDb().collection('chatCodes'),

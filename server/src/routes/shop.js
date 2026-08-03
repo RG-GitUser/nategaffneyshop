@@ -12,6 +12,14 @@ const itemSchema = z.object({
   description: z.string().max(1000).default(''),
   price: z.string().max(40).optional().nullable(),
   oldPrice: z.string().max(40).optional().nullable(),
+  /**
+   * What Stripe actually charges, in cents. The `price` string above is
+   * display only — this is the number the checkout uses, and it is read
+   * from the database rather than the request so a customer can't send
+   * their own amount. Leave null and the card links out instead.
+   */
+  priceCents: z.number().int().min(50).max(99999999).optional().nullable(),
+  currency: z.string().length(3).optional().nullable(),
   cta: z.string().min(1).max(60).default('Get it'),
   href: z.string().max(500).default('#'),
   accent: z.enum(['navy', 'umber', 'olive', 'amber']).default('navy'),
