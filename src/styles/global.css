@@ -7,56 +7,82 @@
    hardcodes a color, so a reskin is a change to these blocks only.
    ============================================================ */
 
+/* ============================================================
+   THE PALETTE — four colours, nothing else.
+
+     #EBE5D8  bone
+     #120B07  near-black
+     #C45E18  orange
+     #6C1E05  rust
+
+   Every surface, line and muted tone below is one of those four mixed
+   with another of them. Nothing new is introduced, so the whole page
+   stays inside the palette while still having enough steps to build a
+   hierarchy. White and black appear only as text on solid fills.
+   ============================================================ */
+
 :root {
+  --bone: #ebe5d8;
+  --black: #120b07;
+  --orange: #c45e18;
+  --rust: #6c1e05;
+
   /* ---- LIGHT (default) ---- */
-  --bg: #ebe5d8;
-  --bg-2: #e2dbca;
-  --surface: #f4f0e6;
-  --surface-2: #faf7ef;
+  --bg: color-mix(in srgb, var(--black) 4%, var(--bone));
+  --bg-2: color-mix(in srgb, var(--black) 9%, var(--bone));
+  --surface: var(--bone);
+  --surface-2: color-mix(in srgb, var(--black) 2%, var(--bone));
 
-  --line: #d6cdba;
-  --line-2: #c2b7a0;
+  --line: color-mix(in srgb, var(--black) 14%, var(--bone));
+  --line-2: color-mix(in srgb, var(--black) 26%, var(--bone));
 
-  --ink: #1f1b16;
-  --ink-2: #423b31;
-  --ink-soft: #6d6353;
-  --ink-faint: #948977;
+  --ink: var(--black);
+  --ink-2: color-mix(in srgb, var(--black) 84%, var(--bone));
+  --ink-soft: color-mix(in srgb, var(--black) 64%, var(--bone));
+  --ink-faint: color-mix(in srgb, var(--black) 46%, var(--bone));
 
   /* Deep burnt orange.
      --accent      = orange TEXT/borders sitting on the page background
      --accent-fill = deeper orange used as a solid BACKGROUND under --on-accent
      Those two pull in opposite directions on contrast, hence the split. */
-  --accent: #a8481a; /* 4.6:1 on bone */
-  --accent-hi: #b34e1e; /* lighter stop / hover */
-  --accent-fill: #a8481a;
-  --accent-deep: #6f2c0b; /* darkest gradient stop */
-  --accent-wash: rgba(168, 72, 26, 0.1);
-  --on-accent: #f9f4ea; /* text sitting on a solid accent fill */
+  /* Orange text on bone is only 3.3:1, so small text uses rust (9.3:1)
+     and the orange is kept for fills, borders and large type where it
+     reads properly. */
+  --accent: var(--rust);
+  --accent-hi: var(--orange);
+  --accent-fill: var(--rust);
+  --accent-deep: var(--rust);
+  --accent-wash: color-mix(in srgb, var(--orange) 14%, transparent);
+  --on-accent: #ffffff; /* white on rust = 11.7:1 */
 
-  /* supporting accents — muted earth tones so the orange stays loudest */
-  --amber: #8a6410;
-  --amber-wash: rgba(138, 100, 16, 0.1);
-  --umber: #6b4a32;
-  --umber-wash: rgba(107, 74, 50, 0.1);
-  --olive: #5c6238;
-  --olive-wash: rgba(92, 98, 56, 0.1);
+  /* The palette has no secondary hues, so card accents alternate between
+     the two warm tones instead of introducing colours that aren't here. */
+  --amber: var(--orange);
+  --amber-wash: color-mix(in srgb, var(--orange) 14%, transparent);
+  --umber: var(--rust);
+  --umber-wash: color-mix(in srgb, var(--rust) 12%, transparent);
+  --olive: var(--rust);
+  --olive-wash: color-mix(in srgb, var(--rust) 12%, transparent);
 
   /* atmosphere — the whole page-background gradient stack lives here */
   --page-glow: radial-gradient(
     90vw 50vh at 88% -8vh,
-    rgba(168, 72, 26, 0.12) 0%,
+    color-mix(in srgb, var(--orange) 16%, transparent) 0%,
     transparent 62%
   );
-  --bar-bg: rgba(235, 229, 216, 0.88);
+  --bar-bg: color-mix(in srgb, var(--bone) 92%, transparent);
   --grain-blend: multiply;
   --grain-opacity: 0.055;
 
-  --shadow-sm: 0 1px 2px rgba(70, 50, 30, 0.06);
-  --shadow-md: 0 3px 14px rgba(70, 50, 30, 0.1);
-  --shadow-lg: 0 12px 34px rgba(70, 50, 30, 0.14);
-  --glow: 0 6px 22px rgba(168, 72, 26, 0.24);
-  --avatar-shadow: 0 2px 6px rgba(64, 45, 26, 0.14),
-    0 14px 30px rgba(64, 45, 26, 0.22), 0 30px 64px rgba(64, 45, 26, 0.18);
+  /* Shadows are the near-black at low opacity, so even the depth stays
+     inside the palette rather than being a generic grey. */
+  --shadow-sm: 0 1px 2px color-mix(in srgb, var(--black) 8%, transparent);
+  --shadow-md: 0 3px 14px color-mix(in srgb, var(--black) 12%, transparent);
+  --shadow-lg: 0 12px 34px color-mix(in srgb, var(--black) 16%, transparent);
+  --glow: 0 6px 22px color-mix(in srgb, var(--rust) 26%, transparent);
+  --avatar-shadow: 0 2px 6px color-mix(in srgb, var(--black) 16%, transparent),
+    0 14px 30px color-mix(in srgb, var(--black) 24%, transparent),
+    0 30px 64px color-mix(in srgb, var(--black) 20%, transparent);
 
   /* ---- type ----
      Apple Garamond can't be served on the web (proprietary Apple font), so
@@ -84,35 +110,36 @@
 }
 
 :root[data-theme='dark'] {
-  /* ---- DARK ---- warm near-black, never a cold grey */
-  --bg: #16130f;
-  --bg-2: #1d1915;
-  --surface: #201c17;
-  --surface-2: #29241d;
+  /* ---- DARK ---- the same four colours, inverted ---- */
+  --bg: var(--black);
+  --bg-2: color-mix(in srgb, var(--bone) 5%, var(--black));
+  --surface: color-mix(in srgb, var(--bone) 7%, var(--black));
+  --surface-2: color-mix(in srgb, var(--bone) 11%, var(--black));
 
-  --line: #332d25;
-  --line-2: #463d31;
+  --line: color-mix(in srgb, var(--bone) 14%, var(--black));
+  --line-2: color-mix(in srgb, var(--bone) 24%, var(--black));
 
-  --ink: #f2ede2;
-  --ink-2: #cfc6b6;
-  --ink-soft: #9c9182;
-  --ink-faint: #6f6658;
+  --ink: var(--bone);
+  --ink-2: color-mix(in srgb, var(--bone) 82%, var(--black));
+  --ink-soft: color-mix(in srgb, var(--bone) 60%, var(--black));
+  --ink-faint: color-mix(in srgb, var(--bone) 42%, var(--black));
 
-  /* Deep burnt orange on dark. Text tone lifts just enough to clear 4.5:1
-     against the near-black; fills go deeper so cream reads on top of them. */
-  --accent: #c9622c; /* 4.6:1 on the dark ground */
-  --accent-hi: #b0501f;
-  --accent-fill: #9c4517;
-  --accent-deep: #5f2608;
-  --accent-wash: rgba(201, 98, 44, 0.14);
-  --on-accent: #f9f4ea;
+  /* On the near-black the roles swap: orange is now the readable text
+     tone (4.5:1) and rust is too dark for type, so it becomes the fill
+     that bone sits on (9.3:1). */
+  --accent: var(--orange);
+  --accent-hi: var(--orange);
+  --accent-fill: var(--rust);
+  --accent-deep: color-mix(in srgb, var(--black) 40%, var(--rust));
+  --accent-wash: color-mix(in srgb, var(--orange) 16%, transparent);
+  --on-accent: var(--bone);
 
-  --amber: #d9a03a;
-  --amber-wash: rgba(217, 160, 58, 0.14);
-  --umber: #b58d6b;
-  --umber-wash: rgba(181, 141, 107, 0.14);
-  --olive: #a0a66c;
-  --olive-wash: rgba(160, 166, 108, 0.14);
+  --amber: var(--orange);
+  --amber-wash: color-mix(in srgb, var(--orange) 16%, transparent);
+  --umber: var(--orange);
+  --umber-wash: color-mix(in srgb, var(--orange) 12%, transparent);
+  --olive: var(--orange);
+  --olive-wash: color-mix(in srgb, var(--orange) 12%, transparent);
 
   /* Three layers, warmest at the top and falling away to the near-black
      ground by roughly half the viewport:
@@ -120,34 +147,35 @@
        2. a softer warm wash from the top-left so the light reads as spread
           rather than a single spotlight
        3. a lifted warm band across the very top — this is the tone that
-          "emerges" up there. Composited over #16130f it lands near #322822,
+          "emerges" up there. Composited over the near-black it lifts it a little,
           so it lifts the black without going anywhere near grey. */
   --page-glow: radial-gradient(
       100vw 55vh at 85% -8vh,
-      rgba(226, 122, 69, 0.22) 0%,
+      color-mix(in srgb, var(--orange) 26%, transparent) 0%,
       transparent 58%
     ),
     radial-gradient(
       120vw 50vh at 22% -10vh,
-      rgba(150, 120, 88, 0.16) 0%,
+      color-mix(in srgb, var(--rust) 30%, transparent) 0%,
       transparent 60%
     ),
     linear-gradient(
       180deg,
-      rgba(69, 55, 41, 0.6) 0%,
-      rgba(69, 55, 41, 0.24) 16vh,
-      rgba(22, 19, 15, 0) 46vh
+      color-mix(in srgb, var(--bone) 12%, transparent) 0%,
+      color-mix(in srgb, var(--bone) 5%, transparent) 16vh,
+      transparent 46vh
     );
-  --bar-bg: rgba(22, 19, 15, 0.85);
+  --bar-bg: color-mix(in srgb, var(--black) 88%, transparent);
   --grain-blend: overlay;
   --grain-opacity: 0.05;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 12px 38px rgba(0, 0, 0, 0.55);
-  --glow: 0 6px 24px rgba(226, 122, 69, 0.24);
-  --avatar-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 16px 34px rgba(0, 0, 0, 0.55),
-    0 34px 70px rgba(0, 0, 0, 0.45);
+  --shadow-sm: 0 1px 2px color-mix(in srgb, var(--black) 55%, transparent);
+  --shadow-md: 0 4px 16px color-mix(in srgb, var(--black) 60%, transparent);
+  --shadow-lg: 0 12px 38px color-mix(in srgb, var(--black) 70%, transparent);
+  --glow: 0 6px 24px color-mix(in srgb, var(--orange) 28%, transparent);
+  --avatar-shadow: 0 2px 8px color-mix(in srgb, var(--black) 65%, transparent),
+    0 16px 34px color-mix(in srgb, var(--black) 70%, transparent),
+    0 34px 70px color-mix(in srgb, var(--black) 60%, transparent);
 }
 
 /* ---------- reset ---------- */
@@ -165,6 +193,10 @@ html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
   background: var(--bg);
+  /* Reserve the scrollbar's width always, so a short page and a long one
+     centre the column in the same place instead of shifting sideways as
+     you move between them. */
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -396,41 +428,23 @@ p {
   }
 }
 
+/**
+ * One centred column at every width.
+ *
+ * This used to be a sticky profile rail beside a scrolling content
+ * column. With the full-length photo the rail ran ~1000px tall, so on
+ * any normal laptop it couldn't stick — and once it stopped, scrolling
+ * left a tall empty gutter down the left of the page while the content
+ * carried on beside it. A single column can't fall out of balance.
+ */
 .shell {
   width: 100%;
-  max-width: 540px;
+  max-width: 620px;
   margin-inline: auto;
-}
-
-@media (min-width: 900px) {
-  .shell {
-    max-width: 1060px;
-    display: grid;
-    grid-template-columns: var(--rail-w) minmax(0, 1fr);
-    gap: clamp(32px, 4vw, 56px);
-    align-items: start;
-  }
 }
 
 .rail {
   margin-bottom: clamp(30px, 5vw, 44px);
-}
-
-@media (min-width: 900px) {
-  .rail {
-    position: sticky;
-    top: 44px;
-    margin-bottom: 0;
-  }
-}
-
-/* With the full-length photo the rail is ~950px tall. On a shorter screen a
-   sticky element taller than the viewport pins its top and leaves the bottom
-   permanently out of reach — so let it scroll normally instead. */
-@media (min-width: 900px) and (max-height: 1000px) {
-  .rail {
-    position: static;
-  }
 }
 
 /* ---------- entrance ---------- */

@@ -261,8 +261,8 @@
 }
 
 .adm-mini--danger:hover {
-  color: #c0392b;
-  border-color: #c0392b;
+  color: var(--rust);
+  border-color: var(--rust);
 }
 
 .adm-linkish {
@@ -378,9 +378,9 @@
 
 .adm-pill--cancelled,
 .adm-pill--canceled {
-  background: rgba(192, 57, 43, 0.12);
-  color: #c0392b;
-  border-color: #c0392b;
+  background: color-mix(in srgb, var(--rust) 16%, transparent);
+  color: var(--rust);
+  border-color: var(--rust);
 }
 
 /* ---------- stats ---------- */
@@ -434,9 +434,9 @@
 }
 
 .adm-alert--error {
-  border-color: #c0392b;
-  background: rgba(192, 57, 43, 0.1);
-  color: #c0392b;
+  border-color: var(--rust);
+  background: color-mix(in srgb, var(--rust) 12%, transparent);
+  color: var(--rust);
   margin-bottom: 0;
 }
 
@@ -461,7 +461,7 @@
 }
 
 .adm-toast--error {
-  background: #c0392b;
+  background: var(--rust);
   color: #fff;
 }
 
@@ -473,7 +473,7 @@
   display: grid;
   place-items: center;
   padding: 18px;
-  background: rgba(0, 0, 0, 0.55);
+  background: color-mix(in srgb, var(--black) 62%, transparent);
   backdrop-filter: blur(3px);
 }
 

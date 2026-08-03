@@ -70,7 +70,11 @@
      Measured against the source — his cap starts at y=236 of 1288. */
   --avatar-focus: 50% 69%;
 
+  /* Capped and centred: at the full 620px column width the portrait
+     would run nearly 900px tall and push everything below the fold. */
   width: 100%;
+  max-width: 380px;
+  margin-inline: auto;
   aspect-ratio: 393 / 566;
   border-radius: 0; /* no frame, no rounding — bare image */
   overflow: hidden;
@@ -195,15 +199,9 @@
   line-height: 1.7;
 }
 
-@media (min-width: 900px) {
-  .profile {
-    align-items: flex-start;
-    text-align: left;
-  }
-  .profile__blurb {
-    max-width: none;
-  }
-}
+/* Single centred column now, so the profile stays centred at every width
+   rather than switching to left-aligned for a side rail that no longer
+   exists. */
 
 /* ---------- shared price ---------- */
 .price {
@@ -462,7 +460,7 @@
   background: color-mix(in srgb, var(--on-accent) 92%, transparent);
   color: var(--accent-deep);
   padding-left: 4px; /* optically centres the triangle */
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--black) 34%, transparent);
   transition: transform 0.18s var(--ease), background-color 0.18s var(--ease),
     color 0.18s var(--ease);
 }
@@ -944,9 +942,9 @@
   margin-top: 16px;
   padding: 12px 15px;
   border-radius: var(--r-md);
-  border: 1px solid #c0392b;
-  background: rgba(192, 57, 43, 0.09);
-  color: #c0392b;
+  border: 1px solid var(--rust);
+  background: color-mix(in srgb, var(--rust) 12%, transparent);
+  color: var(--rust);
   font-size: 0.88rem;
 }
 
@@ -1122,9 +1120,9 @@
   margin-top: 14px;
   padding: 11px 14px;
   border-radius: var(--r-md);
-  border: 1px solid #c0392b;
-  background: rgba(192, 57, 43, 0.09);
-  color: #c0392b;
+  border: 1px solid var(--rust);
+  background: color-mix(in srgb, var(--rust) 12%, transparent);
+  color: var(--rust);
   font-size: 0.86rem;
 }
 
