@@ -1,5 +1,14 @@
 import nodemailer from 'nodemailer'
 import { config } from './config.js'
+import {
+  wrap,
+  paragraph,
+  muted,
+  details,
+  row,
+  button,
+  codeBlock,
+} from './emailTemplate.js'
 
 /**
  * Namecrane SMTP. Optional by design — if SMTP_HOST is blank the app runs
@@ -23,10 +32,12 @@ if (!enabled) {
   console.warn('[mail] SMTP not configured — notification emails are disabled')
 }
 
-async function send({ to, subject, text }) {
+/** Always sends both parts — some people read in plain text by choice,
+ *  and HTML-only mail scores worse with spam filters. */
+async function send({ to, subject, text, html }) {
   if (!transport || !to) return
   try {
-    await transport.sendMail({ from: config.smtp.from, to, subject, text })
+    await transport.sendMail({ from: config.smtp.from, to, subject, text, html })
   } catch (err) {
     // Never let a mail failure break the request that triggered it.
     console.error('[mail] send failed:', err.message)
@@ -58,10 +69,22 @@ export function sendChatCode(email, code) {
       ``,
       `If you didn't ask for this, ignore it — nothing has been created.`,
     ].join('\n'),
+    html: wrap({
+      eyebrow: 'Your code',
+      title: 'Join the chat',
+      preheader: `${code} — expires in 10 minutes.`,
+      body:
+        paragraph('Enter this on the site to join the group chat:') +
+        codeBlock(code) +
+        muted(
+          'Expires in 10 minutes. If you didn’t ask for this, ignore it — nothing has been created.',
+        ),
+    }),
   })
 }
 
 export function notifyNewBooking(booking) {
+  // to Nate
   send({
     to: config.smtp.notify,
     subject: `New booking request — ${when(booking)}`,
@@ -77,8 +100,23 @@ export function notifyNewBooking(booking) {
       ``,
       `Confirm or reschedule it in the admin dashboard.`,
     ].join('\n'),
+    html: wrap({
+      eyebrow: 'New request',
+      title: `${booking.name} wants a session`,
+      preheader: `${when(booking)} — confirm or reschedule in the dashboard.`,
+      body:
+        details([
+          row('When', when(booking)),
+          row('Name', booking.name),
+          row('Email', booking.email),
+          row('Notes', booking.note || '—'),
+        ]) +
+        button('https://nategaffney.store/admin/', 'Open the dashboard') +
+        muted('Nothing is confirmed until you accept it.'),
+    }),
   })
 
+  // to the person booking
   send({
     to: booking.email,
     subject: 'Got your booking request',
@@ -92,6 +130,19 @@ export function notifyNewBooking(booking) {
       ``,
       `— Nate`,
     ].join('\n'),
+    html: wrap({
+      eyebrow: 'Request received',
+      title: 'Got it — I’ll be in touch',
+      preheader: `Your request for ${when(booking)} came through.`,
+      body:
+        paragraph(`Hi ${booking.name},`) +
+        paragraph(`Thanks — your request came through for:`) +
+        details([row('When', when(booking))]) +
+        paragraph(
+          `Nothing is locked in yet. I’ll email shortly to confirm the time and sort out payment.`,
+        ) +
+        muted('— Nate'),
+    }),
   })
 }
 
@@ -114,6 +165,18 @@ export function notifyBookingConfirmed(booking) {
       ``,
       `— Nate`,
     ].join('\n'),
+    html: wrap({
+      eyebrow: 'Confirmed',
+      title: 'You’re booked in',
+      preheader: `${when(booking)}${booking.meetUrl ? ' — call link inside.' : ''}`,
+      body:
+        paragraph(`Hi ${booking.name},`) +
+        details([row('When', when(booking))]) +
+        (booking.meetUrl
+          ? button(booking.meetUrl, 'Join the call')
+          : paragraph('I’ll send the call link before we start.')) +
+        muted('Reschedule or cancel free up to 24 hours before. — Nate'),
+    }),
   })
 }
 
@@ -131,6 +194,16 @@ export function notifyBookingRescheduled(booking, previous) {
       ``,
       `— Nate`,
     ].join('\n'),
+    html: wrap({
+      eyebrow: 'Rescheduled',
+      title: 'Your session has moved',
+      preheader: `Now ${when(booking)}.`,
+      body:
+        paragraph(`Hi ${booking.name},`) +
+        details([row('Was', previous), row('Now', when(booking))]) +
+        (booking.meetUrl ? button(booking.meetUrl, 'Join the call') : '') +
+        muted('If that doesn’t work, just reply and we’ll find another time. — Nate'),
+    }),
   })
 }
 
@@ -147,5 +220,15 @@ export function notifyBookingCancelled(booking) {
       ``,
       `— Nate`,
     ].join('\n'),
+    html: wrap({
+      eyebrow: 'Cancelled',
+      title: 'Your session is cancelled',
+      preheader: `${when(booking)} has been cancelled.`,
+      body:
+        paragraph(`Hi ${booking.name},`) +
+        details([row('Was', when(booking))]) +
+        paragraph('If this was a mistake, or you’d like another time, just reply.') +
+        muted('— Nate'),
+    }),
   })
 }

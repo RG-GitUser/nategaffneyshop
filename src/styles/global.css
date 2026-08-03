@@ -25,13 +25,18 @@
   --bone: #ebe5d8;
   --black: #120b07;
   --orange: #c45e18;
-  /* Dark chocolate.
-     Straight rust darkened just reads as a deeper rust — #6C1E05 is
-     heavily red-dominant, and scaling it down keeps that. A little bone
-     first lifts the green and blue channels so the hue lands on brown
-     rather than red, and only then is it taken down with the near-black.
-     Still only palette colours, just mixed in two steps. */
-  --rust: color-mix(in srgb, #120b07 70%, color-mix(in srgb, #ebe5d8 26%, #6c1e05));
+  --red: #6c1e05; /* the deep almost-red, used straight */
+
+  /* Dark chocolate, derived from the palette.
+     Darkening the red alone only produced a deeper red — #6C1E05 is
+     heavily red-dominant, and scaling a colour down preserves that. A
+     little bone first lifts the green and blue channels so the hue lands
+     on brown, and only then is it taken down with the near-black. */
+  --chocolate: color-mix(
+    in srgb,
+    #120b07 70%,
+    color-mix(in srgb, #ebe5d8 26%, #6c1e05)
+  );
 
   /* ---- LIGHT (default) ---- */
   --bg: color-mix(in srgb, var(--black) 4%, var(--bone));
@@ -54,28 +59,42 @@
   /* Orange text on bone is only 3.3:1, so small text uses rust (9.3:1)
      and the orange is kept for fills, borders and large type where it
      reads properly. */
-  --accent: var(--rust);
+  --accent: var(--chocolate);
   --accent-hi: var(--orange);
-  --accent-fill: var(--rust);
-  --accent-deep: var(--rust);
+  --accent-fill: var(--chocolate);
+  --accent-deep: var(--chocolate);
   --accent-wash: color-mix(in srgb, var(--orange) 14%, transparent);
   --on-accent: #ffffff; /* white on rust = 11.7:1 */
 
-  /* The palette has no secondary hues, so card accents alternate between
-     the two warm tones instead of introducing colours that aren't here. */
+  /* Card accents cycle through the three warm tones, so the offers read
+     as a set rather than four of the same colour. */
   --amber: var(--orange);
   --amber-wash: color-mix(in srgb, var(--orange) 14%, transparent);
-  --umber: var(--rust);
-  --umber-wash: color-mix(in srgb, var(--rust) 12%, transparent);
-  --olive: var(--rust);
-  --olive-wash: color-mix(in srgb, var(--rust) 12%, transparent);
+  --umber: var(--red);
+  --umber-wash: color-mix(in srgb, var(--red) 12%, transparent);
+  --olive: var(--chocolate);
+  --olive-wash: color-mix(in srgb, var(--chocolate) 12%, transparent);
 
-  /* atmosphere — the whole page-background gradient stack lives here */
+  /* Atmosphere. Sized in % rather than vh, so the stack spans the whole
+     document instead of stopping partway down — the page keeps a faint
+     warmth all the way to the footer.
+     Each layer carries intermediate stops: a straight colour-to-
+     transparent falloff bands visibly across an area this large, and the
+     extra stops soften it into something you feel rather than see. */
   --page-glow: radial-gradient(
-    90vw 50vh at 88% -8vh,
-    color-mix(in srgb, var(--orange) 16%, transparent) 0%,
-    transparent 62%
-  );
+      120% 60% at 85% 0%,
+      color-mix(in srgb, var(--orange) 10%, transparent) 0%,
+      color-mix(in srgb, var(--orange) 6%, transparent) 28%,
+      color-mix(in srgb, var(--orange) 2.5%, transparent) 58%,
+      transparent 88%
+    ),
+    radial-gradient(
+      110% 55% at 8% 100%,
+      color-mix(in srgb, var(--red) 7%, transparent) 0%,
+      color-mix(in srgb, var(--red) 3.5%, transparent) 30%,
+      color-mix(in srgb, var(--red) 1.5%, transparent) 60%,
+      transparent 88%
+    );
   --bar-bg: color-mix(in srgb, var(--bone) 92%, transparent);
   --grain-blend: multiply;
   --grain-opacity: 0.055;
@@ -155,21 +174,29 @@
        3. a lifted warm band across the very top — this is the tone that
           "emerges" up there. Composited over the near-black it lifts it a little,
           so it lifts the black without going anywhere near grey. */
+  /* Kept deliberately faint. Pushed harder, the warm top-right corner
+     lifts the background enough that orange text over it drops to about
+     3.7:1 — the glow would be costing readability for atmosphere. */
   --page-glow: radial-gradient(
-      100vw 55vh at 85% -8vh,
-      color-mix(in srgb, var(--orange) 26%, transparent) 0%,
-      transparent 58%
+      120% 60% at 85% 0%,
+      color-mix(in srgb, var(--orange) 3.5%, transparent) 0%,
+      color-mix(in srgb, var(--orange) 2%, transparent) 28%,
+      color-mix(in srgb, var(--orange) 1%, transparent) 58%,
+      transparent 88%
     ),
     radial-gradient(
-      120vw 50vh at 22% -10vh,
-      color-mix(in srgb, var(--rust) 30%, transparent) 0%,
-      transparent 60%
+      110% 55% at 8% 100%,
+      color-mix(in srgb, var(--orange) 5%, transparent) 0%,
+      color-mix(in srgb, var(--orange) 2.5%, transparent) 30%,
+      color-mix(in srgb, var(--orange) 1%, transparent) 60%,
+      transparent 88%
     ),
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--bone) 12%, transparent) 0%,
-      color-mix(in srgb, var(--bone) 5%, transparent) 16vh,
-      transparent 46vh
+      color-mix(in srgb, var(--bone) 2%, transparent) 0%,
+      color-mix(in srgb, var(--bone) 1%, transparent) 14%,
+      color-mix(in srgb, var(--bone) 0.5%, transparent) 34%,
+      transparent 62%
     );
   --bar-bg: color-mix(in srgb, var(--black) 88%, transparent);
   --grain-blend: overlay;

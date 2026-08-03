@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Chevron, ArrowRight } from './Icons.jsx'
 import { booking } from '../content.js'
 
@@ -59,6 +59,7 @@ export default function BookingCalendar() {
   const [done, setDone] = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
+  const sectionRef = useRef(null)
 
   if (!booking) return null
 
@@ -113,7 +114,29 @@ export default function BookingCalendar() {
         setError(payload?.error || 'Could not send that request. Please try again.')
         return
       }
+
       setDone(true)
+
+      /**
+       * The confirmation is far shorter than the calendar it replaces, so
+       * the section collapses by several hundred pixels the moment this
+       * renders. Everything below slides up past the viewport and it reads
+       * as the page jumping — with the confirmation itself now scrolled
+       * off the top, unseen.
+       *
+       * Pull the section back into view once the new layout has been
+       * painted. Two frames: the first commits the DOM change, the second
+       * runs after layout has settled at its new height.
+       */
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          sectionRef.current?.scrollIntoView({
+            behavior: reduced ? 'auto' : 'smooth',
+            block: 'start',
+          })
+        }),
+      )
     } catch {
       setError('Could not reach the server. Please try again in a moment.')
     } finally {
@@ -130,7 +153,7 @@ export default function BookingCalendar() {
     : null
 
   return (
-    <section className="section booking" id="book">
+    <section className="section booking" id="book" ref={sectionRef}>
       <div className="section__head">
         <span className="eyebrow">{booking.eyebrow}</span>
         <h2 className="section__title">{booking.title}</h2>
