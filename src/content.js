@@ -10,21 +10,21 @@ export const profile = {
   name: 'Nate Gaffney',
   handle: '@nategaffney',
   // Short + human. This is the first thing someone reads after tapping your bio link.
-  tagline: 'Indigenous filmmaker & creator.',
+  tagline: 'Wolastoqey filmmaker. Nicheless Nomad.',
   blurb:
-    'I make things about story, mindset, and building a career you actually like. Everything I’ve figured out the hard way lives below.',
+    'Obsessed with turning inner life into art. Director, writer, journaler, creative director — never just one thing.',
   // Web-sized copy (720×1280, ~100KB). The 3.8MB original is kept alongside
   // it as profilepicture-source.jpg for the OG image / print use.
   // If the file goes missing the page falls back to initials — nothing breaks.
   avatar: '/images/profilepicture.jpg',
   location: 'Wabanaki territory',
   // Social proof line under the name. Set to null to hide it.
-  trust: '20K+ on Instagram · Co-owner, Wabanaki Media',
+  trust: 'Co-owner of Wabanaki Media · Indigenous storytelling & media production',
 }
 
 export const socials = [
   { label: 'Instagram', href: 'https://www.instagram.com/nategaffney/', icon: 'instagram' },
-  { label: 'YouTube', href: '#', icon: 'youtube' },
+  { label: 'YouTube', href: 'https://www.youtube.com/@nategaffney', icon: 'youtube' },
   { label: 'TikTok', href: '#', icon: 'tiktok' },
   { label: 'Email', href: 'mailto:hello@example.com', icon: 'mail' },
 ]
@@ -75,7 +75,7 @@ export const offers = [
     kind: 'product',
     title: '1:1 Creator Consult',
     description:
-      '45 minutes, just us. Bring your channel, your rough cut, or the thing you can’t figure out. You leave with a plan.',
+      '45 minutes, just us. Bring your work, your rough cut, or the thing you can’t figure out. You leave with a plan.',
     price: '$150',
     cta: 'Book a call',
     href: '#book', // jumps to the calendar section
@@ -115,7 +115,7 @@ export const booking = {
   eyebrow: 'Book a session',
   title: '1:1 Coaching',
   description:
-    'Forty-five minutes on whatever’s actually in your way — your channel, a rough cut, pricing, burnout. Pick a time that works and tell me what you want to get out of it.',
+    'Forty-five minutes on whatever’s actually in your way — a rough cut, pricing, burnout, the work you keep not making. Pick a time that works and tell me what you want to get out of it.',
   duration: '45 min',
   price: '$150',
   // Shown to the visitor so nobody books 3am their time by accident.
@@ -172,11 +172,13 @@ export const newsletter = {
 
 export const about = {
   eyebrow: 'Hey, I’m Nate',
-  heading: 'I’m not a guru. I’m just a few steps ahead.',
+  heading: 'You were never just one thing.',
   paragraphs: [
-    'I picked up a camera because I wanted to tell stories from my community the way they actually feel from the inside — not the way they get flattened on someone else’s timeline.',
-    'Somewhere in there it turned into a career. Now I split my time between filmmaking, growing this thing online, and being home with my people. That balance is the whole point, and it’s most of what I teach.',
-    'If you’re making something and it feels messy and slow — that’s normal. Everything here is the stuff I wish someone had handed me three years ago.',
+    'I’m a Wolastoqey filmmaker obsessed with turning inner life into art.',
+    'But I’m also a director, a writer, a journaler, a creative director, and I’ve never been able to fit into just one box. For a long time I thought that was a problem.',
+    'It’s not. It’s the whole point.',
+    'Everything here is for creators who are made of many parts and tired of pretending otherwise. We talk about filmmaking, journaling, and the deeper work of building a creative life that actually looks like you.',
+    'Welcome to the Nicheless Nomad.',
   ],
   // Swap for a different shot any time — public/images/nate-about.jpg etc.
   image: '/images/profilepicture.jpg',
