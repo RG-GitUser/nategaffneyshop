@@ -21,39 +21,64 @@ import { connect, close, collections } from '../src/db.js'
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 const MIN_LENGTH = 12
 
-function ask(question) {
-  const rl = createInterface({ input: stdin, output: stdout })
-  return new Promise((resolve) => {
-    rl.question(question, (answer) => {
-      rl.close()
-      resolve(answer.trim())
-    })
-  })
+/**
+ * ONE readline interface for the whole script, reused for every prompt.
+ *
+ * Creating a fresh interface per question looks tidier but breaks: the
+ * first close() ends stdin, so the second prompt never receives input and
+ * the script hangs forever on an unsettled await.
+ */
+const rl = createInterface({
+  input: stdin,
+  output: stdout,
+  terminal: stdin.isTTY,
+})
+
+let muted = false
+rl._writeToOutput = (chunk) => {
+  if (!muted) stdout.write(chunk)
 }
 
-/** Same as ask(), but nothing is echoed while typing. */
-function askHidden(question) {
-  return new Promise((resolve) => {
-    const rl = createInterface({ input: stdin, output: stdout, terminal: true })
-    stdout.write(question)
+/**
+ * Lines are buffered as they arrive rather than read via rl.question().
+ *
+ * With piped input readline drains the whole stream immediately, so any
+ * line that arrives before its question() call is emitted with nobody
+ * listening and silently lost — the script then waits forever for input
+ * that already came and went. Queueing them makes the script behave the
+ * same whether it's typed into or piped to.
+ */
+const pending = []
+const waiting = []
 
-    const onData = (char) => {
-      // Stop muting once the line is submitted.
-      if (['\n', '\r', ''].includes(char.toString())) {
-        stdin.removeListener('data', onData)
-      }
-    }
-    stdin.on('data', onData)
+rl.on('line', (line) => {
+  const next = waiting.shift()
+  if (next) next(line)
+  else pending.push(line)
+})
 
-    // Swallow everything readline would normally echo back.
-    rl._writeToOutput = () => {}
-
-    rl.question('', (answer) => {
-      rl.close()
-      stdout.write('\n')
-      resolve(answer.trim())
-    })
+const readLine = () =>
+  new Promise((resolve) => {
+    const buffered = pending.shift()
+    if (buffered !== undefined) resolve(buffered)
+    else waiting.push(resolve)
   })
+
+async function ask(question) {
+  stdout.write(question)
+  return (await readLine()).trim()
+}
+
+/** Same as ask(), but the typing isn't echoed back. */
+async function askHidden(question) {
+  stdout.write(question)
+  muted = true
+  try {
+    return (await readLine()).trim()
+  } finally {
+    muted = false
+    stdout.write('\n')
+  }
 }
 
 let exitCode = 0
@@ -103,7 +128,9 @@ try {
   )
 
   console.log('')
-  console.log(existing ? `  Password updated for ${email}.` : `  Admin account created for ${email}.`)
+  console.log(
+    existing ? `  Password updated for ${email}.` : `  Admin account created for ${email}.`,
+  )
 
   const others = await collections.admins().countDocuments({ email: { $ne: email } })
   if (others > 0) {
@@ -116,6 +143,7 @@ try {
   console.error(`\n  ${err.message}\n`)
   exitCode = 1
 } finally {
+  rl.close()
   await close()
   process.exit(exitCode)
 }
