@@ -150,7 +150,7 @@ export const booking = {
  */
 export const newsletter = {
   eyebrow: 'The newsletter',
-  name: 'The Cutting Room',
+  name: 'Sunday Notes',
   cadence: 'Sunday mornings',
   description:
     'What I’m making, what’s working, and what flopped that week. Written the same way I’d text it to a friend who’s also figuring this out.',

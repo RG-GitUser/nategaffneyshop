@@ -39,8 +39,8 @@ export default function App() {
             </section>
 
             <BookingCalendar />
-            <Newsletter />
             <About />
+            <Newsletter />
             <Testimonials />
             <Faq />
             <Footer />
