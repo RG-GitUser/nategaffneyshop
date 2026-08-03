@@ -73,6 +73,32 @@ export const config = {
 
   stripeSecretKey: required('STRIPE_SECRET_KEY'),
 
+  /**
+   * Stripe Connect.
+   *
+   * STRIPE_SECRET_KEY is the *platform* key. STRIPE_ACCOUNT_ID is the
+   * connected account this site sells for — every Stripe call is made on
+   * its behalf. Leave the account id blank to act as the platform itself,
+   * which is the right setup for a standalone (non-Connect) account.
+   */
+  stripeAccountId: optional('STRIPE_ACCOUNT_ID'),
+
+  /**
+   * Refund behaviour, which differs by charge type:
+   *
+   *   Direct charges     — the charge lives on the connected account.
+   *                        Leave both of these false.
+   *   Destination /      — the charge lives on the platform and funds were
+   *   separate transfers   transferred out. Set reverseTransfer=true so the
+   *                        money comes back, and refundApplicationFee=true
+   *                        if you also want to hand back your fee.
+   *
+   * Getting this wrong doesn't fail loudly — it refunds the customer while
+   * leaving the money on the wrong side of the ledger.
+   */
+  stripeReverseTransfer: optional('STRIPE_REVERSE_TRANSFER') === 'true',
+  stripeRefundApplicationFee: optional('STRIPE_REFUND_APPLICATION_FEE') === 'true',
+
   // Google Calendar + Meet. Optional — without a client id, bookings fall
   // back to a Meet link pasted in by hand.
   google: {

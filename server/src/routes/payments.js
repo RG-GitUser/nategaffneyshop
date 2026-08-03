@@ -10,6 +10,21 @@ export const paymentsRouter = Router()
 const stripe = new Stripe(config.stripeSecretKey)
 
 /**
+ * Stripe Connect: act on behalf of the connected account.
+ *
+ * The key belongs to the platform; this header is what makes each call
+ * read and write the *client's* account instead. Without it you'd be
+ * listing the platform's own payments, which for a Connect setup is
+ * usually an empty list — a confusing failure rather than an obvious one.
+ *
+ * With STRIPE_ACCOUNT_ID blank this is an empty object, so a plain
+ * standalone Stripe account behaves exactly as before.
+ */
+const onBehalf = config.stripeAccountId
+  ? { stripeAccount: config.stripeAccountId }
+  : {}
+
+/**
  * Every route here is admin-only. The Stripe secret key lives in this
  * process and nowhere else — the browser never sees it, and never talks
  * to Stripe directly. The frontend only ever sees the trimmed-down shapes
@@ -57,11 +72,12 @@ paymentsRouter.get('/', async (req, res, next) => {
     const params = { limit, expand: ['data.latest_charge'] }
     if (req.query.starting_after) params.starting_after = req.query.starting_after
 
-    const list = await stripe.paymentIntents.list(params)
+    const list = await stripe.paymentIntents.list(params, onBehalf)
     res.json({
       data: list.data.map(summarise),
       hasMore: list.has_more,
       lastId: list.data.at(-1)?.id ?? null,
+      account: config.stripeAccountId || null,
     })
   } catch (err) {
     next(err)
@@ -71,10 +87,15 @@ paymentsRouter.get('/', async (req, res, next) => {
 /** One payment, with its refund history. */
 paymentsRouter.get('/:id', async (req, res, next) => {
   try {
-    const pi = await stripe.paymentIntents.retrieve(req.params.id, {
-      expand: ['latest_charge'],
-    })
-    const refunds = await stripe.refunds.list({ payment_intent: pi.id, limit: 20 })
+    const pi = await stripe.paymentIntents.retrieve(
+      req.params.id,
+      { expand: ['latest_charge'] },
+      onBehalf,
+    )
+    const refunds = await stripe.refunds.list(
+      { payment_intent: pi.id, limit: 20 },
+      onBehalf,
+    )
     res.json({
       ...summarise(pi),
       refunds: refunds.data.map((r) => ({
@@ -105,11 +126,21 @@ paymentsRouter.post('/:id/refund', async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid refund request' })
     }
 
-    const refund = await stripe.refunds.create({
-      payment_intent: req.params.id,
-      ...(parsed.data.amount ? { amount: parsed.data.amount } : {}),
-      reason: parsed.data.reason,
-    })
+    const refund = await stripe.refunds.create(
+      {
+        payment_intent: req.params.id,
+        ...(parsed.data.amount ? { amount: parsed.data.amount } : {}),
+        reason: parsed.data.reason,
+        // Only meaningful for destination / separate-transfer charges,
+        // where the money has to be pulled back from the connected
+        // account. Harmless to omit on direct charges.
+        ...(config.stripeReverseTransfer ? { reverse_transfer: true } : {}),
+        ...(config.stripeRefundApplicationFee
+          ? { refund_application_fee: true }
+          : {}),
+      },
+      onBehalf,
+    )
 
     await audit(req.admin.email, 'payment.refund', {
       paymentIntent: req.params.id,
@@ -131,16 +162,17 @@ paymentsRouter.post('/:id/refund', async (req, res, next) => {
 paymentsRouter.get('/stats/summary', async (_req, res, next) => {
   try {
     const since = Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60
-    const list = await stripe.paymentIntents.list({
-      limit: 100,
-      created: { gte: since },
-    })
+    const list = await stripe.paymentIntents.list(
+      { limit: 100, created: { gte: since } },
+      onBehalf,
+    )
     const succeeded = list.data.filter((p) => p.status === 'succeeded')
     res.json({
       windowDays: 30,
       count: succeeded.length,
       grossAmount: succeeded.reduce((sum, p) => sum + p.amount, 0),
       currency: succeeded[0]?.currency ?? 'cad',
+      account: config.stripeAccountId || null,
     })
   } catch (err) {
     next(err)
