@@ -137,7 +137,8 @@ export const booking = {
   horizonDays: 60,
   // Specific days off, as 'YYYY-MM-DD'.
   blackouts: [],
-  // Where the request goes. null = show a confirmation without sending.
+  // Handled by the API server now — BookingCalendar posts to /api/bookings,
+  // which stores the request and shows up in the admin Calendar tab.
   action: null,
   finePrint:
     'You’ll get an email to confirm the time and handle payment. Reschedule or cancel free up to 24 hours before.',

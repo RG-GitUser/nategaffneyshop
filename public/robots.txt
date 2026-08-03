@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /admin/
+Allow: /
+
+# The admin area is also noindex,nofollow at the page level. Neither of these
+# is a security control — the real gate is the login plus the server-side
+# email allowlist. This just keeps it out of search results.

@@ -72,8 +72,9 @@
 
   width: 100%;
   aspect-ratio: 393 / 566;
-  border-radius: 0; /* no frame, no rounding — bare image for now */
+  border-radius: 0; /* no frame, no rounding — bare image */
   overflow: hidden;
+  box-shadow: var(--shadow-lg);
   background: linear-gradient(145deg, var(--accent-fill) 0%, var(--accent-deep) 100%);
   display: grid;
   place-items: center;
@@ -936,9 +937,24 @@
   outline: none;
 }
 
+.booking__error {
+  margin-top: 16px;
+  padding: 12px 15px;
+  border-radius: var(--r-md);
+  border: 1px solid #c0392b;
+  background: rgba(192, 57, 43, 0.09);
+  color: #c0392b;
+  font-size: 0.88rem;
+}
+
 .booking__submit {
   margin-top: 18px;
   width: 100%;
+}
+
+.booking__submit:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 .booking__fine {

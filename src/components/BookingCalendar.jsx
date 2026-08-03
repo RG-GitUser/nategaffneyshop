@@ -57,6 +57,8 @@ export default function BookingCalendar() {
   const [selectedSlot, setSelectedSlot] = useState(null)
   const [form, setForm] = useState({ name: '', email: '', note: '' })
   const [done, setDone] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
 
   if (!booking) return null
 
@@ -86,10 +88,36 @@ export default function BookingCalendar() {
     setSelectedSlot(null) // a slot from the old day is meaningless now
   }
 
-  function handleSubmit(e) {
-    if (!booking.action) {
-      e.preventDefault()
+  const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setError('')
+    setSending(true)
+    try {
+      const res = await fetch(`${API}/api/bookings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: dateKey(selectedDate),
+          time: selectedSlot,
+          name: form.name,
+          email: form.email,
+          note: form.note,
+        }),
+      })
+      const payload = await res.json().catch(() => null)
+
+      if (!res.ok) {
+        // 409 means someone else grabbed the slot between load and submit.
+        setError(payload?.error || 'Could not send that request. Please try again.')
+        return
+      }
       setDone(true)
+    } catch {
+      setError('Could not reach the server. Please try again in a moment.')
+    } finally {
+      setSending(false)
     }
   }
 
@@ -221,15 +249,7 @@ export default function BookingCalendar() {
 
             {/* ── step 3: who's coming ── */}
             {selectedDate && selectedSlot && (
-              <form
-                className="booking__form"
-                action={booking.action || undefined}
-                method={booking.action ? 'post' : undefined}
-                onSubmit={handleSubmit}
-              >
-                {/* carries the choice through to whatever handles the POST */}
-                <input type="hidden" name="date" value={dateKey(selectedDate)} />
-                <input type="hidden" name="time" value={selectedSlot} />
+              <form className="booking__form" onSubmit={handleSubmit}>
 
                 <div className="booking__fields">
                   <div className="field">
@@ -270,9 +290,25 @@ export default function BookingCalendar() {
                   />
                 </div>
 
-                <button className="btn btn--primary booking__submit" type="submit">
-                  Request {prettyDate?.replace(/,.*/, '')} at {selectedSlot}
-                  <ArrowRight width={17} height={17} />
+                {error && (
+                  <p className="booking__error" role="alert">
+                    {error}
+                  </p>
+                )}
+
+                <button
+                  className="btn btn--primary booking__submit"
+                  type="submit"
+                  disabled={sending}
+                >
+                  {sending ? (
+                    'Sending…'
+                  ) : (
+                    <>
+                      Request {prettyDate?.replace(/,.*/, '')} at {selectedSlot}
+                      <ArrowRight width={17} height={17} />
+                    </>
+                  )}
                 </button>
 
                 <p className="booking__fine mono">{booking.finePrint}</p>

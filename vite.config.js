@@ -20,6 +20,7 @@ export default defineConfig({
         main: resolve(root, 'index.html'),
         privacy: resolve(root, 'privacy/index.html'),
         terms: resolve(root, 'terms/index.html'),
+        admin: resolve(root, 'admin/index.html'),
       },
     },
   },

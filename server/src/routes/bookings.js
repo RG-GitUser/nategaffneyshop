@@ -1,0 +1,184 @@
+import { Router } from 'express'
+import { ObjectId } from 'mongodb'
+import rateLimit from 'express-rate-limit'
+import { z } from 'zod'
+import { collections, audit } from '../db.js'
+import { requireAdmin } from '../middleware/auth.js'
+
+export const bookingsRouter = Router()
+
+const STATUSES = ['pending', 'confirmed', 'cancelled', 'completed']
+
+const createSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD'),
+  time: z.string().min(1).max(20),
+  name: z.string().min(1).max(120),
+  email: z.string().email().max(200),
+  note: z.string().max(2000).default(''),
+})
+
+/** The public form is unauthenticated, so it needs its own throttle —
+ *  otherwise one script can fill the calendar with junk bookings. */
+const publicLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many booking requests. Try again later.' },
+})
+
+const toClient = (d) => ({ ...d, id: d._id.toString(), _id: undefined })
+
+function parseId(id, res) {
+  if (!ObjectId.isValid(id)) {
+    res.status(400).json({ error: 'Invalid id' })
+    return null
+  }
+  return new ObjectId(id)
+}
+
+/** Public — submit a booking request. */
+bookingsRouter.post('/', publicLimiter, async (req, res, next) => {
+  try {
+    const parsed = createSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ error: 'Invalid booking', details: parsed.error.flatten() })
+    }
+
+    // Soft double-booking guard. The public site can't see live availability,
+    // so this stops two people grabbing the same slot in the same minute.
+    const taken = await collections.bookings().findOne({
+      date: parsed.data.date,
+      time: parsed.data.time,
+      status: { $in: ['pending', 'confirmed'] },
+    })
+    if (taken) {
+      return res
+        .status(409)
+        .json({ error: 'That time was just taken. Please pick another.' })
+    }
+
+    const doc = {
+      ...parsed.data,
+      status: 'pending',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    const { insertedId } = await collections.bookings().insertOne(doc)
+    res.status(201).json({ ok: true, id: insertedId.toString() })
+  } catch (err) {
+    next(err)
+  }
+})
+
+/** Public — which slots are already spoken for, so the calendar can grey
+ *  them out. Returns dates/times only, never names or emails. */
+bookingsRouter.get('/taken', async (_req, res, next) => {
+  try {
+    const today = new Date().toISOString().slice(0, 10)
+    const rows = await collections
+      .bookings()
+      .find(
+        { date: { $gte: today }, status: { $in: ['pending', 'confirmed'] } },
+        { projection: { date: 1, time: 1, _id: 0 } },
+      )
+      .toArray()
+    res.json(rows)
+  } catch (err) {
+    next(err)
+  }
+})
+
+/** Admin — full list, newest first, optionally filtered by status. */
+bookingsRouter.get('/', requireAdmin, async (req, res, next) => {
+  try {
+    const filter = {}
+    if (req.query.status && STATUSES.includes(req.query.status)) {
+      filter.status = req.query.status
+    }
+    const rows = await collections
+      .bookings()
+      .find(filter)
+      .sort({ date: 1, time: 1 })
+      .limit(500)
+      .toArray()
+    res.json(rows.map(toClient))
+  } catch (err) {
+    next(err)
+  }
+})
+
+/** Admin — reschedule and/or change status (confirm, cancel, complete). */
+const updateSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  time: z.string().min(1).max(20).optional(),
+  status: z.enum(STATUSES).optional(),
+  adminNote: z.string().max(2000).optional(),
+})
+
+bookingsRouter.patch('/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const _id = parseId(req.params.id, res)
+    if (!_id) return
+
+    const parsed = updateSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ error: 'Invalid update', details: parsed.error.flatten() })
+    }
+    if (Object.keys(parsed.data).length === 0) {
+      return res.status(400).json({ error: 'Nothing to update' })
+    }
+
+    // Moving a booking onto an occupied slot would silently double-book.
+    if (parsed.data.date || parsed.data.time) {
+      const current = await collections.bookings().findOne({ _id })
+      if (!current) return res.status(404).json({ error: 'Not found' })
+
+      const date = parsed.data.date ?? current.date
+      const time = parsed.data.time ?? current.time
+      const clash = await collections.bookings().findOne({
+        _id: { $ne: _id },
+        date,
+        time,
+        status: { $in: ['pending', 'confirmed'] },
+      })
+      if (clash) {
+        return res.status(409).json({ error: 'Another booking already holds that slot' })
+      }
+    }
+
+    const result = await collections
+      .bookings()
+      .findOneAndUpdate(
+        { _id },
+        { $set: { ...parsed.data, updatedAt: new Date() } },
+        { returnDocument: 'after' },
+      )
+    if (!result) return res.status(404).json({ error: 'Not found' })
+
+    await audit(req.admin.email, 'booking.update', {
+      id: req.params.id,
+      changes: parsed.data,
+    })
+    res.json(toClient(result))
+  } catch (err) {
+    next(err)
+  }
+})
+
+bookingsRouter.delete('/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const _id = parseId(req.params.id, res)
+    if (!_id) return
+    const { deletedCount } = await collections.bookings().deleteOne({ _id })
+    if (!deletedCount) return res.status(404).json({ error: 'Not found' })
+    await audit(req.admin.email, 'booking.delete', { id: req.params.id })
+    res.json({ ok: true })
+  } catch (err) {
+    next(err)
+  }
+})

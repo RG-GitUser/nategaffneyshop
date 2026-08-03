@@ -1,0 +1,52 @@
+import { MongoClient } from 'mongodb'
+import { config } from './config.js'
+
+let client
+let db
+
+export async function connect() {
+  if (db) return db
+  client = new MongoClient(config.mongoUri, { retryWrites: true })
+  await client.connect()
+  db = client.db(config.mongoDb)
+
+  // Bookings get queried by date constantly; content is a single doc.
+  await db.collection('bookings').createIndex({ date: 1, time: 1 })
+  await db.collection('bookings').createIndex({ status: 1, createdAt: -1 })
+  await db.collection('shopItems').createIndex({ order: 1 })
+
+  return db
+}
+
+export function getDb() {
+  if (!db) throw new Error('Database not connected yet')
+  return db
+}
+
+export async function close() {
+  if (client) await client.close()
+  client = undefined
+  db = undefined
+}
+
+export const collections = {
+  content: () => getDb().collection('content'),
+  shopItems: () => getDb().collection('shopItems'),
+  bookings: () => getDb().collection('bookings'),
+  audit: () => getDb().collection('auditLog'),
+}
+
+/** Every state-changing admin action gets a row here. If something is ever
+ *  refunded or cancelled unexpectedly, this is the record of who and when. */
+export async function audit(actor, action, details = {}) {
+  try {
+    await collections.audit().insertOne({
+      actor,
+      action,
+      details,
+      at: new Date(),
+    })
+  } catch {
+    // Never let audit failure break the actual operation.
+  }
+}
