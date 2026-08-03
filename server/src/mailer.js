@@ -47,6 +47,20 @@ export async function verifyMail() {
 
 const when = (b) => `${b.date} at ${b.time}`
 
+export function sendChatCode(email, code) {
+  send({
+    to: email,
+    subject: `${code} is your code to join the chat`,
+    text: [
+      `Your code is ${code}`,
+      ``,
+      `Enter it on the site to join the group chat. It expires in 10 minutes.`,
+      ``,
+      `If you didn't ask for this, ignore it — nothing has been created.`,
+    ].join('\n'),
+  })
+}
+
 export function notifyNewBooking(booking) {
   send({
     to: config.smtp.notify,

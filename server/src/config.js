@@ -56,6 +56,15 @@ export const config = {
   },
 
   stripeSecretKey: required('STRIPE_SECRET_KEY'),
+
+  // Circle.so community chat. Optional — leave the token blank and the
+  // chat section simply reports itself as unconfigured instead of breaking.
+  circle: {
+    headlessToken: optional('CIRCLE_HEADLESS_TOKEN'),
+    adminToken: optional('CIRCLE_ADMIN_TOKEN'),
+    spaceId: optional('CIRCLE_SPACE_ID'),
+    chatRoomUuid: optional('CIRCLE_CHAT_ROOM_UUID'),
+  },
 }
 
 // A guessable session secret is the same as no login at all.

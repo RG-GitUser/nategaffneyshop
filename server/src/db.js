@@ -18,6 +18,15 @@ export async function connect() {
   // remembering to check for duplicates everywhere.
   await db.collection('admins').createIndex({ email: 1 }, { unique: true })
 
+  // Circle chat. Mongo expires these itself, so stale login codes and
+  // sessions clean themselves up without a cron job.
+  await db.collection('circleCodes').createIndex({ email: 1 }, { unique: true })
+  await db.collection('circleCodes').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
+  await db.collection('circleSessions').createIndex({ sessionId: 1 }, { unique: true })
+  await db
+    .collection('circleSessions')
+    .createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
+
   return db
 }
 
@@ -37,6 +46,8 @@ export const collections = {
   content: () => getDb().collection('content'),
   shopItems: () => getDb().collection('shopItems'),
   bookings: () => getDb().collection('bookings'),
+  circleCodes: () => getDb().collection('circleCodes'),
+  circleSessions: () => getDb().collection('circleSessions'),
   audit: () => getDb().collection('auditLog'),
 }
 
