@@ -7,6 +7,8 @@ const BLANK = {
   description: '',
   price: '',
   oldPrice: '',
+  amount: '', // dollars, converted to priceCents on save
+  currency: 'cad',
   cta: 'Get it',
   href: '#',
   accent: 'navy',
@@ -15,6 +17,13 @@ const BLANK = {
   order: 0,
   visible: true,
 }
+
+/** Stripe works in cents; the form works in dollars. */
+const toCents = (dollars) => {
+  const n = Number(String(dollars).replace(/[^0-9.]/g, ''))
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) : null
+}
+const toDollars = (cents) => (cents ? (cents / 100).toFixed(2) : '')
 
 export default function ShopPanel({ notify }) {
   const [items, setItems] = useState([])
@@ -48,6 +57,15 @@ export default function ShopPanel({ notify }) {
       if (!payload[k]) payload[k] = null
     }
     payload.order = Number(payload.order) || 0
+
+    // The dollars field is form-only; the server stores cents.
+    payload.priceCents = toCents(draft.amount)
+    delete payload.amount
+    if (payload.priceCents && payload.priceCents < 50) {
+      notify('Stripe’s minimum charge is 50 cents.', 'error')
+      return
+    }
+    if (!payload.priceCents) payload.currency = null
 
     try {
       if (draft.id) await api.updateShopItem(draft.id, payload)
@@ -110,6 +128,7 @@ export default function ShopPanel({ notify }) {
                 <th>#</th>
                 <th>Title</th>
                 <th>Price</th>
+                <th>Checkout</th>
                 <th>Link</th>
                 <th>Visible</th>
                 <th />
@@ -125,6 +144,15 @@ export default function ShopPanel({ notify }) {
                     <span className="adm-muted">{it.description?.slice(0, 60)}</span>
                   </td>
                   <td className="adm-nowrap">{it.price || '—'}</td>
+                  <td className="adm-nowrap">
+                    {it.priceCents ? (
+                      <span className="adm-pill adm-pill--confirmed">
+                        {toDollars(it.priceCents)} {(it.currency || 'cad').toUpperCase()}
+                      </span>
+                    ) : (
+                      <span className="adm-pill">link only</span>
+                    )}
+                  </td>
                   <td className="adm-note">{it.href}</td>
                   <td>
                     <button className="adm-mini" onClick={() => toggleVisible(it)}>
@@ -132,7 +160,10 @@ export default function ShopPanel({ notify }) {
                     </button>
                   </td>
                   <td className="adm-actions">
-                    <button className="adm-mini" onClick={() => setDraft({ ...it })}>
+                    <button
+                      className="adm-mini"
+                      onClick={() => setDraft({ ...it, amount: toDollars(it.priceCents) })}
+                    >
                       Edit
                     </button>
                     <button className="adm-mini adm-mini--danger" onClick={() => remove(it)}>
@@ -209,6 +240,40 @@ export default function ShopPanel({ notify }) {
                   onChange={(e) => setDraft({ ...draft, description: e.target.value })}
                 />
               </div>
+
+              {/* This is the field that actually turns the card into a
+                  purchase. Without it the card is just a link. */}
+              <div className="adm-field">
+                <label htmlFor="shop-amount">Charge amount</label>
+                <input
+                  id="shop-amount"
+                  type="number"
+                  step="0.01"
+                  min="0.50"
+                  placeholder="39.00"
+                  value={draft.amount ?? ''}
+                  onChange={(e) => setDraft({ ...draft, amount: e.target.value })}
+                />
+              </div>
+
+              <div className="adm-field">
+                <label htmlFor="shop-currency">Currency</label>
+                <select
+                  id="shop-currency"
+                  value={draft.currency || 'cad'}
+                  onChange={(e) => setDraft({ ...draft, currency: e.target.value })}
+                >
+                  <option value="cad">CAD</option>
+                  <option value="usd">USD</option>
+                </select>
+              </div>
+
+              <p className="adm-sub adm-field--wide">
+                Set a <strong>charge amount</strong> and clicking the card opens
+                Stripe Checkout. Leave it blank and the card just follows its link
+                instead. The “Price” field above is the text shown on the card —
+                this is the money that actually moves.
+              </p>
             </div>
 
             <div className="adm-modal__actions">

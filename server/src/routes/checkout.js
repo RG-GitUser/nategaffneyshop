@@ -15,11 +15,19 @@ const stripeReady =
 
 const stripe = stripeReady ? new Stripe(config.stripeSecretKey) : null
 
-// Connect: everything happens on the connected account, so the money
-// lands with Nate and the session appears in his dashboard.
+/**
+ * Connect: everything happens on the connected account, so the money
+ * lands with Nate and the session appears in his dashboard.
+ *
+ * An ARRAY, spread into each call, not an object passed directly.
+ * stripe-node inspects the trailing argument for known option keys, and
+ * an empty `{}` matches none of them — it throws "Unknown arguments"
+ * rather than ignoring it. Spreading an empty array passes nothing at
+ * all, which is what a standalone account needs.
+ */
 const onBehalf = config.stripeAccountId
-  ? { stripeAccount: config.stripeAccountId }
-  : {}
+  ? [{ stripeAccount: config.stripeAccountId }]
+  : []
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -85,13 +93,22 @@ checkoutRouter.post('/session', limiter, async (req, res, next) => {
         // Read back in the webhook to know what was bought.
         metadata: { itemId: item._id.toString(), title: item.title },
       },
-      onBehalf,
+      ...onBehalf,
     )
 
     res.json({ url: session.url })
   } catch (err) {
-    if (err?.type?.startsWith('Stripe')) {
-      console.error('[checkout] stripe rejected:', err.message)
+    /**
+     * Anything the Stripe SDK raises is an upstream problem, not a bug
+     * here, so it becomes a 502 with a message the customer can act on.
+     * Checking `type` alone missed some of them — an authentication
+     * failure fell through to the generic 500 handler — so this also
+     * looks at rawType and statusCode.
+     */
+    const fromStripe =
+      err?.type?.startsWith('Stripe') || err?.rawType || err?.statusCode
+    if (fromStripe) {
+      console.error('[checkout] stripe rejected:', err.type || err.rawType, err.message)
       return res.status(502).json({ error: 'Could not start checkout. Please try again.' })
     }
     next(err)

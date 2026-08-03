@@ -27,11 +27,6 @@ export default function FeaturedVideo() {
             />
           )}
 
-          <span className="film__play" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
-              <path d="M8 5.2v13.6L19 12 8 5.2z" />
-            </svg>
-          </span>
         </div>
 
         <div className="film__body">

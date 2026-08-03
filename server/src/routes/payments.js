@@ -25,12 +25,13 @@ const stripe = stripeReady ? new Stripe(config.stripeSecretKey) : null
  * listing the platform's own payments, which for a Connect setup is
  * usually an empty list — a confusing failure rather than an obvious one.
  *
- * With STRIPE_ACCOUNT_ID blank this is an empty object, so a plain
- * standalone Stripe account behaves exactly as before.
+ * An ARRAY, spread into each call. stripe-node throws "Unknown arguments"
+ * on an empty trailing options object, so with STRIPE_ACCOUNT_ID blank
+ * spreading an empty array passes nothing at all.
  */
 const onBehalf = config.stripeAccountId
-  ? { stripeAccount: config.stripeAccountId }
-  : {}
+  ? [{ stripeAccount: config.stripeAccountId }]
+  : []
 
 /**
  * Every route here is admin-only. The Stripe secret key lives in this
@@ -91,7 +92,7 @@ paymentsRouter.get('/', async (req, res, next) => {
     const params = { limit, expand: ['data.latest_charge'] }
     if (req.query.starting_after) params.starting_after = req.query.starting_after
 
-    const list = await stripe.paymentIntents.list(params, onBehalf)
+    const list = await stripe.paymentIntents.list(params, ...onBehalf)
     res.json({
       data: list.data.map(summarise),
       hasMore: list.has_more,
@@ -109,11 +110,11 @@ paymentsRouter.get('/:id', async (req, res, next) => {
     const pi = await stripe.paymentIntents.retrieve(
       req.params.id,
       { expand: ['latest_charge'] },
-      onBehalf,
+      ...onBehalf,
     )
     const refunds = await stripe.refunds.list(
       { payment_intent: pi.id, limit: 20 },
-      onBehalf,
+      ...onBehalf,
     )
     res.json({
       ...summarise(pi),
@@ -158,7 +159,7 @@ paymentsRouter.post('/:id/refund', async (req, res, next) => {
           ? { refund_application_fee: true }
           : {}),
       },
-      onBehalf,
+      ...onBehalf,
     )
 
     await audit(req.admin.email, 'payment.refund', {
@@ -183,7 +184,7 @@ paymentsRouter.get('/stats/summary', async (_req, res, next) => {
     const since = Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60
     const list = await stripe.paymentIntents.list(
       { limit: 100, created: { gte: since } },
-      onBehalf,
+      ...onBehalf,
     )
     const succeeded = list.data.filter((p) => p.status === 'succeeded')
     res.json({
@@ -196,4 +197,24 @@ paymentsRouter.get('/stats/summary', async (_req, res, next) => {
   } catch (err) {
     next(err)
   }
+})
+
+
+/**
+ * Router-level catch for anything the Stripe SDK raises: upstream
+ * problems (bad key, Stripe outage, revoked Connect access) become an
+ * honest 502 with a message, rather than tripping the app-wide 500.
+ *
+ * Must be registered AFTER every route above — Express only routes an
+ * error to handlers that come later in the stack than the route that
+ * threw it.
+ */
+paymentsRouter.use((err, _req, res, next) => {
+  if (err?.type?.startsWith('Stripe') || err?.rawType || err?.statusCode) {
+    console.error('[payments] stripe rejected:', err.type || err.rawType, err.message)
+    return res.status(502).json({
+      error: 'Stripe did not accept the request. Check the key and account id in server/.env.',
+    })
+  }
+  next(err)
 })
