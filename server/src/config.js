@@ -71,7 +71,13 @@ export const config = {
     notify: optional('ADMIN_NOTIFY_EMAIL', optional('SMTP_USER')),
   },
 
-  stripeSecretKey: required('STRIPE_SECRET_KEY'),
+  /**
+   * Optional. Without it the Payments tab reports itself unconfigured and
+   * everything else — bookings, chat, content, images — runs normally.
+   * Requiring it would mean a missing Stripe key blocks the entire site
+   * from starting, which is a bad trade for one dashboard tab.
+   */
+  stripeSecretKey: optional('STRIPE_SECRET_KEY'),
 
   /**
    * Stripe Connect.

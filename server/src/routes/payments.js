@@ -7,7 +7,15 @@ import { requireAdmin } from '../middleware/auth.js'
 
 export const paymentsRouter = Router()
 
-const stripe = new Stripe(config.stripeSecretKey)
+// Placeholder values from .env.example count as "not configured" — they'd
+// otherwise produce confusing auth errors from Stripe rather than an
+// honest "you haven't set this up yet".
+const stripeReady =
+  Boolean(config.stripeSecretKey) &&
+  !config.stripeSecretKey.includes('placeholder') &&
+  !config.stripeSecretKey.includes('xxx')
+
+const stripe = stripeReady ? new Stripe(config.stripeSecretKey) : null
 
 /**
  * Stripe Connect: act on behalf of the connected account.
@@ -31,6 +39,17 @@ const onBehalf = config.stripeAccountId
  * built below, so card details and raw Stripe objects stay server-side.
  */
 paymentsRouter.use(requireAdmin)
+
+// Answer honestly rather than throwing on a null client.
+paymentsRouter.use((_req, res, next) => {
+  if (!stripeReady) {
+    return res.status(503).json({
+      error: 'Stripe is not connected yet. Add STRIPE_SECRET_KEY to server/.env.',
+      configured: false,
+    })
+  }
+  next()
+})
 
 const summarise = (pi) => ({
   id: pi.id,

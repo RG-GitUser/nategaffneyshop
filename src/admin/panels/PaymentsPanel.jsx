@@ -15,6 +15,8 @@ export default function PaymentsPanel({ notify }) {
   const [loading, setLoading] = useState(true)
   const [refunding, setRefunding] = useState(null) // { id, amount, max, currency }
 
+  const [unconfigured, setUnconfigured] = useState(false)
+
   async function load() {
     setLoading(true)
     try {
@@ -24,8 +26,12 @@ export default function PaymentsPanel({ notify }) {
       ])
       setRows(list.data)
       setSummary(stats)
+      setUnconfigured(false)
     } catch (err) {
-      notify(err.message, 'error')
+      // 503 means no Stripe key on the server — that's a setup state, not
+      // an error worth shouting about.
+      if (err.status === 503) setUnconfigured(true)
+      else notify(err.message, 'error')
     } finally {
       setLoading(false)
     }
@@ -90,12 +96,17 @@ export default function PaymentsPanel({ notify }) {
         </div>
       )}
 
-      {loading ? (
+      {unconfigured ? (
+        <p className="adm-alert adm-alert--warn">
+          Stripe isn’t connected yet. Add <code>STRIPE_SECRET_KEY</code> — and{' '}
+          <code>STRIPE_ACCOUNT_ID</code> if you’re on Connect — to{' '}
+          <code>server/.env</code> and restart the service. Everything else on
+          this dashboard works without it.
+        </p>
+      ) : loading ? (
         <p className="adm-muted">Loading…</p>
       ) : rows.length === 0 ? (
-        <p className="adm-muted">
-          No payments yet — or Stripe is not connected on the server.
-        </p>
+        <p className="adm-muted">No payments yet.</p>
       ) : (
         <div className="adm-table-wrap">
           <table className="adm-table">
