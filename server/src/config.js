@@ -8,11 +8,27 @@ import 'dotenv/config'
  * someone tries to issue a refund.
  */
 
+/**
+ * Config problems print a readable message and exit, rather than throwing.
+ * This runs at import time, so a throw here surfaces as a raw Node stack
+ * trace before any entry point gets the chance to catch it — which is a
+ * miserable first experience for "I forgot to fill in .env".
+ */
+function fail(message, hint) {
+  console.error('')
+  console.error('  Configuration problem')
+  console.error(`  ${message}`)
+  if (hint) console.error(`  ${hint}`)
+  console.error('')
+  process.exit(1)
+}
+
 function required(name) {
   const value = process.env[name]
   if (!value || !value.trim()) {
-    throw new Error(
-      `Missing required environment variable: ${name}. See server/.env.example.`,
+    fail(
+      `${name} is not set.`,
+      'Copy server/.env.example to server/.env and fill it in.',
     )
   }
   return value.trim()
@@ -80,18 +96,22 @@ export const config = {
 
 // A guessable session secret is the same as no login at all.
 if (config.jwtSecret.length < 32) {
-  throw new Error(
-    'JWT_SECRET is too short. Generate one with:\n' +
-      '  node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"',
+  fail(
+    'JWT_SECRET is too short.',
+    'Generate one: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"',
   )
 }
 
 if (config.jwtSecret.includes('replace-me')) {
-  throw new Error('JWT_SECRET is still the placeholder from .env.example. Refusing to start.')
+  fail(
+    'JWT_SECRET is still the placeholder from .env.example.',
+    'Generate a real one before going anywhere near production.',
+  )
 }
 
 if (config.isProd && config.allowedOrigins.length === 0) {
-  throw new Error(
-    'ALLOWED_ORIGINS is empty in production. Refusing to start with open CORS.',
+  fail(
+    'ALLOWED_ORIGINS is empty while NODE_ENV=production.',
+    'Refusing to start with open CORS. List your site origins, comma separated.',
   )
 }
