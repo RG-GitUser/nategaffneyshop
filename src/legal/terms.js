@@ -12,15 +12,15 @@ export const terms = {
   title: 'Terms & Conditions',
   updated: '3 August 2026',
   intro: [
-    'These terms are the agreement between you and [LEGAL BUSINESS NAME] ("we", "us") for everything sold or offered through this website. Please read them before you buy anything or book a session.',
+    'These terms are the agreement between you and Wabanaki Software Solutions Inc. ("we", "us") for everything sold or offered through this website. Please read them before you buy anything or book a session.',
     'By buying a product, booking a session, subscribing to the newsletter, or otherwise using this site, you agree to these terms. If you do not agree with them, please do not use the site or buy anything from it.',
   ],
   sections: [
     {
       heading: '1. Who you are dealing with',
       paragraphs: [
-        'This site is operated by [LEGAL BUSINESS NAME], [sole proprietorship / corporation] registered in [PROVINCE], Canada, with a business address at [BUSINESS ADDRESS].',
-        'You can reach us at [CONTACT EMAIL] for any question about these terms, an order, or a booking.',
+        'This site is operated by Wabanaki Software Solutions Inc., [sole proprietorship / corporation] registered in [PROVINCE], Canada.',
+        'You can reach us at support@nategaffney.store for any question about these terms, an order, or a booking.',
       ],
     },
     {
@@ -85,7 +85,7 @@ export const terms = {
       heading: '7. Refunds on digital products',
       paragraphs: [
         'Because digital products are delivered instantly and cannot be returned, we offer a goodwill refund window rather than a legal right of return.',
-        'If a digital product is not right for you, email [CONTACT EMAIL] within <strong>14 days</strong> of purchase and we will refund you in full. You do not need to give a reason. Your licence ends when the refund is issued, and you must delete the files.',
+        'If a digital product is not right for you, email support@nategaffney.store within <strong>14 days</strong> of purchase and we will refund you in full. You do not need to give a reason. Your licence ends when the refund is issued, and you must delete the files.',
         'We may decline a refund where there is clear evidence of abuse — for example repeated buy-and-refund behaviour, or redistribution of the files.',
       ],
     },
@@ -205,7 +205,7 @@ export const terms = {
       heading: '22. Contact',
       paragraphs: [
         'Questions about these terms, an order, a refund, or a booking:',
-        '<strong>[LEGAL BUSINESS NAME]</strong><br />[BUSINESS ADDRESS]<br /><a href="mailto:[CONTACT EMAIL]">[CONTACT EMAIL]</a>',
+        '<strong>Wabanaki Software Solutions Inc.</strong><br /><a href="mailto:support@nategaffney.store">support@nategaffney.store</a>',
       ],
     },
   ],

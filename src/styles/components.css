@@ -233,11 +233,14 @@
 .featured {
   position: relative;
   border-radius: var(--r-xl);
+  /* Runs the full warm range — orange into red into the dark brown —
+     rather than three shades of one colour. */
   background: linear-gradient(
     152deg,
     var(--accent-hi) 0%,
-    var(--accent-fill) 52%,
-    var(--accent-deep) 100%
+    var(--orange) 30%,
+    var(--red) 68%,
+    var(--chocolate) 100%
   );
   color: var(--on-accent);
   box-shadow: var(--shadow-lg);
@@ -540,9 +543,11 @@
     transform 0.16s var(--ease);
 }
 
+/* Its own token rather than --accent: that one is tuned against the page
+   background, and the card sits at a different tone. */
 .offer--navy {
-  --card-accent: var(--accent);
-  --card-wash: var(--accent-wash);
+  --card-accent: var(--card-lead);
+  --card-wash: var(--card-lead-wash);
 }
 .offer--umber {
   --card-accent: var(--umber);

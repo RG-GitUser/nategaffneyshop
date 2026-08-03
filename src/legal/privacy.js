@@ -13,14 +13,14 @@ export const privacy = {
   title: 'Privacy Policy',
   updated: '3 August 2026',
   intro: [
-    'This policy explains what personal information [LEGAL BUSINESS NAME] ("we", "us") collects through this website, why we collect it, who we share it with, and what control you have over it.',
+    'This policy explains what personal information Wabanaki Software Solutions Inc. ("we", "us") collects through this website, why we collect it, who we share it with, and what control you have over it.',
     'The short version: we collect as little as we can get away with, we do not sell your information to anyone, and we never see your card details.',
   ],
   sections: [
     {
       heading: '1. Who is responsible for your information',
       paragraphs: [
-        '[LEGAL BUSINESS NAME], [BUSINESS ADDRESS], is responsible for the personal information collected through this site. For any privacy question or request, contact <a href="mailto:[CONTACT EMAIL]">[CONTACT EMAIL]</a>.',
+        'Wabanaki Software Solutions Inc. is responsible for the personal information collected through this site. For any privacy question or request, contact <a href="mailto:support@nategaffney.store">support@nategaffney.store</a>.',
       ],
     },
     {
@@ -66,9 +66,10 @@ export const privacy = {
       ],
       list: [
         '<strong>Stripe</strong> — payment processing. See <a href="https://stripe.com/privacy" target="_blank" rel="noreferrer noopener">stripe.com/privacy</a>.',
-        '<strong>[EMAIL PROVIDER — e.g. ConvertKit / Beehiiv / Mailchimp]</strong> — storing your subscription and sending the newsletter.',
-        '<strong>[HOSTING PROVIDER — e.g. Netlify / Vercel]</strong> — serving the website and keeping server logs.',
-        '<strong>[VIDEO CALL TOOL — e.g. Zoom / Google Meet]</strong> — running coaching sessions, where used.',
+        '<strong>Namecrane</strong> — storing your subscription and sending the newsletter.',
+        '<strong>DigitalOcean</strong> — serving the website and keeping server logs.',
+        '<strong>MongoDB Atlas</strong> — the database holding bookings, chat messages and site content.',
+        '<strong>Google Meet</strong> — running coaching sessions, where used.',
         '<strong>Professional advisers</strong> — our accountant or a lawyer, where genuinely needed.',
       ],
       after: [
@@ -111,7 +112,7 @@ export const privacy = {
         '<strong>Object to or restrict</strong> processing based on our legitimate interests.',
       ],
       after: [
-        'Email <a href="mailto:[CONTACT EMAIL]">[CONTACT EMAIL]</a> and we will respond within 30 days. We may need to verify your identity first. Exercising these rights is free, and we will not treat you differently for it.',
+        'Email <a href="mailto:support@nategaffney.store">support@nategaffney.store</a> and we will respond within 30 days. We may need to verify your identity first. Exercising these rights is free, and we will not treat you differently for it.',
       ],
     },
     {
@@ -136,7 +137,7 @@ export const privacy = {
       heading: '13. Questions and complaints',
       paragraphs: [
         'Please come to us first — most things are quickest to fix directly:',
-        '<strong>[LEGAL BUSINESS NAME]</strong><br />[BUSINESS ADDRESS]<br /><a href="mailto:[CONTACT EMAIL]">[CONTACT EMAIL]</a>',
+        '<strong>Wabanaki Software Solutions Inc.</strong><br /><a href="mailto:support@nategaffney.store">support@nategaffney.store</a>',
         'If you are not satisfied with our response, you can complain to the <strong>Office of the Privacy Commissioner of Canada</strong> at <a href="https://www.priv.gc.ca" target="_blank" rel="noreferrer noopener">priv.gc.ca</a>, or to the privacy regulator in your own country if you live outside Canada.',
       ],
     },

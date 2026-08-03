@@ -26,7 +26,7 @@ export const socials = [
   { label: 'Instagram', href: 'https://www.instagram.com/nategaffney/', icon: 'instagram' },
   { label: 'YouTube', href: 'https://www.youtube.com/@nategaffney', icon: 'youtube' },
   { label: 'TikTok', href: '#', icon: 'tiktok' },
-  { label: 'Email', href: 'mailto:hello@example.com', icon: 'mail' },
+  { label: 'Email', href: 'mailto:support@nategaffney.store', icon: 'mail' },
 ]
 
 /**
@@ -266,7 +266,7 @@ export const footer = {
   links: [
     { label: 'Privacy', href: '/privacy/' },
     { label: 'Terms', href: '/terms/' },
-    { label: 'Contact', href: 'mailto:hello@example.com' },
+    { label: 'Contact', href: 'mailto:support@nategaffney.store' },
   ],
 }
 

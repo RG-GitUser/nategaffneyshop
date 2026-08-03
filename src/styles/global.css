@@ -56,24 +56,34 @@
      --accent      = orange TEXT/borders sitting on the page background
      --accent-fill = deeper orange used as a solid BACKGROUND under --on-accent
      Those two pull in opposite directions on contrast, hence the split. */
-  /* Orange text on bone is only 3.3:1, so small text uses rust (9.3:1)
-     and the orange is kept for fills, borders and large type where it
-     reads properly. */
-  --accent: var(--chocolate);
-  --accent-hi: var(--orange);
-  --accent-fill: var(--chocolate);
-  --accent-deep: var(--chocolate);
-  --accent-wash: color-mix(in srgb, var(--orange) 14%, transparent);
-  --on-accent: #ffffff; /* white on rust = 11.7:1 */
+  /* All three warm tones earn a job here rather than the brown carrying
+     everything:
+       orange     solid fills — buttons, active states, the featured card
+       red        accent text, labels, links, small marks
+       chocolate  the deep end of gradients and the darkest card accent
 
-  /* Card accents cycle through the three warm tones, so the offers read
-     as a set rather than four of the same colour. */
-  --amber: var(--orange);
-  --amber-wash: color-mix(in srgb, var(--orange) 14%, transparent);
+     Orange as small text on bone is only 3.3:1, which is why the red does
+     the talking. On an orange fill the near-black sits at 4.5:1, where
+     white would be 4.2:1 — so text on orange is dark, not light. */
+  --accent: var(--red);
+  --accent-hi: color-mix(in srgb, var(--bone) 10%, var(--orange));
+  --accent-fill: var(--orange);
+  --accent-deep: var(--chocolate);
+  --accent-wash: color-mix(in srgb, var(--orange) 16%, transparent);
+  --on-accent: var(--black);
+
+  /* Card accents are tuned against the CARD surface, not the page — the
+     card is a different tone, so the page accent doesn't carry over. On
+     bone there's plenty of room, so these are four genuinely different
+     warm colours. */
+  --amber: color-mix(in srgb, var(--black) 22%, var(--orange));
+  --amber-wash: color-mix(in srgb, var(--orange) 16%, transparent);
   --umber: var(--red);
-  --umber-wash: color-mix(in srgb, var(--red) 12%, transparent);
+  --umber-wash: color-mix(in srgb, var(--red) 14%, transparent);
   --olive: var(--chocolate);
   --olive-wash: color-mix(in srgb, var(--chocolate) 12%, transparent);
+  --card-lead: color-mix(in srgb, var(--black) 45%, var(--orange));
+  --card-lead-wash: color-mix(in srgb, var(--orange) 14%, transparent);
 
   /* Atmosphere. Sized in % rather than vh, so the stack spans the whole
      document instead of stopping partway down — the page keeps a faint
@@ -159,12 +169,19 @@
   --accent-wash: color-mix(in srgb, var(--orange) 16%, transparent);
   --on-accent: var(--black);
 
-  --amber: var(--orange);
+  /* Cards sit lighter than the page here, so plain orange only reaches
+     4.05:1 on them. Every card accent is lifted toward bone instead.
+     They separate by lightness rather than hue: anything dark enough to
+     read as a different colour fails against this surface — a lifted red
+     measured 2.06:1 — so lightness is the only axis available. */
+  --amber: color-mix(in srgb, var(--bone) 14%, var(--orange));
   --amber-wash: color-mix(in srgb, var(--orange) 16%, transparent);
-  --umber: var(--orange);
+  --umber: color-mix(in srgb, var(--bone) 30%, var(--orange));
   --umber-wash: color-mix(in srgb, var(--orange) 12%, transparent);
-  --olive: var(--orange);
-  --olive-wash: color-mix(in srgb, var(--orange) 12%, transparent);
+  --olive: color-mix(in srgb, var(--bone) 38%, var(--orange));
+  --olive-wash: color-mix(in srgb, var(--orange) 14%, transparent);
+  --card-lead: color-mix(in srgb, var(--bone) 22%, var(--orange));
+  --card-lead-wash: color-mix(in srgb, var(--orange) 14%, transparent);
 
   /* Three layers, warmest at the top and falling away to the near-black
      ground by roughly half the viewport:
@@ -344,12 +361,14 @@ p {
   color: var(--accent);
 }
 
-/* small tick before every label */
+/* The label reads in red, but the tick beside it is the full orange — a
+   block of colour rather than type, so it doesn't need to clear a text
+   contrast threshold and can be the brighter tone. */
 .eyebrow::before {
   content: '';
   width: 14px;
   height: 2px;
-  background: var(--accent);
+  background: var(--orange);
 }
 
 .section {
