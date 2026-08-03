@@ -63,14 +63,15 @@
 
 /* ---------- Avatar ---------- */
 .avatar {
-  /* Full-width portrait rather than a small thumbnail. The source is 9:16,
-     so 4:5 shows plenty of him without the card running off the screen;
+  /* Full-width portrait rather than a small thumbnail. Source is 9:16;
+     3:4 runs a little longer than 4:5 did, and the focus sits lower so
+     there's less headroom up top and more of him below.
      max-height stops it eating the whole viewport on tall phones. */
-  --avatar-focus: 50% 22%;
+  --avatar-focus: 50% 32%;
 
   width: 100%;
-  aspect-ratio: 4 / 5;
-  max-height: 440px;
+  aspect-ratio: 3 / 4;
+  max-height: 480px;
   border-radius: 0; /* no frame, no rounding — bare image for now */
   overflow: hidden;
   background: linear-gradient(145deg, var(--accent-fill) 0%, var(--accent-deep) 100%);
