@@ -1,9 +1,12 @@
 import express from 'express'
 import helmet from 'helmet'
 import cors from 'cors'
+import cookieParser from 'cookie-parser'
 import rateLimit from 'express-rate-limit'
 import { config } from './config.js'
 import { connect, close } from './db.js'
+import { verifyMail } from './mailer.js'
+import { authRouter } from './routes/auth.js'
 import { contentRouter } from './routes/content.js'
 import { shopRouter } from './routes/shop.js'
 import { bookingsRouter } from './routes/bookings.js'
@@ -12,12 +15,19 @@ import { mediaRouter } from './routes/media.js'
 
 const app = express()
 
-// Behind DigitalOcean's load balancer, so rate limiting sees the real IP
-// rather than the proxy's.
+// Behind nginx on the droplet, so rate limiting and req.ip see the real
+// client address rather than 127.0.0.1.
 app.set('trust proxy', 1)
 
-app.use(helmet())
+app.use(
+  helmet({
+    // Uploaded images are served from here and displayed on the site,
+    // which sits on a different origin.
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }),
+)
 app.use(express.json({ limit: '256kb' }))
+app.use(cookieParser())
 
 app.use(
   cors({
@@ -27,7 +37,8 @@ app.use(
       if (config.allowedOrigins.includes(origin)) return cb(null, true)
       cb(new Error(`Origin not allowed: ${origin}`))
     },
-    credentials: false,
+    // Required for the httpOnly session cookie to be sent at all.
+    credentials: true,
   }),
 )
 
@@ -40,8 +51,20 @@ app.use(
   }),
 )
 
+// Uploaded images. Static, long-cached — filenames carry a random suffix
+// so a replaced image never collides with a cached one.
+app.use(
+  '/uploads',
+  express.static(config.uploadDir, {
+    maxAge: '30d',
+    index: false,
+    dotfiles: 'deny',
+  }),
+)
+
 app.get('/health', (_req, res) => res.json({ ok: true }))
 
+app.use('/api/auth', authRouter)
 app.use('/api/content', contentRouter)
 app.use('/api/shop', shopRouter)
 app.use('/api/bookings', bookingsRouter)
@@ -59,17 +82,18 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Something went wrong' })
 })
 
-const server = await connect()
-  .then(() =>
-    app.listen(config.port, () => {
-      console.log(`API listening on :${config.port} (${config.env})`)
-      console.log(`Admins: ${config.adminEmails.join(', ')}`)
-    }),
-  )
-  .catch((err) => {
-    console.error('Failed to start:', err.message)
-    process.exit(1)
+let server
+try {
+  await connect()
+  await verifyMail()
+  server = app.listen(config.port, () => {
+    console.log(`API listening on :${config.port} (${config.env})`)
+    console.log(`Allowed origins: ${config.allowedOrigins.join(', ') || '(any)'}`)
   })
+} catch (err) {
+  console.error('Failed to start:', err.message)
+  process.exit(1)
+}
 
 for (const signal of ['SIGTERM', 'SIGINT']) {
   process.on(signal, async () => {

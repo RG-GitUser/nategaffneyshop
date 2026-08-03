@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import { supabase, isConfigured } from './supabase.js'
+import { api } from './api.js'
 import Login from './Login.jsx'
 import ContentPanel from './panels/ContentPanel.jsx'
 import ShopPanel from './panels/ShopPanel.jsx'
 import BookingsPanel from './panels/BookingsPanel.jsx'
 import PaymentsPanel from './panels/PaymentsPanel.jsx'
 import MediaPanel from './panels/MediaPanel.jsx'
+import AccountPanel from './panels/AccountPanel.jsx'
 import ThemeToggle from '../components/ThemeToggle.jsx'
 
 const TABS = [
@@ -14,10 +15,11 @@ const TABS = [
   { id: 'content', label: 'Content', Panel: ContentPanel },
   { id: 'shop', label: 'Shop', Panel: ShopPanel },
   { id: 'media', label: 'Images', Panel: MediaPanel },
+  { id: 'account', label: 'Account', Panel: AccountPanel },
 ]
 
 export default function AdminApp() {
-  const [session, setSession] = useState(null)
+  const [me, setMe] = useState(null)
   const [checking, setChecking] = useState(true)
   const [tab, setTab] = useState('bookings')
   const [toast, setToast] = useState(null)
@@ -27,18 +29,23 @@ export default function AdminApp() {
     setTimeout(() => setToast(null), kind === 'error' ? 7000 : 4000)
   }, [])
 
+  // Ask the server whether the cookie is still valid. The cookie is
+  // httpOnly, so this is the only way the app can know.
   useEffect(() => {
-    if (!isConfigured) {
-      setChecking(false)
-      return
-    }
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
-      setChecking(false)
-    })
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
-    return () => sub.subscription.unsubscribe()
+    api
+      .me()
+      .then(setMe)
+      .catch(() => setMe(null))
+      .finally(() => setChecking(false))
   }, [])
+
+  async function signOut() {
+    try {
+      await api.logout()
+    } finally {
+      setMe(null)
+    }
+  }
 
   if (checking) {
     return (
@@ -48,7 +55,7 @@ export default function AdminApp() {
     )
   }
 
-  if (!session) return <Login />
+  if (!me) return <Login onSignedIn={setMe} />
 
   const Active = TABS.find((t) => t.id === tab)?.Panel ?? BookingsPanel
 
@@ -63,11 +70,11 @@ export default function AdminApp() {
             <h1 className="adm-title">Dashboard</h1>
           </div>
           <div className="adm-header__right">
-            <span className="adm-who mono">{session.user.email}</span>
+            <span className="adm-who mono">{me.email}</span>
             <a className="adm-mini" href="/">
               View site
             </a>
-            <button className="adm-mini" onClick={() => supabase.auth.signOut()}>
+            <button className="adm-mini" onClick={signOut}>
               Sign out
             </button>
           </div>
@@ -86,7 +93,7 @@ export default function AdminApp() {
         </nav>
 
         <main className="adm-main">
-          <Active notify={notify} />
+          <Active notify={notify} me={me} onSignedOut={() => setMe(null)} />
         </main>
 
         {toast && (

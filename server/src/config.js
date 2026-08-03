@@ -5,7 +5,7 @@ import 'dotenv/config'
  *
  * Deliberately fails loudly on startup rather than at first request: a
  * server that boots without STRIPE_SECRET_KEY looks healthy right up until
- * someone tries to issue a refund. Better to never come up at all.
+ * someone tries to issue a refund.
  */
 
 function required(name) {
@@ -18,46 +18,59 @@ function required(name) {
   return value.trim()
 }
 
-function optional(name, fallback = '') {
-  const value = process.env[name]
-  return value && value.trim() ? value.trim() : fallback
+const optional = (name, fallback = '') => {
+  const v = process.env[name]
+  return v && v.trim() ? v.trim() : fallback
 }
 
-function list(name) {
-  return optional(name)
+const list = (name) =>
+  optional(name)
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean)
-}
 
 export const config = {
   env: optional('NODE_ENV', 'development'),
   port: Number(optional('PORT', '8080')),
+  isProd: optional('NODE_ENV', 'development') === 'production',
 
   allowedOrigins: list('ALLOWED_ORIGINS'),
 
   mongoUri: required('MONGODB_URI'),
   mongoDb: optional('MONGODB_DB', 'nategaffneyshop'),
 
-  supabaseUrl: required('SUPABASE_URL'),
-  supabaseJwtSecret: required('SUPABASE_JWT_SECRET'),
-  supabaseServiceRoleKey: required('SUPABASE_SERVICE_ROLE_KEY'),
-  supabaseBucket: optional('SUPABASE_BUCKET', 'site-media'),
+  jwtSecret: required('JWT_SECRET'),
+  sessionHours: Number(optional('SESSION_HOURS', '12')),
+  cookieDomain: optional('COOKIE_DOMAIN'),
 
-  // Lowercased so the comparison in auth.js can't fail on capitalisation.
-  adminEmails: list('ADMIN_EMAILS').map((e) => e.toLowerCase()),
+  uploadDir: optional('UPLOAD_DIR', './uploads'),
+  uploadPublicUrl: optional('UPLOAD_PUBLIC_URL', '/uploads').replace(/\/$/, ''),
+
+  smtp: {
+    host: optional('SMTP_HOST'),
+    port: Number(optional('SMTP_PORT', '465')),
+    user: optional('SMTP_USER'),
+    pass: optional('SMTP_PASS'),
+    from: optional('MAIL_FROM', optional('SMTP_USER')),
+    notify: optional('ADMIN_NOTIFY_EMAIL', optional('SMTP_USER')),
+  },
 
   stripeSecretKey: required('STRIPE_SECRET_KEY'),
 }
 
-if (config.adminEmails.length === 0) {
+// A guessable session secret is the same as no login at all.
+if (config.jwtSecret.length < 32) {
   throw new Error(
-    'ADMIN_EMAILS is empty. With no allowlist, anyone who can sign up to the ' +
-      'Supabase project would have admin access. Refusing to start.',
+    'JWT_SECRET is too short. Generate one with:\n' +
+      '  node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"',
   )
 }
 
-if (config.env === 'production' && config.allowedOrigins.length === 0) {
+if (config.jwtSecret.includes('replace-me')) {
+  throw new Error('JWT_SECRET is still the placeholder from .env.example. Refusing to start.')
+}
+
+if (config.isProd && config.allowedOrigins.length === 0) {
   throw new Error(
     'ALLOWED_ORIGINS is empty in production. Refusing to start with open CORS.',
   )

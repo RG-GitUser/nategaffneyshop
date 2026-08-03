@@ -1,16 +1,19 @@
-import { getAccessToken } from './supabase.js'
-
 const BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
+/**
+ * All admin calls go out with `credentials: 'include'` so the httpOnly
+ * session cookie is sent. Nothing sensitive is stored in JavaScript —
+ * the cookie can't be read by script, so an XSS bug can't steal the
+ * session the way a token in localStorage could.
+ */
 async function request(path, { method = 'GET', body, isForm = false } = {}) {
-  const token = await getAccessToken()
   const headers = {}
-  if (token) headers.Authorization = `Bearer ${token}`
   if (body && !isForm) headers['Content-Type'] = 'application/json'
 
   const res = await fetch(`${BASE}/api${path}`, {
     method,
     headers,
+    credentials: 'include',
     body: isForm ? body : body ? JSON.stringify(body) : undefined,
   })
 
@@ -33,6 +36,17 @@ async function request(path, { method = 'GET', body, isForm = false } = {}) {
 }
 
 export const api = {
+  // auth
+  login: (email, password) =>
+    request('/auth/login', { method: 'POST', body: { email, password } }),
+  logout: () => request('/auth/logout', { method: 'POST' }),
+  me: () => request('/auth/me'),
+  changePassword: (currentPassword, newPassword) =>
+    request('/auth/password', {
+      method: 'POST',
+      body: { currentPassword, newPassword },
+    }),
+
   // content
   getContent: () => request('/content'),
   saveContent: (data) => request('/content', { method: 'PUT', body: data }),

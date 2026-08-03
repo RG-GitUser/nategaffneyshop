@@ -1,44 +1,52 @@
 import jwt from 'jsonwebtoken'
 import { config } from '../config.js'
 
+export const COOKIE_NAME = 'ng_session'
+
+export function signSession(admin) {
+  return jwt.sign(
+    { sub: admin._id.toString(), email: admin.email },
+    config.jwtSecret,
+    { expiresIn: `${config.sessionHours}h`, algorithm: 'HS256' },
+  )
+}
+
+export function cookieOptions() {
+  return {
+    httpOnly: true, // JavaScript can't read it, so XSS can't steal the session
+    secure: config.isProd, // HTTPS only in production
+    sameSite: 'lax', // survives the site → api.site subdomain hop
+    domain: config.cookieDomain || undefined,
+    path: '/',
+    maxAge: config.sessionHours * 60 * 60 * 1000,
+  }
+}
+
 /**
- * Admin gate. Two independent checks, both must pass:
+ * Admin gate for every protected route.
  *
- *   1. The bearer token is a valid, unexpired Supabase JWT (verified
- *      cryptographically against the project's JWT secret — not decoded
- *      and trusted).
- *   2. The email inside that token is on the ADMIN_EMAILS allowlist.
+ * Reads the session from the httpOnly cookie, falling back to an
+ * Authorization header (useful for curl and for a frontend hosted on an
+ * unrelated domain where the cookie wouldn't be sent).
  *
- * The second check matters: if signups are ever left open on the Supabase
- * project, a valid token alone would otherwise be enough to get in.
+ * The token is verified cryptographically — never decoded and trusted.
  */
 export function requireAdmin(req, res, next) {
-  const header = req.get('authorization') || ''
-  const [scheme, token] = header.split(' ')
+  let token = req.cookies?.[COOKIE_NAME]
 
-  if (scheme !== 'Bearer' || !token) {
-    return res.status(401).json({ error: 'Missing bearer token' })
+  if (!token) {
+    const [scheme, headerToken] = (req.get('authorization') || '').split(' ')
+    if (scheme === 'Bearer' && headerToken) token = headerToken
   }
 
-  let payload
+  if (!token) return res.status(401).json({ error: 'Not signed in' })
+
   try {
-    payload = jwt.verify(token, config.supabaseJwtSecret, {
-      algorithms: ['HS256'],
-    })
+    const payload = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] })
+    req.admin = { id: payload.sub, email: payload.email }
+    next()
   } catch (err) {
     const expired = err.name === 'TokenExpiredError'
-    return res
-      .status(401)
-      .json({ error: expired ? 'Session expired' : 'Invalid token' })
+    res.status(401).json({ error: expired ? 'Session expired' : 'Invalid session' })
   }
-
-  const email = String(payload.email || '').toLowerCase()
-  if (!email || !config.adminEmails.includes(email)) {
-    // Deliberately vague to the client; the detail goes to the log.
-    console.warn(`[auth] rejected non-admin login attempt: ${email || '(no email)'}`)
-    return res.status(403).json({ error: 'Not authorised' })
-  }
-
-  req.admin = { id: payload.sub, email }
-  next()
 }

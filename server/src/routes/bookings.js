@@ -4,6 +4,12 @@ import rateLimit from 'express-rate-limit'
 import { z } from 'zod'
 import { collections, audit } from '../db.js'
 import { requireAdmin } from '../middleware/auth.js'
+import {
+  notifyNewBooking,
+  notifyBookingConfirmed,
+  notifyBookingRescheduled,
+  notifyBookingCancelled,
+} from '../mailer.js'
 
 export const bookingsRouter = Router()
 
@@ -67,6 +73,11 @@ bookingsRouter.post('/', publicLimiter, async (req, res, next) => {
       updatedAt: new Date(),
     }
     const { insertedId } = await collections.bookings().insertOne(doc)
+
+    // Fire and forget — the mailer swallows its own errors, so a bad SMTP
+    // password can never turn into a failed booking.
+    notifyNewBooking(doc)
+
     res.status(201).json({ ok: true, id: insertedId.toString() })
   } catch (err) {
     next(err)
@@ -133,13 +144,13 @@ bookingsRouter.patch('/:id', requireAdmin, async (req, res, next) => {
       return res.status(400).json({ error: 'Nothing to update' })
     }
 
+    const before = await collections.bookings().findOne({ _id })
+    if (!before) return res.status(404).json({ error: 'Not found' })
+
     // Moving a booking onto an occupied slot would silently double-book.
     if (parsed.data.date || parsed.data.time) {
-      const current = await collections.bookings().findOne({ _id })
-      if (!current) return res.status(404).json({ error: 'Not found' })
-
-      const date = parsed.data.date ?? current.date
-      const time = parsed.data.time ?? current.time
+      const date = parsed.data.date ?? before.date
+      const time = parsed.data.time ?? before.time
       const clash = await collections.bookings().findOne({
         _id: { $ne: _id },
         date,
@@ -159,6 +170,19 @@ bookingsRouter.patch('/:id', requireAdmin, async (req, res, next) => {
         { returnDocument: 'after' },
       )
     if (!result) return res.status(404).json({ error: 'Not found' })
+
+    // Tell the customer what changed — only when it actually changed, so
+    // an admin note or a status tidy-up doesn't spam them.
+    const moved =
+      (parsed.data.date && parsed.data.date !== before.date) ||
+      (parsed.data.time && parsed.data.time !== before.time)
+
+    if (moved) {
+      notifyBookingRescheduled(result, `${before.date} at ${before.time}`)
+    } else if (parsed.data.status && parsed.data.status !== before.status) {
+      if (parsed.data.status === 'confirmed') notifyBookingConfirmed(result)
+      if (parsed.data.status === 'cancelled') notifyBookingCancelled(result)
+    }
 
     await audit(req.admin.email, 'booking.update', {
       id: req.params.id,
