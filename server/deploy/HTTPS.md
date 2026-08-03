@@ -70,6 +70,17 @@ systemctl enable --now nginx
 
 Visit `http://your-droplet-ip` — the default nginx page confirms it works.
 
+### Get the project onto the droplet
+
+The nginx config lives in this repo, so it has to be on the box before
+you can copy it. If `/var/www/nategaffneyshop` doesn't exist yet:
+
+```bash
+apt install -y git
+git clone https://github.com/RG-GitUser/nategaffneyshop.git /var/www/nategaffneyshop
+mkdir -p /var/www/nategaffneyshop/site /var/www/nategaffneyshop/uploads
+```
+
 ---
 
 ## 3. Firewall
@@ -109,12 +120,23 @@ sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-`nginx -t` must say **syntax is ok** / **test is successful**. If it
-complains about a missing directory, create the web root:
+`nginx -t` must say **syntax is ok** / **test is successful**.
+
+If the `cp` failed and you created the symlink anyway, nginx is now
+pointing at a file that doesn't exist and every reload will fail with
+`open() ... failed (2: No such file or directory)`. Clear it first:
 
 ```bash
-sudo mkdir -p /var/www/nategaffneyshop/site
-sudo chown -R deploy:deploy /var/www/nategaffneyshop
+rm -f /etc/nginx/sites-enabled/nategaffneyshop
+nginx -t          # should pass again
+```
+
+Then clone the repo (above) and redo the copy.
+
+If it complains about a missing web root:
+
+```bash
+mkdir -p /var/www/nategaffneyshop/site
 ```
 
 ---
