@@ -24,46 +24,79 @@ records Namecheap adds by default (a `CNAME` for `www` pointing at
 Leave the existing MX and mail records alone — those are Namecrane's and
 breaking them takes your email down.
 
-Check it has propagated before going further. Certbot will fail with a
-confusing error if DNS isn't live yet:
+Check it has propagated before going further. Certbot fails with a
+confusing error if DNS isn't live yet.
+
+**Query a public resolver explicitly.** A fresh droplet's local resolver
+(`127.0.0.53`, systemd-resolved) is often broken or slow, and a timeout
+there tells you nothing about whether your DNS records exist:
 
 ```bash
-dig +short nategaffney.store
-dig +short api.nategaffney.store
+dig @1.1.1.1 +short nategaffney.store
+dig @1.1.1.1 +short api.nategaffney.store
 ```
 
 Both must print your droplet IP. Give it 15–30 minutes if not.
 
----
-
-## 2. Firewall
-
-Do this **before** exposing anything.
+If the plain `dig` (without `@1.1.1.1`) times out, the droplet's own
+resolver needs fixing — otherwise `apt` and certbot will both struggle:
 
 ```bash
-sudo ufw allow OpenSSH
-sudo ufw allow 'Nginx Full'      # opens 80 and 443
-sudo ufw enable
-sudo ufw status
+systemctl restart systemd-resolved
+resolvectl status | head -20
 ```
 
-Port 80 has to stay open even though everything ends up on 443 — Let's
-Encrypt validates over HTTP, and renewals will fail silently later if you
-close it.
-
-`27017` must **not** appear in that list.
+> **If you are logged in as `root`, drop `sudo` from every command below.**
+> Some minimal droplet images don't ship it, which produces a confusing
+> `sudo: command not found`.
+>
+> Pasting several lines at once can also break — the terminal's
+> bracketed-paste markers (`^[[200~`) end up glued to the first command.
+> Paste one line at a time if you see that.
 
 ---
 
-## 3. nginx
+## 2. nginx first, then the firewall
+
+Order matters. The `'Nginx Full'` ufw profile is installed **by the nginx
+package**, so opening the firewall first fails with
+`ERROR: Could not find a profile matching 'Nginx Full'`.
 
 ```bash
-sudo apt update
-sudo apt install -y nginx
-sudo systemctl enable --now nginx
+apt update
+apt install -y nginx
+systemctl enable --now nginx
 ```
 
 Visit `http://your-droplet-ip` — the default nginx page confirms it works.
+
+---
+
+## 3. Firewall
+
+```bash
+ufw allow OpenSSH
+ufw allow 'Nginx Full'      # opens 80 and 443
+ufw enable
+ufw status
+```
+
+If you already enabled ufw before installing nginx, ports 80 and 443 are
+currently **blocked** and nothing will reach the site. Either re-run the
+`'Nginx Full'` line now that nginx exists, or open the ports directly —
+this works regardless of what's installed:
+
+```bash
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw status
+```
+
+Port 80 has to stay open even though everything ends up on 443 — Let's
+Encrypt validates over HTTP, and renewals fail silently later if you
+close it.
+
+`27017` must **not** appear in that list.
 
 Copy the site config in, adjusting the domain if needed:
 
