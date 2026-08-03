@@ -30,27 +30,14 @@ export const socials = [
 ]
 
 /**
- * The big one at the top. Set to null if you don’t want a featured offer.
- * `badge`, `oldPrice`, `spotsLeft` and `note` are all optional.
+ * The big highlighted offer at the top of the page. Currently off.
+ *
+ * To bring it back, replace null with an object shaped like:
+ *   { badge, title, subtitle, description, price, oldPrice, spotsLeft,
+ *     cta, href, note, bullets: [] }
+ * Everything except title, description, price, cta and href is optional.
  */
-export const featured = {
-  badge: 'New cohort',
-  title: 'Make Better Videos',
-  subtitle: '4-week live cohort',
-  description:
-    'The exact system I use to turn a rough idea into a video people actually finish. Four weeks, small group, real feedback on your own work.',
-  price: '$249',
-  oldPrice: '$349',
-  spotsLeft: 12,
-  cta: 'Save my seat',
-  href: '#',
-  note: 'Starts the first Monday of next month · Replays included',
-  bullets: [
-    'Live calls + recordings you keep forever',
-    'Feedback on your actual footage, not hypotheticals',
-    'A private group that stays open after the cohort ends',
-  ],
-}
+export const featured = null
 
 /**
  * Everything else, in the order you want it shown.
@@ -185,26 +172,12 @@ export const about = {
   signature: 'Nate',
 }
 
-export const testimonials = [
-  {
-    quote:
-      'I’d been posting for a year with nothing to show. Two weeks after Nate’s guide I finally understood what I was actually doing wrong.',
-    name: 'Maya R.',
-    role: 'Photographer',
-  },
-  {
-    quote:
-      'The consult paid for itself in a month. He looked at my stuff and told me the truth instead of being nice about it.',
-    name: 'Devon L.',
-    role: 'Videographer',
-  },
-  {
-    quote:
-      'Genuinely the least sleazy person selling anything online right now. It just feels like talking to a friend who knows more than you.',
-    name: 'Sam K.',
-    role: 'Creator',
-  },
-]
+/**
+ * Empty, so the whole section stays off the page.
+ * Add real ones as { quote, name, role } and it reappears on its own —
+ * only ever put words in here that someone actually said.
+ */
+export const testimonials = []
 
 export const faqs = [
   {
@@ -236,8 +209,8 @@ export const footer = {
 
 /** Sticky bar that follows you up the page on mobile. */
 export const stickyCta = {
-  label: 'Make Better Videos',
-  sublabel: '12 spots left',
-  cta: 'Save my seat',
-  href: '#',
+  label: '1:1 Coaching',
+  sublabel: '45 min · $150',
+  cta: 'Book a time',
+  href: '#book',
 }
