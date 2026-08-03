@@ -53,7 +53,7 @@ export const featuredVideo = {
   title: 'Why Create?',
   subtitle: 'Canon R5 Short Film',
   blurb:
-    'A short film about the thing that keeps pulling you back to the work, even when nobody asked for it.',
+    'Please enjoy this stream of consciousness montage video focusing on why I think creating things is worth it.',
   thumbnail: '/images/video-54s5a4VuIY4.jpg',
   href: 'https://www.youtube.com/watch?v=54s5a4VuIY4',
   cta: 'Watch on YouTube',

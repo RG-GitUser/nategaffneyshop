@@ -41,8 +41,12 @@
   --olive: #5c6238;
   --olive-wash: rgba(92, 98, 56, 0.1);
 
-  /* atmosphere */
-  --ember: rgba(168, 72, 26, 0.12);
+  /* atmosphere — the whole page-background gradient stack lives here */
+  --page-glow: radial-gradient(
+    90vw 50vh at 88% -8vh,
+    rgba(168, 72, 26, 0.12) 0%,
+    transparent 62%
+  );
   --bar-bg: rgba(235, 229, 216, 0.88);
   --grain-blend: multiply;
   --grain-opacity: 0.055;
@@ -108,7 +112,30 @@
   --olive: #a0a66c;
   --olive-wash: rgba(160, 166, 108, 0.14);
 
-  --ember: rgba(226, 122, 69, 0.15);
+  /* Three layers, warmest at the top and falling away to the near-black
+     ground by roughly half the viewport:
+       1. orange ember off the top-right
+       2. a softer warm wash from the top-left so the light reads as spread
+          rather than a single spotlight
+       3. a lifted warm band across the very top — this is the tone that
+          "emerges" up there. Composited over #16130f it lands near #322822,
+          so it lifts the black without going anywhere near grey. */
+  --page-glow: radial-gradient(
+      100vw 55vh at 85% -8vh,
+      rgba(226, 122, 69, 0.22) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      120vw 50vh at 22% -10vh,
+      rgba(150, 120, 88, 0.16) 0%,
+      transparent 60%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(69, 55, 41, 0.6) 0%,
+      rgba(69, 55, 41, 0.24) 16vh,
+      rgba(22, 19, 15, 0) 46vh
+    );
   --bar-bg: rgba(22, 19, 15, 0.85);
   --grain-blend: overlay;
   --grain-opacity: 0.05;
@@ -146,13 +173,12 @@ body {
   line-height: 1.62;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  /* one warm ember in the top corner */
-  background-image: radial-gradient(
-    90% 50% at 88% -8%,
-    var(--ember) 0%,
-    transparent 62%
-  );
-  background-attachment: fixed;
+  /* Anchored to the top of the document, not the viewport. Sized in vh/vw so
+     it stays predictable without background-attachment: fixed — fixed would
+     pin the lifted band to the top of the screen, dragging small orange
+     labels down to ~3:1 contrast every time one scrolled through it. */
+  background-image: var(--page-glow);
+  background-repeat: no-repeat;
   transition: background-color 0.3s var(--ease), color 0.3s var(--ease);
 }
 
