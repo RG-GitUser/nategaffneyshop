@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit'
 import { z } from 'zod'
 import { config } from '../config.js'
 import { collections, audit } from '../db.js'
+import { requireAdmin } from '../middleware/auth.js'
 
 export const checkoutRouter = Router()
 
@@ -111,6 +112,22 @@ checkoutRouter.post('/session', limiter, async (req, res, next) => {
       console.error('[checkout] stripe rejected:', err.type || err.rawType, err.message)
       return res.status(502).json({ error: 'Could not start checkout. Please try again.' })
     }
+    next(err)
+  }
+})
+
+/** Admin — recent paid orders, newest first. Without this the orders the
+ *  webhook records are only visible by opening Compass. */
+checkoutRouter.get('/orders', requireAdmin, async (_req, res, next) => {
+  try {
+    const rows = await collections
+      .orders()
+      .find({})
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .toArray()
+    res.json(rows.map((o) => ({ ...o, id: o._id.toString(), _id: undefined })))
+  } catch (err) {
     next(err)
   }
 })

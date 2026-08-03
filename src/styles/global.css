@@ -134,25 +134,27 @@
 }
 
 :root[data-theme='dark'] {
-  /* ---- DARK ---- the same four colours, inverted ---- */
-  --bg: var(--black);
-  --bg-2: color-mix(in srgb, var(--bone) 5%, var(--black));
-  --surface: color-mix(in srgb, var(--bone) 7%, var(--black));
-  --surface-2: color-mix(in srgb, var(--bone) 11%, var(--black));
+  /* ---- DARK ---- grounded on the warm chocolate, not the near-black.
+     The near-black stays in the palette for text on orange fills and for
+     pushing surfaces darker where depth is needed. */
+  --bg: var(--chocolate);
+  --bg-2: color-mix(in srgb, var(--black) 30%, var(--chocolate));
+  --surface: color-mix(in srgb, var(--black) 22%, var(--chocolate));
+  --surface-2: color-mix(in srgb, var(--bone) 6%, var(--chocolate));
 
-  --line: color-mix(in srgb, var(--bone) 14%, var(--black));
-  --line-2: color-mix(in srgb, var(--bone) 24%, var(--black));
+  --line: color-mix(in srgb, var(--bone) 12%, var(--chocolate));
+  --line-2: color-mix(in srgb, var(--bone) 22%, var(--chocolate));
 
   --ink: var(--bone);
   --ink-2: color-mix(in srgb, var(--bone) 82%, var(--black));
   --ink-soft: color-mix(in srgb, var(--bone) 60%, var(--black));
   --ink-faint: color-mix(in srgb, var(--bone) 42%, var(--black));
 
-  /* On the near-black the orange does both jobs. The chocolate is far too
-     close to the background to work as a fill here — a button in it would
-     barely separate from the page — so fills are the orange with the
+  /* Orange text sits on the chocolate ground here, which is lighter than
+     the near-black was — plain orange only reaches ~3.8:1 on it, so the
+     text tone is lifted toward bone. Fills stay full orange with the
      near-black on top. */
-  --accent: var(--orange);
+  --accent: color-mix(in srgb, var(--bone) 22%, var(--orange));
   --accent-hi: color-mix(in srgb, var(--bone) 12%, var(--orange));
   --accent-fill: var(--orange);
   --accent-deep: color-mix(in srgb, var(--black) 45%, var(--orange));
