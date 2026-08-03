@@ -47,13 +47,38 @@ try {
   console.error('')
   console.error(`  Could not connect: ${err.message}`)
   console.error('')
-  console.error('  Common causes:')
-  console.error('    - MONGODB_URI not filled in, or has a typo')
-  console.error('    - password contains special characters and needs URL encoding')
-  console.error('      (@ : / ? # [ ] % must be percent-encoded)')
-  console.error('    - auth database is wrong — try adding ?authSource=admin')
-  console.error('    - mongod is bound to 127.0.0.1 and you are connecting from elsewhere')
-  console.error('')
+
+  // Atlas refuses connections from unlisted IPs by aborting the TLS
+  // handshake, so it surfaces as an SSL error rather than an auth error.
+  // Worth calling out specifically — nothing about the message suggests
+  // "your IP isn't allowed", which is nearly always the actual cause.
+  const tlsAbort =
+    /alert number 80|tlsv1 alert internal error|SSL routines/i.test(err.message)
+
+  if (tlsAbort && /mongodb\.net/i.test(config.mongoUri)) {
+    console.error('  This looks like the Atlas IP allowlist.')
+    console.error('')
+    console.error('  Atlas drops the TLS connection outright when the source IP is not')
+    console.error('  allowlisted, which shows up as an SSL error rather than "access')
+    console.error('  denied". If this works from your laptop but not from a server, that')
+    console.error('  is almost certainly it.')
+    console.error('')
+    console.error('    Atlas -> Network Access -> Add IP Address')
+    console.error('    Add this machine\'s public IP. Find it with:')
+    console.error('      curl -s ifconfig.me')
+    console.error('')
+    console.error('  Allow a few minutes for the change to take effect.')
+    console.error('')
+  } else {
+    console.error('  Common causes:')
+    console.error('    - MONGODB_URI not filled in, or has a typo')
+    console.error('    - password contains special characters and needs URL encoding')
+    console.error('      (@ : / ? # [ ] % must be percent-encoded)')
+    console.error('    - IP not allowlisted (Atlas -> Network Access)')
+    console.error('    - auth database is wrong — try adding ?authSource=admin')
+    console.error('    - mongod is bound to 127.0.0.1 and you are connecting from elsewhere')
+    console.error('')
+  }
   exitCode = 1
 } finally {
   await close()
