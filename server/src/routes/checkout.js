@@ -146,6 +146,19 @@ checkoutRouter.post('/webhook', async (req, res) => {
   // and the work below must not hold that up.
   res.json({ received: true })
 
+  /**
+   * A Connect webhook on the platform receives events from EVERY
+   * connected account. Without this filter, a sale on any other client's
+   * account would be recorded as one of Nate's orders.
+   */
+  if (
+    config.stripeAccountId &&
+    event.account &&
+    event.account !== config.stripeAccountId
+  ) {
+    return
+  }
+
   try {
     if (event.type === 'checkout.session.completed') {
       const s = event.data.object
