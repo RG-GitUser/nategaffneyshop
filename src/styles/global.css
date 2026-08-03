@@ -25,10 +25,13 @@
   --bone: #ebe5d8;
   --black: #120b07;
   --orange: #c45e18;
-  /* The rust, pulled toward the near-black so it reads as a deeper brown.
-     Still derived from the palette rather than being a fifth colour —
-     adjust the percentage to taste. */
-  --rust: color-mix(in srgb, #120b07 32%, #6c1e05);
+  /* Dark chocolate.
+     Straight rust darkened just reads as a deeper rust — #6C1E05 is
+     heavily red-dominant, and scaling it down keeps that. A little bone
+     first lifts the green and blue channels so the hue lands on brown
+     rather than red, and only then is it taken down with the near-black.
+     Still only palette colours, just mixed in two steps. */
+  --rust: color-mix(in srgb, #120b07 70%, color-mix(in srgb, #ebe5d8 26%, #6c1e05));
 
   /* ---- LIGHT (default) ---- */
   --bg: color-mix(in srgb, var(--black) 4%, var(--bone));
@@ -126,15 +129,16 @@
   --ink-soft: color-mix(in srgb, var(--bone) 60%, var(--black));
   --ink-faint: color-mix(in srgb, var(--bone) 42%, var(--black));
 
-  /* On the near-black the roles swap: orange is now the readable text
-     tone (4.5:1) and rust is too dark for type, so it becomes the fill
-     that bone sits on (9.3:1). */
+  /* On the near-black the orange does both jobs. The chocolate is far too
+     close to the background to work as a fill here — a button in it would
+     barely separate from the page — so fills are the orange with the
+     near-black on top. */
   --accent: var(--orange);
-  --accent-hi: var(--orange);
-  --accent-fill: var(--rust);
-  --accent-deep: color-mix(in srgb, var(--black) 40%, var(--rust));
+  --accent-hi: color-mix(in srgb, var(--bone) 12%, var(--orange));
+  --accent-fill: var(--orange);
+  --accent-deep: color-mix(in srgb, var(--black) 45%, var(--orange));
   --accent-wash: color-mix(in srgb, var(--orange) 16%, transparent);
-  --on-accent: var(--bone);
+  --on-accent: var(--black);
 
   --amber: var(--orange);
   --amber-wash: color-mix(in srgb, var(--orange) 16%, transparent);
