@@ -25,7 +25,10 @@
   --bone: #ebe5d8;
   --black: #120b07;
   --orange: #c45e18;
-  --rust: #6c1e05;
+  /* The rust, pulled toward the near-black so it reads as a deeper brown.
+     Still derived from the palette rather than being a fifth colour —
+     adjust the percentage to taste. */
+  --rust: color-mix(in srgb, #120b07 32%, #6c1e05);
 
   /* ---- LIGHT (default) ---- */
   --bg: color-mix(in srgb, var(--black) 4%, var(--bone));
@@ -79,7 +82,6 @@
   --shadow-sm: 0 1px 2px color-mix(in srgb, var(--black) 8%, transparent);
   --shadow-md: 0 3px 14px color-mix(in srgb, var(--black) 12%, transparent);
   --shadow-lg: 0 12px 34px color-mix(in srgb, var(--black) 16%, transparent);
-  --glow: 0 6px 22px color-mix(in srgb, var(--rust) 26%, transparent);
   --avatar-shadow: 0 2px 6px color-mix(in srgb, var(--black) 16%, transparent),
     0 14px 30px color-mix(in srgb, var(--black) 24%, transparent),
     0 30px 64px color-mix(in srgb, var(--black) 20%, transparent);
@@ -172,7 +174,6 @@
   --shadow-sm: 0 1px 2px color-mix(in srgb, var(--black) 55%, transparent);
   --shadow-md: 0 4px 16px color-mix(in srgb, var(--black) 60%, transparent);
   --shadow-lg: 0 12px 38px color-mix(in srgb, var(--black) 70%, transparent);
-  --glow: 0 6px 24px color-mix(in srgb, var(--orange) 28%, transparent);
   --avatar-shadow: 0 2px 8px color-mix(in srgb, var(--black) 65%, transparent),
     0 16px 34px color-mix(in srgb, var(--black) 70%, transparent),
     0 34px 70px color-mix(in srgb, var(--black) 60%, transparent);
@@ -363,7 +364,6 @@ p {
 .btn--primary {
   background: var(--accent-fill);
   color: var(--on-accent);
-  box-shadow: var(--glow);
 }
 
 .btn--dark {
