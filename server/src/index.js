@@ -13,6 +13,7 @@ import { bookingsRouter } from './routes/bookings.js'
 import { paymentsRouter } from './routes/payments.js'
 import { mediaRouter } from './routes/media.js'
 import { circleRouter } from './routes/circle.js'
+import { chatRouter } from './routes/chat.js'
 
 const app = express()
 
@@ -72,6 +73,7 @@ app.use('/api/bookings', bookingsRouter)
 app.use('/api/payments', paymentsRouter)
 app.use('/api/media', mediaRouter)
 app.use('/api/circle', circleRouter)
+app.use('/api/chat', chatRouter)
 
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }))
 

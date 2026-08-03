@@ -96,6 +96,11 @@ export function notifyNewBooking(booking) {
 }
 
 export function notifyBookingConfirmed(booking) {
+  // If a call link has been set, send it now rather than promising it later.
+  const callLines = booking.meetUrl
+    ? [`Join here at that time:`, booking.meetUrl, ``]
+    : [`I'll send the call link before we start.`, ``]
+
   send({
     to: booking.email,
     subject: `Confirmed — ${when(booking)}`,
@@ -104,8 +109,8 @@ export function notifyBookingConfirmed(booking) {
       ``,
       `You're booked in for ${when(booking)}.`,
       ``,
-      `I'll send the call link before we start. Reschedule or cancel free`,
-      `up to 24 hours before.`,
+      ...callLines,
+      `Reschedule or cancel free up to 24 hours before.`,
       ``,
       `— Nate`,
     ].join('\n'),
@@ -121,6 +126,7 @@ export function notifyBookingRescheduled(booking, previous) {
       ``,
       `Your session has moved from ${previous} to ${when(booking)}.`,
       ``,
+      ...(booking.meetUrl ? [`Same link as before:`, booking.meetUrl, ``] : []),
       `If that doesn't work, just reply and we'll find another time.`,
       ``,
       `— Nate`,

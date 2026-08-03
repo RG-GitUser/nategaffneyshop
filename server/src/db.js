@@ -27,6 +27,18 @@ export async function connect() {
     .collection('circleSessions')
     .createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
 
+  // Native group chat
+  await db.collection('chatCodes').createIndex({ email: 1 }, { unique: true })
+  await db.collection('chatCodes').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
+  await db.collection('chatSessions').createIndex({ sessionId: 1 }, { unique: true })
+  await db.collection('chatSessions').createIndex({ email: 1 })
+  await db
+    .collection('chatSessions')
+    .createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
+  await db.collection('chatMessages').createIndex({ createdAt: -1 })
+  await db.collection('chatMembers').createIndex({ email: 1 }, { unique: true })
+  await db.collection('chatBans').createIndex({ email: 1 }, { unique: true })
+
   return db
 }
 
@@ -48,6 +60,11 @@ export const collections = {
   bookings: () => getDb().collection('bookings'),
   circleCodes: () => getDb().collection('circleCodes'),
   circleSessions: () => getDb().collection('circleSessions'),
+  chatCodes: () => getDb().collection('chatCodes'),
+  chatSessions: () => getDb().collection('chatSessions'),
+  chatMessages: () => getDb().collection('chatMessages'),
+  chatMembers: () => getDb().collection('chatMembers'),
+  chatBans: () => getDb().collection('chatBans'),
   audit: () => getDb().collection('auditLog'),
 }
 

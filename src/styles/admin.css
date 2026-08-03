@@ -524,6 +524,24 @@
   font-size: 0.7rem;
 }
 
+.adm-meet {
+  margin-top: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: var(--r-sm);
+  border: 1px dashed var(--line-2);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+}
+
+.adm-meet:focus {
+  border-style: solid;
+  border-color: var(--accent);
+  outline: none;
+}
+
 .adm-pre {
   margin-top: 12px;
   padding: 14px 16px;

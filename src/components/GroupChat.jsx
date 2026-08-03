@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowRight } from './Icons.jsx'
-import { circleChat } from '../content.js'
+import { groupChat } from '../content.js'
 
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
-/** All calls carry the httpOnly session cookie; no Circle token ever
- *  touches the browser — the server proxies every chat request. */
+/** 'native' talks to our own server, 'circle' proxies Circle.so. Both
+ *  expose the same endpoints, so only the prefix changes. */
+const PREFIX = groupChat?.mode === 'circle' ? '/api/circle' : '/api/chat'
+
 async function call(path, { method = 'GET', body } = {}) {
-  const res = await fetch(`${API}/api/circle${path}`, {
+  const res = await fetch(`${API}${PREFIX}${path}`, {
     method,
     credentials: 'include',
     headers: body ? { 'Content-Type': 'application/json' } : {},
@@ -18,10 +20,10 @@ async function call(path, { method = 'GET', body } = {}) {
   return payload
 }
 
-const POLL_MS = 8000
+const POLL_MS = 6000
 
-export default function CircleChat() {
-  const [stage, setStage] = useState('loading') // loading | email | code | chat | off
+export default function GroupChat() {
+  const [stage, setStage] = useState('loading') // loading | email | code | chat | link | off
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
@@ -31,23 +33,19 @@ export default function CircleChat() {
   const [busy, setBusy] = useState(false)
   const listRef = useRef(null)
 
-  // Already joined from a previous visit? A 503 here means the server has
-  // no Circle tokens configured, so the section hides itself rather than
-  // rendering a box that can't work.
-  // (The `circleChat` check lives inside the effect, not as an early
-  // return — bailing before the hooks below would change the hook order.)
   useEffect(() => {
-    if (!circleChat) {
-      setStage('off')
-      return
-    }
+    if (!groupChat) return setStage('off')
+    if (groupChat.mode === 'link') return setStage('link')
+
     call('/session')
       .then((s) => setStage(s.joined ? 'chat' : 'email'))
-      .catch(() => setStage('off'))
+      // Server unreachable or the backend isn't configured — fall back to
+      // a link if there is one, otherwise hide rather than show a dead box.
+      .catch(() => setStage(groupChat.joinUrl ? 'link' : 'off'))
   }, [])
 
-  // Poll while the chat is open. Cheap enough at this scale, and avoids
-  // holding a websocket open for a page most people scroll straight past.
+  // Poll while open. Cheap at this scale, and avoids holding a socket for
+  // a page most visitors scroll straight past.
   useEffect(() => {
     if (stage !== 'chat') return
     let alive = true
@@ -57,7 +55,7 @@ export default function CircleChat() {
         const data = await call('/messages')
         if (alive) setMessages(data.messages)
       } catch {
-        // Stay quiet on a failed poll — the next one usually recovers.
+        // Quiet on a failed poll — the next one usually recovers.
       }
     }
 
@@ -69,7 +67,6 @@ export default function CircleChat() {
     }
   }, [stage])
 
-  // Keep the newest message in view.
   useEffect(() => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight
   }, [messages])
@@ -107,6 +104,7 @@ export default function CircleChat() {
     const body = draft.trim()
     if (!body) return
     setDraft('')
+    setError('')
     try {
       await call('/messages', { method: 'POST', body: { body } })
       const data = await call('/messages')
@@ -124,19 +122,51 @@ export default function CircleChat() {
     setCode('')
   }
 
-  if (!circleChat || stage === 'loading' || stage === 'off') return null
+  if (!groupChat || stage === 'loading' || stage === 'off') return null
+
+  const meet = groupChat.meetUrl ? (
+    <a
+      className="chat__meet"
+      href={groupChat.meetUrl}
+      target="_blank"
+      rel="noreferrer noopener"
+    >
+      <span className="chat__meet-label mono">{groupChat.meetLabel}</span>
+      <span className="chat__meet-note">{groupChat.meetNote}</span>
+      <span className="chat__meet-cta mono">
+        Join on Google Meet
+        <ArrowRight width={14} height={14} />
+      </span>
+    </a>
+  ) : null
 
   return (
-    <section className="section chat" id="circle">
+    <section className="section chat" id="chat">
       <div className="section__head">
-        <span className="eyebrow">{circleChat.eyebrow}</span>
-        <h2 className="section__title">{circleChat.title}</h2>
+        <span className="eyebrow">{groupChat.eyebrow}</span>
+        <h2 className="section__title">{groupChat.title}</h2>
       </div>
+
+      {meet}
 
       <div className="chat__card">
         {stage !== 'chat' && (
           <div className="chat__intro">
-            <p className="chat__desc">{circleChat.description}</p>
+            <p className="chat__desc">{groupChat.description}</p>
+          </div>
+        )}
+
+        {stage === 'link' && (
+          <div className="chat__form">
+            <a
+              className="btn btn--primary chat__submit"
+              href={groupChat.joinUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              {groupChat.joinCta}
+              <ArrowRight width={16} height={16} />
+            </a>
           </div>
         )}
 
@@ -150,6 +180,7 @@ export default function CircleChat() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   autoComplete="name"
+                  maxLength={60}
                 />
               </div>
               <div className="field">
@@ -169,7 +200,7 @@ export default function CircleChat() {
             {error && <p className="chat__error">{error}</p>}
 
             <button className="btn btn--primary chat__submit" disabled={busy}>
-              {busy ? 'Sending…' : circleChat.cta}
+              {busy ? 'Sending…' : groupChat.cta}
               <ArrowRight width={16} height={16} />
             </button>
             <p className="chat__fine mono">
@@ -216,9 +247,7 @@ export default function CircleChat() {
           <div className="chat__room">
             <div className="chat__log" ref={listRef}>
               {messages.length === 0 ? (
-                <p className="chat__empty">
-                  Nothing here yet. Say the first thing.
-                </p>
+                <p className="chat__empty">Nothing here yet. Say the first thing.</p>
               ) : (
                 messages.map((m) => (
                   <article className="chat__msg" key={m.id}>

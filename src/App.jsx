@@ -4,7 +4,7 @@ import FeaturedCard from './components/FeaturedCard.jsx'
 import FeaturedVideo from './components/FeaturedVideo.jsx'
 import OfferCard from './components/OfferCard.jsx'
 import BookingCalendar from './components/BookingCalendar.jsx'
-import CircleChat from './components/CircleChat.jsx'
+import GroupChat from './components/GroupChat.jsx'
 import Newsletter from './components/Newsletter.jsx'
 import About from './components/About.jsx'
 import Testimonials from './components/Testimonials.jsx'
@@ -40,7 +40,7 @@ export default function App() {
             </section>
 
             <BookingCalendar />
-            <CircleChat />
+            <GroupChat />
             <About />
             <Newsletter />
             <Testimonials />

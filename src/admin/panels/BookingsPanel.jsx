@@ -142,7 +142,27 @@ export default function BookingsPanel({ notify }) {
                     <br />
                     <a href={`mailto:${b.email}`}>{b.email}</a>
                   </td>
-                  <td className="adm-note">{b.note || '—'}</td>
+                  <td className="adm-note">
+                    {b.note || '—'}
+                    <input
+                      className="adm-meet"
+                      type="url"
+                      placeholder="Google Meet link…"
+                      defaultValue={b.meetUrl || ''}
+                      // Saved on blur so it doesn't fire a request per keystroke.
+                      onBlur={async (e) => {
+                        const meetUrl = e.target.value.trim()
+                        if (meetUrl === (b.meetUrl || '')) return
+                        try {
+                          await api.updateBooking(b.id, { meetUrl })
+                          notify(meetUrl ? 'Call link saved.' : 'Call link cleared.')
+                          load()
+                        } catch (err) {
+                          notify(err.message, 'error')
+                        }
+                      }}
+                    />
+                  </td>
                   <td>
                     <span className={`adm-pill adm-pill--${b.status}`}>{b.status}</span>
                   </td>

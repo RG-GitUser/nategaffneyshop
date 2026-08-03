@@ -999,7 +999,56 @@
   margin-inline: auto;
 }
 
-/* ---------- Circle group chat ---------- */
+/* ---------- Group chat ---------- */
+.chat__meet {
+  display: block;
+  margin-bottom: 12px;
+  padding: 16px 18px;
+  border-radius: var(--r-lg);
+  background: var(--accent-wash);
+  border: 1px solid var(--accent);
+  transition: background-color 0.16s var(--ease);
+}
+
+@media (hover: hover) {
+  .chat__meet:hover {
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+  .chat__meet:hover .chat__meet-cta {
+    gap: 9px;
+  }
+}
+
+.chat__meet-label {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.chat__meet-note {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+
+.chat__meet-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  transition: gap 0.16s var(--ease);
+}
+
+
 .chat__card {
   border-radius: var(--r-xl);
   background: var(--surface);

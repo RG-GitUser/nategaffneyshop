@@ -127,6 +127,8 @@ const updateSchema = z.object({
   time: z.string().min(1).max(20).optional(),
   status: z.enum(STATUSES).optional(),
   adminNote: z.string().max(2000).optional(),
+  // Google Meet (or any) call link. Included in the confirmation email.
+  meetUrl: z.string().url().max(500).or(z.literal('')).optional(),
 })
 
 bookingsRouter.patch('/:id', requireAdmin, async (req, res, next) => {
