@@ -63,14 +63,15 @@
 
 /* ---------- Avatar ---------- */
 .avatar {
-  /* Full uncropped photo. The frame matches the file's exact ratio
-     (720 x 1288), so nothing is cut off and no letterbox bars appear.
-     If you swap in a photo with different proportions, update this
-     ratio to match it or the edges will crop again. */
-  --avatar-focus: 50% 50%;
+  /* Cropped portrait: trims headroom off the top and his legs off the
+     bottom, leaving cap-to-forearms. The ratio is wider than the file's
+     own 720:1288, which is what makes cover zoom in; the 69% focus then
+     slides that window down so the cap sits just inside the top edge.
+     Measured against the source — his cap starts at y=236 of 1288. */
+  --avatar-focus: 50% 69%;
 
   width: 100%;
-  aspect-ratio: 720 / 1288;
+  aspect-ratio: 393 / 566;
   border-radius: 0; /* no frame, no rounding — bare image for now */
   overflow: hidden;
   background: linear-gradient(145deg, var(--accent-fill) 0%, var(--accent-deep) 100%);
@@ -393,6 +394,122 @@
   margin-top: 8px;
   font-size: 0.76rem;
   color: color-mix(in srgb, var(--on-accent) 62%, transparent);
+}
+
+/* ---------- Featured video ---------- */
+.film__card {
+  display: block;
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  transition: border-color 0.18s var(--ease), transform 0.18s var(--ease);
+}
+
+@media (hover: hover) {
+  .film__card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .film__card:hover .film__play {
+    transform: translate(-50%, -50%) scale(1.08);
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  .film__card:hover .film__media img {
+    transform: scale(1.03);
+  }
+  .film__card:hover .film__cta {
+    gap: 10px;
+  }
+}
+
+.film__media {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.film__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s var(--ease);
+}
+
+.film__fallback {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(145deg, var(--accent-fill) 0%, var(--accent-deep) 100%);
+}
+
+.film__play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 62px;
+  height: 62px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--on-accent) 92%, transparent);
+  color: var(--accent-deep);
+  padding-left: 4px; /* optically centres the triangle */
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+  transition: transform 0.18s var(--ease), background-color 0.18s var(--ease),
+    color 0.18s var(--ease);
+}
+
+.film__body {
+  padding: clamp(20px, 4.5vw, 28px);
+}
+
+.film__title {
+  font-size: clamp(1.7rem, 5.5vw, 2.2rem);
+  margin-top: 12px;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.022em;
+  line-height: 1;
+}
+
+/* no eyebrow above it — don't leave a gap at the top of the card */
+.film__title:first-child {
+  margin-top: 0;
+}
+
+.film__subtitle {
+  margin-top: 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.film__blurb {
+  margin-top: 12px;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--ink-soft);
+  max-width: 52ch;
+}
+
+.film__cta {
+  margin-top: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  transition: gap 0.16s var(--ease);
 }
 
 /* ---------- Offer cards ---------- */
@@ -1088,6 +1205,11 @@
     display: grid;
     grid-template-columns: 250px 1fr;
     align-items: stretch;
+  }
+
+  /* no photo — one full-width column instead of a dead 250px gutter */
+  .about__card--text-only {
+    display: block;
   }
 }
 

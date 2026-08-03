@@ -2,25 +2,25 @@ import { useState } from 'react'
 import { about } from '../content.js'
 
 export default function About() {
-  const [imgFailed, setImgFailed] = useState(!about.image)
+  const [imgFailed, setImgFailed] = useState(false)
+
+  // No image configured (or it 404'd) — drop the media column entirely
+  // rather than leaving an empty placeholder panel behind.
+  const showMedia = Boolean(about.image) && !imgFailed
 
   return (
     <section className="section about rise">
-      <div className="about__card">
-        <div className="about__media">
-          {imgFailed ? (
-            <div className="about__placeholder" aria-hidden="true">
-              <span>Your photo here</span>
-            </div>
-          ) : (
+      <div className={`about__card${showMedia ? '' : ' about__card--text-only'}`}>
+        {showMedia && (
+          <div className="about__media">
             <img
               src={about.image}
               alt=""
               loading="lazy"
               onError={() => setImgFailed(true)}
             />
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="about__text">
           <span className="eyebrow">{about.eyebrow}</span>

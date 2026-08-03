@@ -1,6 +1,7 @@
 import ThemeToggle from './components/ThemeToggle.jsx'
 import ProfileRail from './components/ProfileRail.jsx'
 import FeaturedCard from './components/FeaturedCard.jsx'
+import FeaturedVideo from './components/FeaturedVideo.jsx'
 import OfferCard from './components/OfferCard.jsx'
 import BookingCalendar from './components/BookingCalendar.jsx'
 import Newsletter from './components/Newsletter.jsx'
@@ -21,6 +22,7 @@ export default function App() {
           <ProfileRail />
 
           <main className="stack">
+            <FeaturedVideo />
             <FeaturedCard />
 
             <section className="section">

@@ -40,6 +40,26 @@ export const socials = [
 export const featured = null
 
 /**
+ * Featured video at the top of the page. Set to null to remove it.
+ *
+ * The thumbnail is stored locally rather than hotlinked from YouTube, so the
+ * page doesn't depend on a third-party request to render. To swap in a new
+ * video, download its thumbnail to public/images/ and update both fields:
+ *   https://i.ytimg.com/vi/<VIDEO_ID>/maxresdefault.jpg
+ */
+export const featuredVideo = {
+  // Set eyebrow to null to drop the small label above the title.
+  eyebrow: null,
+  title: 'Why Create?',
+  subtitle: 'Canon R5 Short Film',
+  blurb:
+    'A short film about the thing that keeps pulling you back to the work, even when nobody asked for it.',
+  thumbnail: '/images/video-54s5a4VuIY4.jpg',
+  href: 'https://www.youtube.com/watch?v=54s5a4VuIY4',
+  cta: 'Watch on YouTube',
+}
+
+/**
  * Everything else, in the order you want it shown.
  * Cards are auto-numbered 01, 02, 03 in the order below.
  * kind: 'product' (has a price) | 'link' (just goes somewhere)
@@ -167,8 +187,9 @@ export const about = {
     'Everything here is for creators who are made of many parts and tired of pretending otherwise. We talk about filmmaking, journaling, and the deeper work of building a creative life that actually looks like you.',
     'Welcome to the Nicheless Nomad.',
   ],
-  // Swap for a different shot any time — public/images/nate-about.jpg etc.
-  image: '/images/profilepicture.jpg',
+  // Set to an image path to show a photo beside the text, or null for
+  // text only. The card lays itself out either way.
+  image: null,
   signature: 'Nate',
 }
 
@@ -201,8 +222,8 @@ export const faqs = [
 export const footer = {
   note: 'Made on Wabanaki territory.',
   links: [
-    { label: 'Privacy', href: '#' },
-    { label: 'Terms', href: '#' },
+    { label: 'Privacy', href: '/privacy/' },
+    { label: 'Terms', href: '/terms/' },
     { label: 'Contact', href: 'mailto:hello@example.com' },
   ],
 }
