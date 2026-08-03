@@ -45,7 +45,28 @@ console.log(`  Port     ${config.smtp.port} (${secure ? 'implicit TLS' : 'STARTT
 console.log(`  User     ${config.smtp.user}`)
 console.log(`  Password ${config.smtp.pass ? '*'.repeat(8) : '(not set)'}`)
 console.log(`  From     ${config.smtp.from}`)
+console.log(`  Notify   ${env('ADMIN_NOTIFY_EMAIL', '(falls back to SMTP_USER)')}`)
 console.log('')
+
+// The usual own-goal: sending as an address the mailbox doesn't own.
+// Most servers reject it outright, and the ones that don't will fail SPF
+// so the mail lands in spam.
+const domainOf = (s) => (s.match(/@([^\s>]+)/) || [])[1]?.toLowerCase()
+const userDomain = domainOf(config.smtp.user)
+const fromDomain = domainOf(config.smtp.from)
+
+if (userDomain && fromDomain && userDomain !== fromDomain) {
+  console.log(`  Warning: MAIL_FROM is @${fromDomain} but you authenticate as @${userDomain}.`)
+  console.log('  Most servers refuse to send as a domain you do not own, and anything')
+  console.log('  that gets through will fail SPF and land in spam. Match them.')
+  console.log('')
+}
+
+if (config.smtp.user && !config.smtp.user.includes('@')) {
+  console.log('  Warning: SMTP_USER is usually the full email address, not just the')
+  console.log('  part before the @.')
+  console.log('')
+}
 
 const transport = nodemailer.createTransport({
   host: config.smtp.host,
