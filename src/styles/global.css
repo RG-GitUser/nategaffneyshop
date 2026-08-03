@@ -394,6 +394,15 @@ p {
   }
 }
 
+/* With the full-length photo the rail is ~950px tall. On a shorter screen a
+   sticky element taller than the viewport pins its top and leaves the bottom
+   permanently out of reach — so let it scroll normally instead. */
+@media (min-width: 900px) and (max-height: 1000px) {
+  .rail {
+    position: static;
+  }
+}
+
 /* ---------- entrance ---------- */
 @keyframes rise {
   from {
