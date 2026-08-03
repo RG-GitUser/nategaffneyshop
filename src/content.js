@@ -271,9 +271,10 @@ export const footer = {
 }
 
 /** Sticky bar that follows you up the page on mobile. */
-export const stickyCta = {
-  label: '1:1 Coaching',
-  sublabel: '45 min · $150',
-  cta: 'Book a time',
-  href: '#book',
-}
+/**
+ * Sticky bar that followed you up the page on mobile. Off.
+ *
+ * To bring it back, replace null with:
+ *   { label, sublabel, cta, href }
+ */
+export const stickyCta = null

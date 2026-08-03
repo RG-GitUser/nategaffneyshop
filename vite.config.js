@@ -10,6 +10,16 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true, // lets you open the site on your phone over local wifi
+    // In development, forward API calls to the local server so cookies are
+    // same-origin and VITE_API_URL can stay empty. In production the two
+    // are separate hosts and VITE_API_URL points at the real API.
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: false, // keep the Origin so the API's CORS check is real
+      },
+      '/uploads': { target: 'http://localhost:8080' },
+    },
   },
   build: {
     // Real static pages rather than client-side routes, so /privacy/ and

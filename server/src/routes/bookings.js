@@ -10,6 +10,12 @@ import {
   notifyBookingRescheduled,
   notifyBookingCancelled,
 } from '../mailer.js'
+import {
+  isConnected as googleConnected,
+  createBookingEvent,
+  updateBookingEvent,
+  cancelBookingEvent,
+} from '../google.js'
 
 export const bookingsRouter = Router()
 
@@ -164,13 +170,47 @@ bookingsRouter.patch('/:id', requireAdmin, async (req, res, next) => {
       }
     }
 
+    const changes = { ...parsed.data, updatedAt: new Date() }
+
+    /**
+     * Google Calendar, when connected. Wrapped so a Calendar failure
+     * downgrades to a plain confirmation rather than losing the admin's
+     * action entirely — the booking update still goes through.
+     */
+    const warnings = []
+    if (await googleConnected().catch(() => false)) {
+      const merged = { ...before, ...parsed.data }
+      const nowConfirmed =
+        parsed.data.status === 'confirmed' && before.status !== 'confirmed'
+      const nowCancelled =
+        parsed.data.status === 'cancelled' && before.status !== 'cancelled'
+      const timeChanged =
+        (parsed.data.date && parsed.data.date !== before.date) ||
+        (parsed.data.time && parsed.data.time !== before.time)
+
+      try {
+        if (nowCancelled && before.googleEventId) {
+          await cancelBookingEvent(before.googleEventId)
+          changes.googleEventId = null
+          changes.meetUrl = ''
+        } else if (nowConfirmed && !before.googleEventId) {
+          const ev = await createBookingEvent(merged)
+          changes.googleEventId = ev.eventId
+          // Only overwrite the link if the admin hasn't set one by hand.
+          if (ev.meetUrl && !parsed.data.meetUrl) changes.meetUrl = ev.meetUrl
+        } else if (timeChanged && before.googleEventId) {
+          const ev = await updateBookingEvent(before.googleEventId, merged)
+          if (ev.meetUrl && !parsed.data.meetUrl) changes.meetUrl = ev.meetUrl
+        }
+      } catch (gErr) {
+        console.error('[google] calendar sync failed:', gErr.message)
+        warnings.push(`Calendar not updated: ${gErr.message}`)
+      }
+    }
+
     const result = await collections
       .bookings()
-      .findOneAndUpdate(
-        { _id },
-        { $set: { ...parsed.data, updatedAt: new Date() } },
-        { returnDocument: 'after' },
-      )
+      .findOneAndUpdate({ _id }, { $set: changes }, { returnDocument: 'after' })
     if (!result) return res.status(404).json({ error: 'Not found' })
 
     // Tell the customer what changed — only when it actually changed, so
@@ -190,7 +230,7 @@ bookingsRouter.patch('/:id', requireAdmin, async (req, res, next) => {
       id: req.params.id,
       changes: parsed.data,
     })
-    res.json(toClient(result))
+    res.json({ ...toClient(result), warnings })
   } catch (err) {
     next(err)
   }

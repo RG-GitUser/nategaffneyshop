@@ -55,6 +55,7 @@ export async function close() {
 
 export const collections = {
   admins: () => getDb().collection('admins'),
+  settings: () => getDb().collection('settings'),
   content: () => getDb().collection('content'),
   shopItems: () => getDb().collection('shopItems'),
   bookings: () => getDb().collection('bookings'),

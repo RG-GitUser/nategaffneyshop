@@ -70,6 +70,11 @@ export const api = {
   refund: (id, body) => request(`/payments/${id}/refund`, { method: 'POST', body }),
   paymentSummary: () => request('/payments/stats/summary'),
 
+  // google calendar
+  googleStatus: () => request('/google/status'),
+  googleConnect: () => request('/google/connect'),
+  googleDisconnect: () => request('/google/disconnect', { method: 'POST' }),
+
   // media
   uploadImage: (file, slot) => {
     const form = new FormData()

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api } from '../api.js'
 
 export default function AccountPanel({ notify, me }) {
@@ -6,6 +6,40 @@ export default function AccountPanel({ notify, me }) {
   const [next, setNext] = useState('')
   const [confirm, setConfirm] = useState('')
   const [busy, setBusy] = useState(false)
+  const [google, setGoogle] = useState(null)
+
+  const loadGoogle = () => api.googleStatus().then(setGoogle).catch(() => setGoogle(null))
+  useEffect(() => {
+    loadGoogle()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function connectGoogle() {
+    try {
+      const { url } = await api.googleConnect()
+      // Full redirect, not a popup — Google blocks its consent screen in
+      // many popup/embedded contexts.
+      window.location.href = url
+    } catch (err) {
+      notify(err.message, 'error')
+    }
+  }
+
+  async function disconnectGoogle() {
+    // window.confirm explicitly — plain `confirm` is shadowed by the
+    // repeat-password state above.
+    const sure = window.confirm(
+      'Disconnect Google Calendar? New bookings will stop getting Meet links.',
+    )
+    if (!sure) return
+    try {
+      await api.googleDisconnect()
+      notify('Google Calendar disconnected.')
+      loadGoogle()
+    } catch (err) {
+      notify(err.message, 'error')
+    }
+  }
 
   async function submit(e) {
     e.preventDefault()
@@ -85,6 +119,42 @@ export default function AccountPanel({ notify, me }) {
             {busy ? 'Saving…' : 'Change password'}
           </button>
         </form>
+      </section>
+
+      <section className="adm-group" style={{ maxWidth: 480 }}>
+        <h3 className="adm-h3">Google Calendar</h3>
+
+        {!google ? (
+          <p className="adm-sub">Checking…</p>
+        ) : !google.configured ? (
+          <p className="adm-sub">
+            Not set up on the server yet. Add <code>GOOGLE_CLIENT_ID</code> and{' '}
+            <code>GOOGLE_CLIENT_SECRET</code> to <code>server/.env</code>, then
+            reload this page.
+          </p>
+        ) : google.connected ? (
+          <>
+            <p className="adm-sub">
+              Connected. Confirming a booking now creates a calendar event, mints a
+              Google Meet room, and emails the invite. Events go on{' '}
+              <strong>{google.calendarId}</strong> in {google.timeZone}, lasting{' '}
+              {google.durationMinutes} minutes.
+            </p>
+            <button className="adm-mini adm-mini--danger" onClick={disconnectGoogle}>
+              Disconnect
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="adm-sub">
+              Connect once and every confirmed booking gets a Meet link and a
+              calendar invite automatically.
+            </p>
+            <button className="btn btn--primary adm-save" onClick={connectGoogle}>
+              Connect Google Calendar
+            </button>
+          </>
+        )}
       </section>
 
       <section className="adm-group" style={{ maxWidth: 480 }}>

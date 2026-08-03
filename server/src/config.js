@@ -57,6 +57,17 @@ export const config = {
 
   stripeSecretKey: required('STRIPE_SECRET_KEY'),
 
+  // Google Calendar + Meet. Optional — without a client id, bookings fall
+  // back to a Meet link pasted in by hand.
+  google: {
+    clientId: optional('GOOGLE_CLIENT_ID'),
+    clientSecret: optional('GOOGLE_CLIENT_SECRET'),
+    redirectUri: optional('GOOGLE_REDIRECT_URI'),
+    calendarId: optional('GOOGLE_CALENDAR_ID', 'primary'),
+    timeZone: optional('GOOGLE_TIMEZONE', 'America/Halifax'),
+    durationMinutes: Number(optional('SESSION_MINUTES', '45')),
+  },
+
   // Circle.so community chat. Optional — leave the token blank and the
   // chat section simply reports itself as unconfigured instead of breaking.
   circle: {

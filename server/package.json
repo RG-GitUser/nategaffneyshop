@@ -9,6 +9,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
+    "dev:local": "node scripts/dev.js",
     "create-admin": "node scripts/create-admin.js"
   },
   "dependencies": {
@@ -25,5 +26,8 @@
     "nodemailer": "^6.9.15",
     "stripe": "^17.0.0",
     "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^10.1.2"
   }
 }
