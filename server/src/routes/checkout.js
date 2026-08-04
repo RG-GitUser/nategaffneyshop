@@ -229,8 +229,8 @@ checkoutRouter.post('/webhook', async (req, res) => {
           { returnDocument: 'after' },
         )
         if (booking) {
-          const { notifyNewBooking } = await import('../mailer.js')
-          notifyNewBooking(booking)
+          const { notifyBookingPaid } = await import('../mailer.js')
+          notifyBookingPaid(booking)
         }
       }
 

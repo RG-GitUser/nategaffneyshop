@@ -132,68 +132,20 @@ bookingsRouter.post('/', publicLimiter, async (req, res, next) => {
         .json({ error: 'That time was just taken. Please pick another.' })
     }
 
-    const { priceCents, currency } = await bookingPrice()
-    const paying = Boolean(priceCents) && stripeReady
-
     const doc = {
       ...parsed.data,
       status: 'pending',
-      ...(paying ? { awaitingPayment: true, priceCents, currency } : {}),
       createdAt: new Date(),
       updatedAt: new Date(),
     }
     const { insertedId } = await collections.bookings().insertOne(doc)
 
-    if (!paying) {
-      // Fire and forget — the mailer swallows its own errors, so a bad SMTP
-      // password can never turn into a failed booking.
-      notifyNewBooking(doc)
-      return res.status(201).json({ ok: true, id: insertedId.toString() })
-    }
+    // Fire and forget — the mailer swallows its own errors, so a bad SMTP
+    // password can never turn into a failed booking. Payment (when a price
+    // is set) happens later, via the link in the confirmation email.
+    notifyNewBooking(doc)
 
-    // Paid flow: the slot is held while they check out; Nate hears about
-    // it from the webhook once the money is in.
-    try {
-      const embedded = Boolean(config.stripePublishableKey)
-      const site = (config.allowedOrigins[0] || '').replace(/\/$/, '')
-      const session = await stripe.checkout.sessions.create(
-        {
-          mode: 'payment',
-          line_items: [
-            {
-              quantity: 1,
-              price_data: {
-                currency,
-                unit_amount: priceCents,
-                product_data: {
-                  name: 'Coaching session',
-                  description: `${parsed.data.date} at ${parsed.data.time}`,
-                },
-              },
-            },
-          ],
-          customer_creation: 'always',
-          metadata: { bookingId: insertedId.toString(), title: 'Coaching session' },
-          ...(embedded
-            ? { ui_mode: 'embedded', redirect_on_completion: 'never' }
-            : {
-                success_url: `${site}/?booked=1&session={CHECKOUT_SESSION_ID}`,
-                cancel_url: `${site}/#booking`,
-              }),
-        },
-        ...onBehalf,
-      )
-      return res.status(201).json({
-        ok: true,
-        id: insertedId.toString(),
-        payment: embedded ? { clientSecret: session.client_secret } : { url: session.url },
-      })
-    } catch (stripeErr) {
-      // Don't leave an unpayable booking holding the slot.
-      await collections.bookings().deleteOne({ _id: insertedId })
-      console.error('[booking] checkout session failed:', stripeErr.message)
-      return res.status(502).json({ error: 'Could not start payment. Please try again.' })
-    }
+    res.status(201).json({ ok: true, id: insertedId.toString() })
   } catch (err) {
     next(err)
   }
@@ -359,13 +311,65 @@ bookingsRouter.patch('/:id', requireAdmin, async (req, res, next) => {
     }
 
     const changes = { ...parsed.data, updatedAt: new Date() }
+    const warnings = []
+
+    const becomingConfirmed =
+      parsed.data.status === 'confirmed' && before.status !== 'confirmed'
+    const becomingCancelled =
+      parsed.data.status === 'cancelled' && before.status !== 'cancelled'
+
+    /**
+     * Payment link, minted at confirmation when a price is set. A Stripe
+     * Payment Link rather than a checkout session because it rides an
+     * email and must still work days later — sessions expire in 24h.
+     * The webhook marks the booking paid via the link's metadata.
+     */
+    if (becomingConfirmed && !before.paid && !before.payUrl && stripeReady) {
+      const { priceCents, currency } = await bookingPrice()
+      if (priceCents) {
+        try {
+          const price = await stripe.prices.create(
+            {
+              currency,
+              unit_amount: priceCents,
+              product_data: { name: 'Coaching session' },
+            },
+            ...onBehalf,
+          )
+          const link = await stripe.paymentLinks.create(
+            {
+              line_items: [{ price: price.id, quantity: 1 }],
+              metadata: { bookingId: before._id.toString(), title: 'Coaching session' },
+            },
+            ...onBehalf,
+          )
+          changes.payUrl = link.url
+          changes.payLinkId = link.id
+          changes.priceCents = priceCents
+          changes.currency = currency
+        } catch (sErr) {
+          console.error('[booking] payment link failed:', sErr.message)
+          warnings.push(`Payment link not created: ${sErr.message}`)
+        }
+      }
+    }
+
+    // A cancelled booking's unpaid link goes dead, so nobody pays for a
+    // session that no longer exists.
+    if (becomingCancelled && before.payLinkId && !before.paid && stripeReady) {
+      try {
+        await stripe.paymentLinks.update(before.payLinkId, { active: false }, ...onBehalf)
+        changes.payUrl = null
+      } catch (sErr) {
+        warnings.push(`Old payment link could not be deactivated: ${sErr.message}`)
+      }
+    }
 
     /**
      * Google Calendar, when connected. Wrapped so a Calendar failure
      * downgrades to a plain confirmation rather than losing the admin's
      * action entirely — the booking update still goes through.
      */
-    const warnings = []
     if (await googleConnected().catch(() => false)) {
       const merged = { ...before, ...parsed.data }
       const nowConfirmed =

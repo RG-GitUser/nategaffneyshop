@@ -83,6 +83,30 @@ export function sendChatCode(email, code) {
   })
 }
 
+/** To Nate — a confirmed session's payment landed. */
+export function notifyBookingPaid(booking) {
+  const amount = booking.paidAmount
+    ? `$${(booking.paidAmount / 100).toFixed(2)}`
+    : 'Payment'
+  send({
+    to: config.smtp.notify,
+    subject: `Paid — ${when(booking)}`,
+    text: [
+      `${booking.name} paid ${amount} for ${when(booking)}.`,
+      ``,
+      `Nothing to do — this is just the receipt landing.`,
+    ].join('\n'),
+    html: wrap({
+      eyebrow: 'Booking paid',
+      title: `${amount} received`,
+      preheader: `${booking.name} — ${when(booking)}`,
+      body:
+        paragraph(`${booking.name} paid ${amount} for ${when(booking)}.`) +
+        muted('Nothing to do — this is just the receipt landing.'),
+    }),
+  })
+}
+
 export function notifyChatBanned(email) {
   send({
     to: email,
@@ -192,6 +216,11 @@ export function notifyBookingConfirmed(booking) {
     ? [`Join here at that time:`, booking.meetUrl, ``]
     : [`I'll send the call link before we start.`, ``]
 
+  const owes = booking.payUrl && !booking.paid
+  const payLines = owes
+    ? [`Lock in your spot — pay for the session here:`, booking.payUrl, ``]
+    : []
+
   send({
     to: booking.email,
     subject: `Confirmed — ${when(booking)}`,
@@ -200,8 +229,9 @@ export function notifyBookingConfirmed(booking) {
       ``,
       `You're booked in for ${when(booking)}.`,
       ``,
+      ...payLines,
       ...callLines,
-      booking.paid
+      owes || booking.paid
         ? `Cancel a day or more ahead for a full refund. With less notice, half the fee is kept.`
         : `Reschedule or cancel free up to 24 hours before.`,
       ``,
@@ -214,11 +244,17 @@ export function notifyBookingConfirmed(booking) {
       body:
         paragraph(`Hi ${booking.name},`) +
         details([row('When', when(booking))]) +
+        (booking.payUrl && !booking.paid
+          ? button(
+              booking.payUrl,
+              `Pay ${booking.priceCents ? `$${(booking.priceCents / 100).toFixed(0)}` : 'now'} & lock it in`,
+            )
+          : '') +
         (booking.meetUrl
           ? button(booking.meetUrl, 'Join the call')
           : paragraph('I’ll send the call link before we start.')) +
         muted(
-          booking.paid
+          booking.paid || booking.payUrl
             ? 'Cancel a day or more ahead for a full refund. With less notice, half the fee is kept. — Nate'
             : 'Reschedule or cancel free up to 24 hours before. — Nate',
         ),

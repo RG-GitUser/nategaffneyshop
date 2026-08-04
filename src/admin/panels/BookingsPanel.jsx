@@ -200,7 +200,10 @@ export default function BookingsPanel({ notify }) {
               ))}
             </select>
           )}
-          <div className="adm-inline" title="What a session costs at booking. Blank = free requests.">
+          <div
+            className="adm-inline"
+            title="Session price. When set, confirming a booking emails the customer a payment link. Blank = free."
+          >
             <span className="adm-who">Session $</span>
             <input
               className="adm-search"
@@ -451,7 +454,7 @@ export default function BookingsPanel({ notify }) {
                         <span className="adm-pill adm-pill--confirmed">paid</span>
                       </>
                     )}
-                    {b.awaitingPayment && (
+                    {!b.paid && b.payUrl && b.status === 'confirmed' && (
                       <>
                         {' '}
                         <span className="adm-pill adm-pill--pending">unpaid</span>
@@ -467,6 +470,20 @@ export default function BookingsPanel({ notify }) {
                     {b.status !== 'cancelled' && (
                       <button className="adm-mini" onClick={() => cancelBooking(b)}>
                         Cancel
+                      </button>
+                    )}
+                    {!b.paid && b.payUrl && (
+                      <button
+                        className="adm-mini"
+                        title="Copy the payment link (it's also in their confirmation email)"
+                        onClick={() => {
+                          navigator.clipboard
+                            .writeText(b.payUrl)
+                            .then(() => notify('Payment link copied.'))
+                            .catch(() => notify(b.payUrl))
+                        }}
+                      >
+                        Pay link
                       </button>
                     )}
                     {b.status !== 'completed' && (

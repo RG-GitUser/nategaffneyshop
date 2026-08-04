@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Chevron, ArrowRight } from './Icons.jsx'
-import CheckoutModal from './CheckoutModal.jsx'
 import { booking } from '../content.js'
 
 /**
@@ -61,9 +60,6 @@ export default function BookingCalendar() {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [price, setPrice] = useState(null) // { enabled, priceCents, currency }
-  const [paySecret, setPaySecret] = useState(null) // embedded checkout secret
-  const [payOpen, setPayOpen] = useState(false)
-  const [paid, setPaid] = useState(false)
   const sectionRef = useRef(null)
 
   useEffect(() => {
@@ -107,12 +103,6 @@ export default function BookingCalendar() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    // An unfinished payment already holds this slot — reopen it rather
-    // than creating a second booking that would collide with the first.
-    if (paySecret && !paid) {
-      setPayOpen(true)
-      return
-    }
     setSending(true)
     try {
       const res = await fetch(`${API}/api/bookings`, {
@@ -131,17 +121,6 @@ export default function BookingCalendar() {
       if (!res.ok) {
         // 409 means someone else grabbed the slot between load and submit.
         setError(payload?.error || 'Could not send that request. Please try again.')
-        return
-      }
-
-      // Paid bookings: the slot is held; the request completes at payment.
-      if (payload?.payment?.clientSecret) {
-        setPaySecret(payload.payment.clientSecret)
-        setPayOpen(true)
-        return
-      }
-      if (payload?.payment?.url) {
-        window.location.href = payload.payment.url // hosted-checkout fallback
         return
       }
 
@@ -201,13 +180,13 @@ export default function BookingCalendar() {
 
         {done ? (
           <div className="booking__done" role="status">
-            <p className="booking__done-title">{paid ? 'Booked' : 'Request sent'}</p>
+            <p className="booking__done-title">Request sent</p>
             <p className="booking__done-when">
               {prettyDate} at {selectedSlot}
             </p>
             <p className="booking__done-note">
-              {paid
-                ? 'Payment received. Nate confirms shortly and your calendar invite lands by email.'
+              {price?.enabled
+                ? "When Nate confirms, you'll get an email with a secure payment link — the spot is locked in once it's paid."
                 : booking.finePrint}
             </p>
           </div>
@@ -370,8 +349,9 @@ export default function BookingCalendar() {
 
                 {price?.enabled && (
                   <p className="booking__fine mono">
-                    ${(price.priceCents / 100).toFixed(0)} at booking. Cancel a day
-                    ahead for a full refund — with less notice, half is kept.
+                    ${(price.priceCents / 100).toFixed(0)}, paid by secure link once
+                    Nate confirms. Cancel a day ahead for a full refund — with less
+                    notice, half is kept.
                   </p>
                 )}
                 <p className="booking__fine mono">{booking.finePrint}</p>
@@ -381,25 +361,6 @@ export default function BookingCalendar() {
         )}
       </div>
 
-      {payOpen && paySecret && (
-        <CheckoutModal
-          clientSecret={paySecret}
-          title="Coaching session"
-          doneNote="You're booked in. Nate confirms shortly and your calendar invite lands by email."
-          onPaid={() => {
-            setPaid(true)
-            setDone(true)
-          }}
-          onClose={() => {
-            setPayOpen(false)
-            if (!paid) {
-              setError(
-                'Payment not finished — your slot is held for 30 minutes. Submit again to reopen the payment form.',
-              )
-            }
-          }}
-        />
-      )}
     </section>
   )
 }
