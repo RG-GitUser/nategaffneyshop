@@ -17,6 +17,23 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: false, // keep the Origin so the API's CORS check is real
+        // Without this, an API that simply isn't running surfaces as a bare
+        // 500 on every request — which reads as a server bug rather than
+        // "you haven't started the server".
+        configure(proxy) {
+          proxy.on('error', (err, _req, res) => {
+            if (!res.headersSent) {
+              res.writeHead(502, { 'Content-Type': 'application/json' })
+            }
+            res.end(
+              JSON.stringify({
+                error:
+                  'Local API is not running. Start it with:  cd server && npm run dev:local',
+                detail: err.code,
+              }),
+            )
+          })
+        },
       },
       '/uploads': { target: 'http://localhost:8080' },
     },

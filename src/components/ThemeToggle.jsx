@@ -4,13 +4,14 @@ import { Sun, Moon } from './Icons.jsx'
 const STORAGE_KEY = 'ng-theme'
 
 /**
- * Light is the default. The inline script in index.html sets data-theme
- * before first paint so there's no flash of the wrong theme on load —
- * this component just reads what that script decided and takes over.
+ * Dark is the default — the warm brown ground is the site's primary look.
+ * The inline script in index.html sets data-theme before first paint so
+ * there's no flash of the wrong theme on load — this component just reads
+ * what that script decided and takes over.
  */
 export default function ThemeToggle() {
   const [theme, setTheme] = useState(
-    () => document.documentElement.dataset.theme || 'light',
+    () => document.documentElement.dataset.theme || 'dark',
   )
 
   useEffect(() => {
@@ -19,7 +20,7 @@ export default function ThemeToggle() {
     // Keeps the mobile browser chrome in step with the page.
     const meta = document.querySelector('meta[name="theme-color"]')
     if (meta) {
-      meta.setAttribute('content', theme === 'dark' ? '#16130F' : '#EBE5D8')
+      meta.setAttribute('content', theme === 'dark' ? '#3C2D22' : '#EBE5D8')
     }
 
     try {

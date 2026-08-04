@@ -28,14 +28,18 @@
   --red: #6c1e05; /* the deep almost-red, used straight */
   --chocolate: #2b2018; /* warm dark brown — the dark theme's ground */
 
-  /* ---- LIGHT (default) ---- */
-  --bg: color-mix(in srgb, var(--black) 4%, var(--bone));
-  --bg-2: color-mix(in srgb, var(--black) 9%, var(--bone));
-  --surface: var(--bone);
-  --surface-2: color-mix(in srgb, var(--black) 2%, var(--bone));
+  /* ---- LIGHT ---- lighter all round, and the containers pull toward
+     white so they read neutral rather than yellow-beige. Bone survives
+     as the page tint and the small inset chips; the cards float above
+     it in near-white. Lines derive from the surface so they grey with
+     it instead of staying beige. */
+  --bg: color-mix(in srgb, #ffffff 30%, var(--bone));
+  --bg-2: var(--bone);
+  --surface: color-mix(in srgb, #ffffff 55%, var(--bone));
+  --surface-2: color-mix(in srgb, #ffffff 72%, var(--bone));
 
-  --line: color-mix(in srgb, var(--black) 14%, var(--bone));
-  --line-2: color-mix(in srgb, var(--black) 26%, var(--bone));
+  --line: color-mix(in srgb, var(--black) 13%, var(--surface));
+  --line-2: color-mix(in srgb, var(--black) 24%, var(--surface));
 
   --ink: var(--black);
   --ink-2: color-mix(in srgb, var(--black) 84%, var(--bone));
@@ -134,21 +138,16 @@
 }
 
 :root[data-theme='dark'] {
-  /* ---- DARK ---- a lifted warm brown ground, not the near-black.
-     Lighter than plain chocolate by a breath of bone, warmed by a trace
-     of orange — the near-black stays for text on orange fills and for
-     pushing surfaces darker where depth is needed. */
-  --bg: color-mix(
-    in srgb,
-    color-mix(in srgb, var(--orange) 5%, var(--chocolate)),
-    var(--bone) 5%
-  );
-  --bg-2: color-mix(in srgb, var(--black) 28%, var(--chocolate));
-  --surface: color-mix(in srgb, var(--black) 22%, var(--chocolate));
-  --surface-2: color-mix(in srgb, var(--bone) 8%, var(--chocolate));
+  /* ---- DARK ---- a grey-leaning dark brown: bone into the near-black
+     rather than the orange-leaning chocolate, so the ground reads taupe.
+     The warmth comes from the glow and the accents sitting on it. */
+  --bg: color-mix(in srgb, var(--bone) 16%, var(--black));
+  --bg-2: color-mix(in srgb, var(--bone) 6%, var(--black));
+  --surface: color-mix(in srgb, var(--bone) 10%, var(--black));
+  --surface-2: color-mix(in srgb, var(--bone) 21%, var(--black));
 
-  --line: color-mix(in srgb, var(--bone) 14%, var(--chocolate));
-  --line-2: color-mix(in srgb, var(--bone) 25%, var(--chocolate));
+  --line: color-mix(in srgb, var(--bone) 27%, var(--black));
+  --line-2: color-mix(in srgb, var(--bone) 38%, var(--black));
 
   --ink: var(--bone);
   --ink-2: color-mix(in srgb, var(--bone) 82%, var(--black));
@@ -171,7 +170,7 @@
      They separate by lightness rather than hue: anything dark enough to
      read as a different colour fails against this surface — a lifted red
      measured 2.06:1 — so lightness is the only axis available. */
-  --amber: color-mix(in srgb, var(--bone) 14%, var(--orange));
+  --amber: color-mix(in srgb, var(--bone) 19%, var(--orange));
   --amber-wash: color-mix(in srgb, var(--orange) 22%, transparent);
   --umber: color-mix(in srgb, var(--bone) 30%, var(--orange));
   --umber-wash: color-mix(in srgb, var(--orange) 18%, transparent);
