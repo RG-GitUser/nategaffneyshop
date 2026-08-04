@@ -146,19 +146,19 @@
 }
 
 :root[data-theme='dark'] {
-  /* ---- DARK ---- anchored to #0e0a06, a warm near-black. Cards MATCH
-     the ground on purpose — depth comes from the hairline borders and
-     the glow layers, not from stacked surface tones. Inset chips and
-     raised surfaces step just far enough to read.
+  /* ---- DARK ---- page anchored to #0e0a06, a warm near-black. Cards
+     sit a step LIGHTER in a neutral grey — deliberately not another
+     brown, so containers read as their own plane while the warmth stays
+     in the ground, the glow and the accents.
      Literals for the same reason as the light block — color-mix is not
      available on older mobile browsers. */
   --bg: #0e0a06; /* the anchor */
-  --bg-2: #17100a; /* inset chips lift slightly — there's no darker left */
-  --surface: #0e0a06; /* cards match the page; borders do the separating */
-  --surface-2: #1c140c; /* raised: modals, hover states */
+  --bg-2: #131210; /* inset chips — between the page and the cards */
+  --surface: #171613; /* cards: lifted neutral grey, not brown */
+  --surface-2: #22201b; /* raised: modals, hover states */
 
-  --line: #3d3122; /* hairlines against the near-black */
-  --line-2: #584a33;
+  --line: #3e3a30; /* hairlines, neutralized to match the grey cards */
+  --line-2: #57534a;
 
   --ink: var(--bone);
   --ink-2: #c4beb2; /* mix(bone 82%, black) */
