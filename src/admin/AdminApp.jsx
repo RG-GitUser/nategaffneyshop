@@ -5,11 +5,13 @@ import ContentPanel from './panels/ContentPanel.jsx'
 import ShopPanel from './panels/ShopPanel.jsx'
 import BookingsPanel from './panels/BookingsPanel.jsx'
 import PaymentsPanel from './panels/PaymentsPanel.jsx'
+import AnalyticsPanel from './panels/AnalyticsPanel.jsx'
 import MediaPanel from './panels/MediaPanel.jsx'
 import AccountPanel from './panels/AccountPanel.jsx'
 import ThemeToggle from '../components/ThemeToggle.jsx'
 
 const TABS = [
+  { id: 'analytics', label: 'Analytics', Panel: AnalyticsPanel },
   { id: 'bookings', label: 'Calendar', Panel: BookingsPanel },
   { id: 'payments', label: 'Payments', Panel: PaymentsPanel },
   { id: 'content', label: 'Content', Panel: ContentPanel },
@@ -21,7 +23,7 @@ const TABS = [
 export default function AdminApp() {
   const [me, setMe] = useState(null)
   const [checking, setChecking] = useState(true)
-  const [tab, setTab] = useState('bookings')
+  const [tab, setTab] = useState('analytics')
   const [toast, setToast] = useState(null)
 
   const notify = useCallback((message, kind = 'ok') => {

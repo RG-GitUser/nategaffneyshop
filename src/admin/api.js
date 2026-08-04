@@ -75,6 +75,9 @@ export const api = {
   googleConnect: () => request('/google/connect'),
   googleDisconnect: () => request('/google/disconnect', { method: 'POST' }),
 
+  // analytics
+  metricsSummary: (days = 30) => request(`/metrics/summary?days=${days}`),
+
   // media
   uploadImage: (file, slot) => {
     const form = new FormData()

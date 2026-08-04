@@ -5,9 +5,12 @@ import { privacy } from '../legal/privacy.js'
 import '../styles/global.css'
 import '../styles/components.css'
 import '../styles/legal.css'
+import { pageView } from '../beacon.js'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <LegalPage doc={privacy} />
   </StrictMode>,
 )
+
+pageView()

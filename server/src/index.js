@@ -16,6 +16,7 @@ import { circleRouter } from './routes/circle.js'
 import { chatRouter } from './routes/chat.js'
 import { googleRouter } from './routes/google.js'
 import { checkoutRouter } from './routes/checkout.js'
+import { metricsRouter } from './routes/metrics.js'
 
 const app = express()
 
@@ -87,6 +88,7 @@ app.use('/api/circle', circleRouter)
 app.use('/api/chat', chatRouter)
 app.use('/api/google', googleRouter)
 app.use('/api/checkout', checkoutRouter)
+app.use('/api/metrics', metricsRouter)
 
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }))
 

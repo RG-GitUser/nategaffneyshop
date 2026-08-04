@@ -571,6 +571,50 @@
   outline: none;
 }
 
+/* ---------- analytics ---------- */
+.adm-bars {
+  display: flex;
+  gap: 4px;
+  align-items: stretch;
+  height: 110px;
+  margin-top: 14px;
+}
+
+.adm-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  min-width: 0;
+}
+
+.adm-bar {
+  background: var(--accent-fill);
+  border-radius: 2px 2px 0 0;
+}
+
+.adm-bar__label {
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  text-align: center;
+  color: var(--ink-faint);
+}
+
+.adm-cols {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.adm-table--tight {
+  min-width: 0;
+}
+
+.adm-table--tight td {
+  padding: 8px 10px;
+}
+
 .adm-pre {
   margin-top: 12px;
   padding: 14px 16px;

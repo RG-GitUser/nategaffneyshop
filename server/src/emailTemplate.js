@@ -12,7 +12,6 @@
  * text by choice, and spam filters treat HTML-only mail with suspicion.
  */
 
-const BONE = '#EBE5D8'
 const BLACK = '#120B07'
 const ORANGE = '#C45E18'
 const CHOCOLATE = '#372017'
@@ -131,4 +130,4 @@ export function codeBlock(code) {
     </table>`
 }
 
-export const palette = { BONE, BLACK, ORANGE, CHOCOLATE, OUTER, INSET, LINE, INK_SOFT, FONT, MONO }
+export const palette = { BLACK, ORANGE, CHOCOLATE, OUTER, INSET, LINE, INK_SOFT, FONT, MONO }

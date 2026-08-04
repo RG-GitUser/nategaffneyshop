@@ -65,7 +65,19 @@ export default function ShopPanel({ notify }) {
       notify('Stripe’s minimum charge is 50 cents.', 'error')
       return
     }
-    if (!payload.priceCents) payload.currency = null
+    if (!payload.priceCents) {
+      payload.currency = null
+      // The single most common mistake: filling the display "Price" but
+      // not the Charge amount, then wondering why clicking doesn't open
+      // checkout. Make saving that state a conscious choice.
+      if (payload.kind === 'product') {
+        const ok = window.confirm(
+          'No Charge amount is set, so this card will NOT open checkout — ' +
+            'it will just follow its link.\n\nSave it that way anyway?',
+        )
+        if (!ok) return
+      }
+    }
 
     try {
       if (draft.id) await api.updateShopItem(draft.id, payload)

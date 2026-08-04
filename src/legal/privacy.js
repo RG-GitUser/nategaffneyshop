@@ -34,7 +34,7 @@ export const privacy = {
       ],
       after: [
         '<strong>Payment information.</strong> Card numbers, expiry dates and security codes go directly to Stripe and are never collected, seen, or stored by us. We receive only limited confirmation data back from Stripe, such as your name, email, billing country, the last four digits of the card, and whether the payment succeeded.',
-        '<strong>Information collected automatically.</strong> Our hosting provider keeps standard server logs, which can include your IP address, browser type, device, referring page and the time of your visit. These are used for security and to keep the site working. [If you add analytics, describe it here — what tool, what it collects, and whether it is cookie-based.]',
+        '<strong>Information collected automatically.</strong> Our hosting provider keeps standard server logs, which can include your IP address, browser type, device, referring page and the time of your visit. These are used for security and to keep the site working. We also count page views ourselves, first-party: when a page loads, it tells our own server which page was opened and whether it is the first page of that browser session. No cookies are used for this, no IP address or device identifier is stored with it, and nothing about it is shared with any analytics company.',
         '<strong>Stored on your own device.</strong> This site saves your light/dark theme choice in your browser\'s local storage. It never leaves your device, is not personal information, and you can clear it any time by clearing your browser data. We do not use advertising or tracking cookies.',
       ],
     },

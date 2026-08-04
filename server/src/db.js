@@ -18,6 +18,8 @@ export async function connect() {
   // unique and the handler upserts against it.
   await db.collection('orders').createIndex({ sessionId: 1 }, { unique: true })
   await db.collection('orders').createIndex({ createdAt: -1 })
+  // one row per (day, path); the beacon increments counters on it
+  await db.collection('pageViews').createIndex({ day: 1, path: 1 }, { unique: true })
   // One account per address, enforced by the database rather than by
   // remembering to check for duplicates everywhere.
   await db.collection('admins').createIndex({ email: 1 }, { unique: true })
@@ -64,6 +66,7 @@ export const collections = {
   shopItems: () => getDb().collection('shopItems'),
   bookings: () => getDb().collection('bookings'),
   orders: () => getDb().collection('orders'),
+  pageViews: () => getDb().collection('pageViews'),
   circleCodes: () => getDb().collection('circleCodes'),
   circleSessions: () => getDb().collection('circleSessions'),
   chatCodes: () => getDb().collection('chatCodes'),

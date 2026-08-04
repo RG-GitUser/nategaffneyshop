@@ -5,9 +5,12 @@ import { terms } from '../legal/terms.js'
 import '../styles/global.css'
 import '../styles/components.css'
 import '../styles/legal.css'
+import { pageView } from '../beacon.js'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <LegalPage doc={terms} />
   </StrictMode>,
 )
+
+pageView()
