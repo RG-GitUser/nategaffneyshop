@@ -18,9 +18,10 @@ const ORANGE = '#C45E18'
 const CHOCOLATE = '#372017'
 
 // Derived tones, pre-computed because email can't mix colours itself.
-const PAGE = '#E5DED0' // bone nudged toward black, the site's page colour
-const LINE = '#D3C9B7'
-const INK_SOFT = '#5C5347'
+const OUTER = '#FFFFFF' // outside the card: no colour
+const INSET = '#F5F5F5' // code block background
+const LINE = '#E6E6E6'
+const INK_SOFT = '#6B6B6B'
 
 const FONT =
   "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
@@ -69,18 +70,18 @@ export function wrap({ title, preheader, body, eyebrow }) {
 <meta name="color-scheme" content="light">
 <title>${esc(title)}</title>
 </head>
-<body style="margin:0;padding:0;background:${PAGE};">
+<body style="margin:0;padding:0;background:${OUTER};">
   <!-- Inbox preview text. Hidden in the message itself, then padded with
        zero-width spaces so the client doesn't pull body copy in after it. -->
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
     ${esc(preheader)}${'&#8203;&nbsp;'.repeat(60)}
   </div>
 
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${PAGE};">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${OUTER};">
     <tr>
       <td align="center" style="padding:32px 16px;">
 
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:${BONE};border:1px solid ${LINE};border-radius:14px;overflow:hidden;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#FFFFFF;border:1px solid ${LINE};border-radius:14px;overflow:hidden;">
           <!-- Orange rule across the top, the one flash of colour -->
           <tr><td style="height:4px;background:${ORANGE};font-size:0;line-height:0;">&nbsp;</td></tr>
 
@@ -125,9 +126,9 @@ export function codeBlock(code) {
   return `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 4px;">
       <tr>
-        <td style="background:${PAGE};border:1px solid ${LINE};border-radius:10px;padding:20px 34px;font-family:${MONO};font-size:34px;font-weight:700;letter-spacing:9px;color:${BLACK};">${esc(code)}</td>
+        <td style="background:${INSET};border:1px solid ${LINE};border-radius:10px;padding:20px 34px;font-family:${MONO};font-size:34px;font-weight:700;letter-spacing:9px;color:${BLACK};">${esc(code)}</td>
       </tr>
     </table>`
 }
 
-export const palette = { BONE, BLACK, ORANGE, CHOCOLATE, PAGE, LINE, INK_SOFT, FONT, MONO }
+export const palette = { BONE, BLACK, ORANGE, CHOCOLATE, OUTER, INSET, LINE, INK_SOFT, FONT, MONO }
