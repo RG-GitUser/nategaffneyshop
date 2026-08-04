@@ -13,8 +13,7 @@
  */
 
 const BLACK = '#120B07'
-const ORANGE = '#7D2800'
-const CHOCOLATE = '#372017'
+const NAVY = '#05192B' // the site's accent — strip, eyebrow and buttons
 
 // Derived tones, pre-computed because email can't mix colours itself.
 const OUTER = '#FFFFFF' // outside the card: no colour
@@ -46,7 +45,7 @@ export function button(href, text) {
   return `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 0;">
       <tr>
-        <td style="background:${CHOCOLATE};border-radius:6px;">
+        <td style="background:${NAVY};border-radius:6px;">
           <a href="${esc(href)}" style="display:inline-block;padding:14px 28px;font-family:${FONT};font-size:15px;font-weight:600;color:#FFFFFF;text-decoration:none;">${esc(text)}</a>
         </td>
       </tr>
@@ -82,13 +81,13 @@ export function wrap({ title, preheader, body, eyebrow }) {
 
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#FFFFFF;border:1px solid ${LINE};border-radius:14px;overflow:hidden;">
           <!-- Orange rule across the top, the one flash of colour -->
-          <tr><td style="height:4px;background:${ORANGE};font-size:0;line-height:0;">&nbsp;</td></tr>
+          <tr><td style="height:4px;background:${NAVY};font-size:0;line-height:0;">&nbsp;</td></tr>
 
           <tr>
             <td style="padding:36px 34px 34px;">
               ${
                 eyebrow
-                  ? `<p style="margin:0 0 12px;font-family:${MONO};font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${ORANGE};">${esc(eyebrow)}</p>`
+                  ? `<p style="margin:0 0 12px;font-family:${MONO};font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${NAVY};">${esc(eyebrow)}</p>`
                   : ''
               }
               <h1 style="margin:0 0 20px;font-family:${FONT};font-size:27px;line-height:1.15;font-weight:700;letter-spacing:-0.4px;color:${BLACK};">${esc(title)}</h1>
@@ -130,4 +129,4 @@ export function codeBlock(code) {
     </table>`
 }
 
-export const palette = { BLACK, ORANGE, CHOCOLATE, OUTER, INSET, LINE, INK_SOFT, FONT, MONO }
+export const palette = { BLACK, NAVY, OUTER, INSET, LINE, INK_SOFT, FONT, MONO }
