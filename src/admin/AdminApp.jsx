@@ -6,12 +6,14 @@ import ShopPanel from './panels/ShopPanel.jsx'
 import BookingsPanel from './panels/BookingsPanel.jsx'
 import PaymentsPanel from './panels/PaymentsPanel.jsx'
 import AnalyticsPanel from './panels/AnalyticsPanel.jsx'
+import CommunityPanel from './panels/CommunityPanel.jsx'
 import MediaPanel from './panels/MediaPanel.jsx'
 import AccountPanel from './panels/AccountPanel.jsx'
 import ThemeToggle from '../components/ThemeToggle.jsx'
 
 const TABS = [
   { id: 'analytics', label: 'Analytics', Panel: AnalyticsPanel },
+  { id: 'community', label: 'Community', Panel: CommunityPanel },
   { id: 'bookings', label: 'Calendar', Panel: BookingsPanel },
   { id: 'payments', label: 'Payments', Panel: PaymentsPanel },
   { id: 'content', label: 'Content', Panel: ContentPanel },

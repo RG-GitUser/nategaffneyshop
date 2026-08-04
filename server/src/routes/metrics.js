@@ -54,7 +54,6 @@ metricsRouter.get('/summary', requireAdmin, async (req, res, next) => {
     const daysBack = Math.min(Math.max(Number(req.query.days) || 30, 1), 90)
     const since = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000)
     const sinceDay = since.toISOString().slice(0, 10)
-    const since7 = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
 
     const [byDay, byPath, orders, recentOrders, chat, bookings] = await Promise.all([
       collections
@@ -104,13 +103,19 @@ metricsRouter.get('/summary', requireAdmin, async (req, res, next) => {
         collections.chatMembers().countDocuments(),
         collections.chatSessions().countDocuments(),
         collections.chatMessages().countDocuments({ deleted: { $ne: true } }),
+        // Both scoped to the selected window, so every stat on the
+        // Analytics tab answers for the same date range.
         collections
           .chatMessages()
-          .countDocuments({ createdAt: { $gte: since7 }, deleted: { $ne: true } }),
+          .countDocuments({ createdAt: { $gte: since }, deleted: { $ne: true } }),
+        collections.chatMembers().countDocuments({ joinedAt: { $gte: since } }),
       ]),
       collections
         .bookings()
-        .aggregate([{ $group: { _id: '$status', n: { $sum: 1 } } }])
+        .aggregate([
+          { $match: { createdAt: { $gte: since } } },
+          { $group: { _id: '$status', n: { $sum: 1 } } },
+        ])
         .toArray(),
     ])
 
@@ -148,7 +153,8 @@ metricsRouter.get('/summary', requireAdmin, async (req, res, next) => {
         members: chat[0],
         activeSessions: chat[1],
         messagesTotal: chat[2],
-        messages7d: chat[3],
+        messagesWindow: chat[3],
+        newMembers: chat[4],
       },
       bookings: Object.fromEntries(bookings.map((b) => [b._id, b.n])),
     })

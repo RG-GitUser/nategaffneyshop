@@ -13,7 +13,7 @@
  */
 
 const BLACK = '#120B07'
-const ORANGE = '#C45E18'
+const ORANGE = '#7D2800'
 const CHOCOLATE = '#372017'
 
 // Derived tones, pre-computed because email can't mix colours itself.

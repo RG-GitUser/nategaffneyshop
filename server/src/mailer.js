@@ -83,6 +83,46 @@ export function sendChatCode(email, code) {
   })
 }
 
+export function notifyChatBanned(email) {
+  send({
+    to: email,
+    subject: 'Your access to the chat has been removed',
+    text: [
+      `You can no longer post in the group chat.`,
+      ``,
+      `If you think this was a mistake, reply to this email.`,
+    ].join('\n'),
+    html: wrap({
+      eyebrow: 'Group chat',
+      title: 'Access removed',
+      preheader: 'You can no longer post in the group chat.',
+      body:
+        paragraph('You can no longer post in the group chat.') +
+        muted('If you think this was a mistake, reply to this email.'),
+    }),
+  })
+}
+
+export function notifyChatUnbanned(email) {
+  send({
+    to: email,
+    subject: 'You can join the chat again',
+    text: [
+      `Your access to the group chat has been restored.`,
+      ``,
+      `Join again from the site — you'll get a fresh sign-in code by email.`,
+    ].join('\n'),
+    html: wrap({
+      eyebrow: 'Group chat',
+      title: 'Welcome back',
+      preheader: 'Your access to the group chat has been restored.',
+      body:
+        paragraph('Your access to the group chat has been restored.') +
+        paragraph('Join again from the site — you’ll get a fresh sign-in code by email.'),
+    }),
+  })
+}
+
 export function notifyNewBooking(booking) {
   // to Nate
   send({

@@ -25,9 +25,14 @@ const POLL_MS = 6000
 export default function GroupChat() {
   const [stage, setStage] = useState('loading') // loading | email | code | chat | link | off
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [method, setMethod] = useState('email') // email | phone
+  const [canPhone, setCanPhone] = useState(false)
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
   const [messages, setMessages] = useState([])
+  const [topics, setTopics] = useState([])
+  const [popped, setPopped] = useState(false)
   const [draft, setDraft] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -42,6 +47,11 @@ export default function GroupChat() {
       // Server unreachable or the backend isn't configured — fall back to
       // a link if there is one, otherwise hide rather than show a dead box.
       .catch(() => setStage(groupChat.joinUrl ? 'link' : 'off'))
+
+    // Phone sign-in is offered only when the server has SMS set up.
+    call('/join-options')
+      .then((o) => setCanPhone(Boolean(o.phone)))
+      .catch(() => setCanPhone(false))
   }, [])
 
   // Poll while open. Cheap at this scale, and avoids holding a socket for
@@ -71,12 +81,31 @@ export default function GroupChat() {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight
   }, [messages])
 
+  // Discussion topics the admin pins from the dashboard. Circle mode has
+  // no such endpoint — a failed fetch just means no strip.
+  useEffect(() => {
+    if (stage !== 'chat') return
+    call('/topics')
+      .then((d) => setTopics(Array.isArray(d.topics) ? d.topics : []))
+      .catch(() => setTopics([]))
+  }, [stage])
+
+  // Escape docks the popped-out chat.
+  useEffect(() => {
+    if (!popped) return
+    const onKey = (e) => e.key === 'Escape' && setPopped(false)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [popped])
+
+  const identity = () => (method === 'phone' ? { phone } : { email })
+
   async function requestCode(e) {
     e.preventDefault()
     setError('')
     setBusy(true)
     try {
-      await call('/request-code', { method: 'POST', body: { email, name } })
+      await call('/request-code', { method: 'POST', body: { ...identity(), name } })
       setStage('code')
     } catch (err) {
       setError(err.message)
@@ -90,7 +119,7 @@ export default function GroupChat() {
     setError('')
     setBusy(true)
     try {
-      await call('/verify', { method: 'POST', body: { email, code } })
+      await call('/verify', { method: 'POST', body: { ...identity(), code } })
       setStage('chat')
     } catch (err) {
       setError(err.message)
@@ -149,7 +178,17 @@ export default function GroupChat() {
 
       {meet}
 
-      <div className="chat__card">
+      <div className={`chat__card${popped ? ' chat__card--popped' : ''}`}>
+        {stage === 'chat' && (
+          <button
+            type="button"
+            className="chat__pop mono"
+            onClick={() => setPopped(!popped)}
+            aria-label={popped ? 'Dock the chat back into the page' : 'Pop the chat out'}
+          >
+            {popped ? 'Dock' : 'Pop out'}
+          </button>
+        )}
         {stage !== 'chat' && (
           <div className="chat__intro">
             <p className="chat__desc">{groupChat.description}</p>
@@ -172,6 +211,25 @@ export default function GroupChat() {
 
         {stage === 'email' && (
           <form className="chat__form" onSubmit={requestCode}>
+            {canPhone && (
+              <div className="chat__method" role="group" aria-label="How to get your code">
+                <button
+                  type="button"
+                  className={method === 'email' ? 'is-active' : ''}
+                  onClick={() => setMethod('email')}
+                >
+                  Email
+                </button>
+                <button
+                  type="button"
+                  className={method === 'phone' ? 'is-active' : ''}
+                  onClick={() => setMethod('phone')}
+                >
+                  Phone
+                </button>
+              </div>
+            )}
+
             <div className="chat__fields">
               <div className="field">
                 <label htmlFor="chat-name">Your name</label>
@@ -183,18 +241,34 @@ export default function GroupChat() {
                   maxLength={60}
                 />
               </div>
-              <div className="field">
-                <label htmlFor="chat-email">Email</label>
-                <input
-                  id="chat-email"
-                  type="email"
-                  required
-                  inputMode="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
+              {method === 'phone' ? (
+                <div className="field">
+                  <label htmlFor="chat-phone">Phone</label>
+                  <input
+                    id="chat-phone"
+                    type="tel"
+                    required
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="+1 902 555 0134"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
+                </div>
+              ) : (
+                <div className="field">
+                  <label htmlFor="chat-email">Email</label>
+                  <input
+                    id="chat-email"
+                    type="email"
+                    required
+                    inputMode="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
 
             {error && <p className="chat__error">{error}</p>}
@@ -204,7 +278,8 @@ export default function GroupChat() {
               <ArrowRight width={16} height={16} />
             </button>
             <p className="chat__fine mono">
-              We email a 6-digit code to check it's really you. No password.
+              We {method === 'phone' ? 'text' : 'email'} a 6-digit code to check it's
+              really you. No password.
             </p>
           </form>
         )}
@@ -212,7 +287,9 @@ export default function GroupChat() {
         {stage === 'code' && (
           <form className="chat__form" onSubmit={verify}>
             <div className="field">
-              <label htmlFor="chat-code">Code sent to {email}</label>
+              <label htmlFor="chat-code">
+                Code sent to {method === 'phone' ? phone : email}
+              </label>
               <input
                 id="chat-code"
                 inputMode="numeric"
@@ -238,20 +315,33 @@ export default function GroupChat() {
                 setError('')
               }}
             >
-              Use a different email
+              Use a different {method === 'phone' ? 'number' : 'email'}
             </button>
           </form>
         )}
 
         {stage === 'chat' && (
           <div className="chat__room">
+            {topics.length > 0 && (
+              <div className="chat__topics">
+                <span className="chat__topics-label mono">On the table</span>
+                <ul>
+                  {topics.map((t) => (
+                    <li key={t}>{t}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="chat__log" ref={listRef}>
               {messages.length === 0 ? (
                 <p className="chat__empty">Nothing here yet. Say the first thing.</p>
               ) : (
                 messages.map((m) => (
-                  <article className="chat__msg" key={m.id}>
-                    <p className="chat__msg-who mono">{m.authorName}</p>
+                  <article
+                    className={`chat__msg${m.mine ? ' chat__msg--mine' : ''}`}
+                    key={m.id}
+                  >
+                    {!m.mine && <p className="chat__msg-who mono">{m.authorName}</p>}
                     <p className="chat__msg-body">{m.body}</p>
                   </article>
                 ))

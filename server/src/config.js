@@ -132,6 +132,14 @@ export const config = {
     durationMinutes: Number(optional('SESSION_MINUTES', '45')),
   },
 
+  // Twilio SMS. Optional — without credentials, joining the chat by phone
+  // simply isn't offered and email codes carry on as before.
+  sms: {
+    accountSid: optional('TWILIO_ACCOUNT_SID'),
+    authToken: optional('TWILIO_AUTH_TOKEN'),
+    from: optional('TWILIO_FROM'),
+  },
+
   // Circle.so community chat. Optional — leave the token blank and the
   // chat section simply reports itself as unconfigured instead of breaking.
   circle: {

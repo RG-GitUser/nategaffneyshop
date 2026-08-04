@@ -108,6 +108,79 @@ bookingsRouter.get('/taken', async (_req, res, next) => {
   }
 })
 
+/**
+ * Admin — book someone in by hand, alongside the public request flow.
+ * Optionally creates the Google Calendar event + Meet room right away
+ * and optionally emails the customer, so it covers both "we agreed on a
+ * time over DM" and "just block the slot quietly".
+ */
+const adminCreateSchema = createSchema.extend({
+  status: z.enum(['pending', 'confirmed']).default('confirmed'),
+  createEvent: z.boolean().default(true),
+  notifyCustomer: z.boolean().default(true),
+})
+
+bookingsRouter.post('/admin', requireAdmin, async (req, res, next) => {
+  try {
+    const parsed = adminCreateSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ error: 'Invalid booking', details: parsed.error.flatten() })
+    }
+    const { status, createEvent, notifyCustomer, ...fields } = parsed.data
+
+    const taken = await collections.bookings().findOne({
+      date: fields.date,
+      time: fields.time,
+      status: { $in: ['pending', 'confirmed'] },
+    })
+    if (taken) {
+      return res.status(409).json({ error: 'Another booking already holds that slot' })
+    }
+
+    const doc = {
+      ...fields,
+      status,
+      adminCreated: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+
+    const warnings = []
+    if (
+      status === 'confirmed' &&
+      createEvent &&
+      (await googleConnected().catch(() => false))
+    ) {
+      try {
+        const ev = await createBookingEvent(doc)
+        doc.googleEventId = ev.eventId
+        if (ev.meetUrl) doc.meetUrl = ev.meetUrl
+      } catch (gErr) {
+        console.error('[google] calendar sync failed:', gErr.message)
+        warnings.push(`Calendar event not created: ${gErr.message}`)
+      }
+    }
+
+    const { insertedId } = await collections.bookings().insertOne(doc)
+    const saved = { ...doc, _id: insertedId }
+
+    // Only a confirmation is worth a customer email — a pending manual
+    // entry is Nate's own bookkeeping, not news to the customer.
+    if (notifyCustomer && status === 'confirmed') notifyBookingConfirmed(saved)
+
+    await audit(req.admin.email, 'booking.create', {
+      id: insertedId.toString(),
+      status,
+      createEvent,
+    })
+    res.status(201).json({ ...toClient(saved), warnings })
+  } catch (err) {
+    next(err)
+  }
+})
+
 /** Admin — full list, newest first, optionally filtered by status. */
 bookingsRouter.get('/', requireAdmin, async (req, res, next) => {
   try {

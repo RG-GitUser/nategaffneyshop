@@ -7,12 +7,43 @@ export default function AccountPanel({ notify, me }) {
   const [confirm, setConfirm] = useState('')
   const [busy, setBusy] = useState(false)
   const [google, setGoogle] = useState(null)
+  const [cal, setCal] = useState(null) // editable copy of the calendar options
+  const [savingCal, setSavingCal] = useState(false)
 
-  const loadGoogle = () => api.googleStatus().then(setGoogle).catch(() => setGoogle(null))
+  const loadGoogle = () =>
+    api
+      .googleStatus()
+      .then((g) => {
+        setGoogle(g)
+        setCal({
+          calendarId: g.calendarId,
+          timeZone: g.timeZone,
+          durationMinutes: g.durationMinutes,
+        })
+      })
+      .catch(() => setGoogle(null))
   useEffect(() => {
     loadGoogle()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  async function saveCalendarSettings(e) {
+    e.preventDefault()
+    setSavingCal(true)
+    try {
+      await api.googleSaveSettings({
+        calendarId: cal.calendarId.trim(),
+        timeZone: cal.timeZone.trim(),
+        durationMinutes: Number(cal.durationMinutes),
+      })
+      notify('Calendar settings saved. New events use them right away.')
+      loadGoogle()
+    } catch (err) {
+      notify(err.message, 'error')
+    } finally {
+      setSavingCal(false)
+    }
+  }
 
   async function connectGoogle() {
     try {
@@ -121,52 +152,89 @@ export default function AccountPanel({ notify, me }) {
         </form>
       </section>
 
-      <section className="adm-group" style={{ maxWidth: 480 }}>
-        <h3 className="adm-h3">Google Calendar</h3>
+      {/* Only rendered once GOOGLE_CLIENT_ID / SECRET exist on the server —
+          until then the section would just be setup instructions. */}
+      {google?.configured && (
+        <section className="adm-group" style={{ maxWidth: 480 }}>
+          <h3 className="adm-h3">Google Calendar</h3>
 
-        {!google ? (
-          <p className="adm-sub">Checking…</p>
-        ) : !google.configured ? (
-          <p className="adm-sub">
-            Not set up on the server yet. Add <code>GOOGLE_CLIENT_ID</code> and{' '}
-            <code>GOOGLE_CLIENT_SECRET</code> to <code>server/.env</code>, then
-            reload this page.
-          </p>
-        ) : google.connected ? (
-          <>
-            <p className="adm-sub">
-              Connected. Confirming a booking now creates a calendar event, mints a
-              Google Meet room, and emails the invite. Events go on{' '}
-              <strong>{google.calendarId}</strong> in {google.timeZone}, lasting{' '}
-              {google.durationMinutes} minutes.
-            </p>
-            <button className="adm-mini adm-mini--danger" onClick={disconnectGoogle}>
-              Disconnect
-            </button>
-          </>
-        ) : (
-          <>
-            <p className="adm-sub">
-              Connect once and every confirmed booking gets a Meet link and a
-              calendar invite automatically.
-            </p>
-            <button className="btn btn--primary adm-save" onClick={connectGoogle}>
-              Connect Google Calendar
-            </button>
-          </>
-        )}
-      </section>
+          {google.connected ? (
+            <>
+              <p className="adm-sub">
+                Connected{google.accountEmail ? (
+                  <>
+                    {' '}as <strong>{google.accountEmail}</strong>
+                  </>
+                ) : null}
+                . Confirming a booking creates a calendar event, mints a Google
+                Meet room, and emails the invite.
+              </p>
 
-      <section className="adm-group" style={{ maxWidth: 480 }}>
-        <h3 className="adm-h3">Locked out?</h3>
-        <p className="adm-sub">
-          There is no password reset email — on purpose, since that would be
-          another way in. Reset it on the server instead:
-        </p>
-        <pre className="adm-pre">
-          cd server{'\n'}npm run create-admin -- {me.email} "new passphrase"
-        </pre>
-      </section>
+              <form className="adm-form" onSubmit={saveCalendarSettings}>
+                <div className="adm-grid">
+                  <div className="adm-field">
+                    <label htmlFor="g-cal">Calendar</label>
+                    <input
+                      id="g-cal"
+                      value={cal?.calendarId ?? ''}
+                      onChange={(e) => setCal({ ...cal, calendarId: e.target.value })}
+                      placeholder="primary"
+                    />
+                  </div>
+                  <div className="adm-field">
+                    <label htmlFor="g-tz">Time zone</label>
+                    <input
+                      id="g-tz"
+                      value={cal?.timeZone ?? ''}
+                      onChange={(e) => setCal({ ...cal, timeZone: e.target.value })}
+                      placeholder="America/Halifax"
+                    />
+                  </div>
+                  <div className="adm-field">
+                    <label htmlFor="g-dur">Session length (minutes)</label>
+                    <input
+                      id="g-dur"
+                      type="number"
+                      min={15}
+                      max={240}
+                      step={5}
+                      value={cal?.durationMinutes ?? 45}
+                      onChange={(e) => setCal({ ...cal, durationMinutes: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <p className="adm-muted">
+                  "primary" is the connected account's main calendar. To use another
+                  calendar, paste its ID from Google Calendar → Settings → "Integrate
+                  calendar".
+                </p>
+                <div className="adm-actions">
+                  <button className="btn btn--primary adm-save" disabled={savingCal}>
+                    {savingCal ? 'Saving…' : 'Save calendar settings'}
+                  </button>
+                  <button
+                    type="button"
+                    className="adm-mini adm-mini--danger"
+                    onClick={disconnectGoogle}
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              </form>
+            </>
+          ) : (
+            <>
+              <p className="adm-sub">
+                Connect once and every confirmed booking gets a Meet link and a
+                calendar invite automatically.
+              </p>
+              <button className="btn btn--primary adm-save" onClick={connectGoogle}>
+                Connect Google Calendar
+              </button>
+            </>
+          )}
+        </section>
+      )}
     </div>
   )
 }

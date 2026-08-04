@@ -640,7 +640,7 @@
   padding: 8px 11px;
   border-radius: var(--r-sm);
   border: 1px solid var(--red);
-  background: rgba(108, 30, 5, 0.12);
+  background: rgba(80, 13, 13, 0.12);
   color: var(--red);
   font-size: 0.8rem;
 }
@@ -937,7 +937,7 @@
   padding: 12px 15px;
   border-radius: var(--r-md);
   border: 1px solid var(--red);
-  background: rgba(108, 30, 5, 0.12);
+  background: rgba(80, 13, 13, 0.12);
   color: var(--red);
   font-size: 0.88rem;
 }
@@ -965,6 +965,8 @@
 .booking__done {
   padding: clamp(26px, 5vw, 36px);
   text-align: center;
+  background: var(--navy-fill);
+  border-radius: var(--r-lg);
 }
 
 .booking__done-title {
@@ -973,7 +975,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--accent);
+  color: var(--on-navy);
 }
 
 .booking__done-when {
@@ -981,12 +983,13 @@
   font-family: var(--mono);
   font-size: 0.8rem;
   letter-spacing: 0.06em;
+  color: rgba(235, 229, 216, 0.85);
 }
 
 .booking__done-note {
   margin-top: 14px;
   font-size: 0.86rem;
-  color: var(--ink-soft);
+  color: rgba(235, 229, 216, 0.72);
   max-width: 44ch;
   margin-inline: auto;
 }
@@ -1042,11 +1045,61 @@
 
 
 .chat__card {
+  position: relative; /* anchors the pop-out toggle */
   border-radius: var(--r-xl);
   background: var(--surface);
   border: 1px solid var(--line);
   border-left: 3px solid var(--accent);
   overflow: hidden;
+}
+
+/* Popped out: the same card, floated to the corner of the viewport so
+   people can keep chatting while they scroll the rest of the page. */
+.chat__card--popped {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 85;
+  width: min(430px, calc(100vw - 24px));
+  height: min(660px, 88dvh);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+}
+
+.chat__card--popped .chat__room {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.chat__card--popped .chat__log {
+  flex: 1;
+  height: auto;
+  min-height: 200px;
+}
+
+.chat__pop {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 2;
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  transition: color 0.16s var(--ease), border-color 0.16s var(--ease);
+}
+
+.chat__pop:hover {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .chat__intro {
@@ -1062,6 +1115,34 @@
 
 .chat__form {
   padding: clamp(20px, 4vw, 28px);
+}
+
+/* Email ⇄ phone switch for getting the sign-in code */
+.chat__method {
+  display: inline-flex;
+  gap: 2px;
+  margin-bottom: 16px;
+  padding: 2px;
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+}
+
+.chat__method button {
+  padding: 6px 16px;
+  border-radius: calc(var(--r-md) - 2px);
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.chat__method button.is-active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
 }
 
 .chat__fields {
@@ -1115,7 +1196,7 @@
   padding: 11px 14px;
   border-radius: var(--r-md);
   border: 1px solid var(--red);
-  background: rgba(108, 30, 5, 0.12);
+  background: rgba(80, 13, 13, 0.12);
   color: var(--red);
   font-size: 0.86rem;
 }
@@ -1123,6 +1204,43 @@
 /* ---- the room ---- */
 .chat__room {
   padding: clamp(18px, 3.5vw, 24px);
+}
+
+/* Pinned discussion topics, set from the admin dashboard */
+.chat__topics {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.chat__topics-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.chat__topics ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+}
+
+.chat__topics li {
+  list-style: none;
+  padding: 4px 12px;
+  border-radius: var(--r-pill);
+  border: 1px dashed var(--accent-border);
+  color: var(--accent);
+  font-size: 0.8rem;
 }
 
 .chat__log {
@@ -1141,7 +1259,19 @@
   color: var(--ink-faint);
 }
 
+/* Bubbles: yours ride right in navy, everyone else's sit left in a
+   neutral wash, so whose-is-whose reads at a glance. */
+.chat__msg {
+  max-width: 82%;
+  align-self: flex-start;
+}
+
+.chat__msg--mine {
+  align-self: flex-end;
+}
+
 .chat__msg-who {
+  margin: 0 0 4px 6px;
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -1150,12 +1280,22 @@
 }
 
 .chat__msg-body {
-  margin-top: 4px;
+  padding: 9px 14px;
+  border-radius: 4px 14px 14px 14px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
   font-size: 0.95rem;
   line-height: 1.6;
   color: var(--ink-2);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+.chat__msg--mine .chat__msg-body {
+  background: var(--navy-fill);
+  border-color: var(--navy-fill);
+  color: var(--on-navy);
+  border-radius: 14px 4px 14px 14px;
 }
 
 .chat__composer {
@@ -1255,9 +1395,20 @@
   padding: 12px 14px;
   border-radius: var(--r-md);
   border: 1px solid var(--red);
-  background: rgba(108, 30, 5, 0.08);
+  background: rgba(80, 13, 13, 0.08);
   color: var(--red);
   font-size: 0.9rem;
+}
+
+/* Success flips the whole card to navy — unmistakably a different state
+   from the white checkout form it replaces. */
+.pay__card--paid {
+  background: var(--navy-fill);
+  border-top-color: var(--navy-fill);
+}
+
+.pay__card--paid .pay__close {
+  color: rgba(235, 229, 216, 0.8);
 }
 
 .pay__done-title {
@@ -1266,13 +1417,13 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--red);
+  color: var(--on-navy);
 }
 
 .pay__done-note {
   margin: 10px 0 18px;
   font-size: 0.92rem;
-  color: #6b6b6b;
+  color: rgba(235, 229, 216, 0.75);
 }
 
 .pay__frame {
@@ -1441,8 +1592,9 @@
   margin-top: 22px;
   padding: 16px 18px;
   border-radius: var(--r-md);
-  background: var(--bg);
-  border: 1px solid var(--accent);
+  background: var(--navy-fill);
+  border: 1px solid var(--navy-fill);
+  color: var(--on-navy);
   font-weight: 500;
   font-size: 0.92rem;
 }

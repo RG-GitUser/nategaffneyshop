@@ -74,9 +74,22 @@ export const api = {
   googleStatus: () => request('/google/status'),
   googleConnect: () => request('/google/connect'),
   googleDisconnect: () => request('/google/disconnect', { method: 'POST' }),
+  googleSaveSettings: (settings) =>
+    request('/google/settings', { method: 'PUT', body: settings }),
+  createBooking: (booking) => request('/bookings/admin', { method: 'POST', body: booking }),
 
   // analytics
   metricsSummary: (days = 30) => request(`/metrics/summary?days=${days}`),
+
+  // community
+  chatMembers: () => request('/chat/admin/members'),
+  chatBanMember: (email) => request('/chat/admin/ban', { method: 'POST', body: { email } }),
+  chatUnbanMember: (email) => request('/chat/admin/unban', { method: 'POST', body: { email } }),
+  chatHistory: () => request('/chat/admin/messages'),
+  chatRemoveMessage: (id) => request(`/chat/admin/messages/${id}`, { method: 'DELETE' }),
+  chatSettings: () => request('/chat/admin/settings'),
+  saveChatSettings: (settings) =>
+    request('/chat/admin/settings', { method: 'PUT', body: settings }),
 
   // media
   uploadImage: (file, slot) => {

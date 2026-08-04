@@ -1,13 +1,39 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
+import { StatusBar } from './charts.jsx'
 
 const STATUSES = ['pending', 'confirmed', 'completed', 'cancelled']
+
+const STATUS_COLORS = {
+  pending: 'var(--amber)',
+  confirmed: 'var(--olive)',
+  completed: 'var(--viz-1)',
+  cancelled: 'var(--red)',
+}
+
+const EMPTY_DRAFT = {
+  name: '',
+  email: '',
+  date: '',
+  time: '',
+  note: '',
+  status: 'confirmed',
+  createEvent: true,
+  notifyCustomer: true,
+}
 
 export default function BookingsPanel({ notify }) {
   const [rows, setRows] = useState([])
   const [filter, setFilter] = useState('')
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(null) // { id, date, time }
+  const [draft, setDraft] = useState(null) // manual-booking modal state
+  const [creating, setCreating] = useState(false)
+  const [googleOn, setGoogleOn] = useState(false)
+
+  useEffect(() => {
+    api.googleStatus().then((g) => setGoogleOn(Boolean(g.connected))).catch(() => {})
+  }, [])
 
   async function load() {
     setLoading(true)
@@ -64,22 +90,167 @@ export default function BookingsPanel({ notify }) {
     <div>
       <div className="adm-panel-head">
         <div>
-          <h2 className="adm-h2 adm-h2--serif">Calendar</h2>
-          <p className="adm-sub">Confirm, reschedule or cancel booking requests.</p>
+          <h2 className="adm-h2">Calendar</h2>
+          <p className="adm-sub">
+            Confirm, reschedule or cancel requests — or book someone in yourself.
+          </p>
         </div>
-        <select
-          className="adm-select"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-        >
-          <option value="">All statuses</option>
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
+        <div className="adm-inline">
+          <button className="btn btn--primary adm-save" onClick={() => setDraft(EMPTY_DRAFT)}>
+            Add booking
+          </button>
+          <select
+            className="adm-select"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          >
+            <option value="">All statuses</option>
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
+
+      {draft && (
+        <div className="adm-modal" onClick={(e) => e.target === e.currentTarget && setDraft(null)}>
+          <div className="adm-modal__card adm-modal__card--wide">
+            <h3 className="adm-h3">New booking</h3>
+            <form
+              className="adm-form"
+              onSubmit={async (e) => {
+                e.preventDefault()
+                setCreating(true)
+                try {
+                  const result = await api.createBooking({
+                    ...draft,
+                    createEvent: googleOn && draft.createEvent,
+                  })
+                  for (const w of result.warnings || []) notify(w, 'error')
+                  notify(
+                    draft.status === 'confirmed'
+                      ? 'Booking added and confirmed.'
+                      : 'Booking added as pending.',
+                  )
+                  setDraft(null)
+                  load()
+                } catch (err) {
+                  notify(err.message, 'error')
+                } finally {
+                  setCreating(false)
+                }
+              }}
+            >
+              <div className="adm-grid">
+                <div className="adm-field">
+                  <label htmlFor="nb-name">Name</label>
+                  <input
+                    id="nb-name"
+                    required
+                    maxLength={120}
+                    value={draft.name}
+                    onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                  />
+                </div>
+                <div className="adm-field">
+                  <label htmlFor="nb-email">Email</label>
+                  <input
+                    id="nb-email"
+                    type="email"
+                    required
+                    value={draft.email}
+                    onChange={(e) => setDraft({ ...draft, email: e.target.value })}
+                  />
+                </div>
+                <div className="adm-field">
+                  <label htmlFor="nb-date">Date</label>
+                  <input
+                    id="nb-date"
+                    type="date"
+                    required
+                    value={draft.date}
+                    onChange={(e) => setDraft({ ...draft, date: e.target.value })}
+                  />
+                </div>
+                <div className="adm-field">
+                  <label htmlFor="nb-time">Time</label>
+                  <input
+                    id="nb-time"
+                    required
+                    placeholder="1:00 PM"
+                    maxLength={20}
+                    value={draft.time}
+                    onChange={(e) => setDraft({ ...draft, time: e.target.value })}
+                  />
+                </div>
+                <div className="adm-field">
+                  <label htmlFor="nb-status">Status</label>
+                  <select
+                    id="nb-status"
+                    value={draft.status}
+                    onChange={(e) => setDraft({ ...draft, status: e.target.value })}
+                  >
+                    <option value="confirmed">confirmed</option>
+                    <option value="pending">pending</option>
+                  </select>
+                </div>
+                <div className="adm-field adm-field--wide">
+                  <label htmlFor="nb-note">Note</label>
+                  <textarea
+                    id="nb-note"
+                    rows={2}
+                    maxLength={2000}
+                    value={draft.note}
+                    onChange={(e) => setDraft({ ...draft, note: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              {googleOn && draft.status === 'confirmed' && (
+                <label className="adm-check">
+                  <input
+                    type="checkbox"
+                    checked={draft.createEvent}
+                    onChange={(e) => setDraft({ ...draft, createEvent: e.target.checked })}
+                  />
+                  Create the calendar event + Google Meet link now
+                </label>
+              )}
+              <label className="adm-check">
+                <input
+                  type="checkbox"
+                  checked={draft.notifyCustomer}
+                  onChange={(e) => setDraft({ ...draft, notifyCustomer: e.target.checked })}
+                />
+                Email the customer {draft.status === 'confirmed' ? 'their confirmation' : ''}
+              </label>
+
+              <div className="adm-modal__actions">
+                <button type="button" className="adm-mini" onClick={() => setDraft(null)}>
+                  Cancel
+                </button>
+                <button className="btn btn--primary adm-save" disabled={creating}>
+                  {creating ? 'Adding…' : 'Add booking'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {!loading && filter === '' && rows.length > 0 && (
+        <div className="adm-statusbar-block">
+          <StatusBar
+            items={STATUSES.filter((s) => rows.some((b) => b.status === s)).map((s) => ({
+              label: s,
+              value: rows.filter((b) => b.status === s).length,
+              color: STATUS_COLORS[s],
+            }))}
+          />
+        </div>
+      )}
 
       {loading ? (
         <p className="adm-muted">Loading…</p>

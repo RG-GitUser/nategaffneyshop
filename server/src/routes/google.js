@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { randomBytes } from 'node:crypto'
+import { z } from 'zod'
 import { config } from '../config.js'
 import { audit } from '../db.js'
 import { requireAdmin } from '../middleware/auth.js'
@@ -9,6 +10,8 @@ import {
   authUrl,
   exchangeCode,
   disconnect,
+  calendarSettings,
+  saveCalendarSettings,
 } from '../google.js'
 
 export const googleRouter = Router()
@@ -26,13 +29,42 @@ const STATE_COOKIE = 'ng_gstate'
 
 googleRouter.get('/status', requireAdmin, async (_req, res, next) => {
   try {
+    const settings = await calendarSettings()
     res.json({
       configured: googleConfigured(),
       connected: await isConnected(),
-      calendarId: config.google.calendarId,
-      timeZone: config.google.timeZone,
-      durationMinutes: config.google.durationMinutes,
+      ...settings,
     })
+  } catch (err) {
+    next(err)
+  }
+})
+
+/** Calendar options, editable from the dashboard. */
+googleRouter.put('/settings', requireAdmin, async (req, res, next) => {
+  try {
+    const parsed = z
+      .object({
+        calendarId: z.string().trim().min(1).max(200),
+        timeZone: z.string().trim().min(1).max(64),
+        durationMinutes: z.number().int().min(15).max(240),
+      })
+      .safeParse(req.body)
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Invalid settings', details: parsed.error.flatten() })
+    }
+
+    // Reject a timezone the runtime doesn't know — a typo here would
+    // otherwise put every future event at the wrong hour.
+    try {
+      new Intl.DateTimeFormat('en', { timeZone: parsed.data.timeZone })
+    } catch {
+      return res.status(400).json({ error: `Unknown time zone "${parsed.data.timeZone}"` })
+    }
+
+    await saveCalendarSettings(parsed.data)
+    await audit(req.admin.email, 'google.settings', parsed.data)
+    res.json({ ok: true })
   } catch (err) {
     next(err)
   }
@@ -62,16 +94,37 @@ googleRouter.get('/connect', requireAdmin, (req, res) => {
  *  state nonce is what proves this callback belongs to the person who
  *  started the flow. */
 googleRouter.get('/callback', async (req, res, next) => {
-  const done = (msg, ok) =>
+  // This page renders on the API origin, so it can't use the site's CSS —
+  // it fakes the same look (bone paper, serif, navy/oxblood accents) inline.
+  const site = config.allowedOrigins[0] || ''
+  const done = (msg, ok) => {
+    const accent = ok ? '#05192b' : '#500d0d'
     res
       .status(ok ? 200 : 400)
       .type('html')
       .send(
-        `<!doctype html><meta charset="utf-8"><title>Google Calendar</title>` +
-          `<body style="font-family:system-ui;max-width:34rem;margin:14vh auto;padding:0 1.5rem;line-height:1.6">` +
-          `<h1 style="font-size:1.4rem">${ok ? 'Calendar connected' : 'Could not connect'}</h1>` +
-          `<p>${msg}</p><p><a href="/admin/">Back to the dashboard</a></p></body>`,
+        `<!doctype html><html lang="en"><head><meta charset="utf-8">` +
+          `<meta name="viewport" content="width=device-width, initial-scale=1">` +
+          `<meta name="robots" content="noindex">` +
+          `<title>${ok ? 'Calendar connected' : 'Could not connect'}</title></head>` +
+          `<body style="margin:0;min-height:100vh;display:grid;place-items:center;` +
+          `background:#f1ede4;color:#120b07;font-family:Garamond,Georgia,'Times New Roman',serif;">` +
+          `<main style="max-width:26rem;margin:24px;padding:40px 36px;background:#f6f3ed;` +
+          `border:1px solid #d8d5cf;border-left:4px solid ${accent};border-radius:14px;` +
+          `box-shadow:0 12px 34px rgba(18,11,7,.16);">` +
+          `<p style="margin:0;font-size:11px;font-weight:700;letter-spacing:2px;` +
+          `text-transform:uppercase;color:${accent};font-family:ui-sans-serif,system-ui,sans-serif;">` +
+          `Google Calendar</p>` +
+          `<h1 style="margin:10px 0 0;font-size:28px;font-weight:600;letter-spacing:.02em;">` +
+          `${ok ? 'Calendar connected' : 'Could not connect'}</h1>` +
+          `<p style="margin:14px 0 0;font-size:17px;line-height:1.6;color:#605952;">${msg}</p>` +
+          `<a href="${site}/admin/" style="display:inline-block;margin-top:26px;padding:12px 24px;` +
+          `background:#05192b;color:#ebe5d8;text-decoration:none;border-radius:6px;` +
+          `font-family:ui-sans-serif,system-ui,sans-serif;font-size:14px;font-weight:600;">` +
+          `Back to the dashboard</a>` +
+          `</main></body></html>`,
       )
+  }
 
   try {
     if (req.query.error) return done(`Google said: ${req.query.error}`, false)

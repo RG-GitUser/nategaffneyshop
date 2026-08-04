@@ -12,8 +12,9 @@
 
      #EBE5D8  bone
      #120B07  near-black
-     #C45E18  orange
-     #6C1E05  rust
+     #7D2800  sienna (the "orange" slot — burnt, darker than it used to be)
+     #05192B  navy (the accent that does the talking)
+     #500D0D  oxblood — errors and danger states only, never decoration
 
    Every surface, line and muted tone below is one of those four mixed
    with another of them. Nothing new is introduced, so the whole page
@@ -24,8 +25,9 @@
 :root {
   --bone: #ebe5d8;
   --black: #120b07;
-  --orange: #c45e18;
-  --red: #6c1e05; /* the deep almost-red, used straight */
+  --orange: #7d2800;
+  --navy: #05192b; /* accent text, borders, links */
+  --red: #500d0d; /* errors and danger states only */
   --chocolate: #2b2018; /* warm dark brown — the dark theme's ground */
 
   /* ---- LIGHT ---- lighter all round, and the containers pull toward
@@ -58,28 +60,35 @@
        red        accent text, labels, links, small marks
        chocolate  the deep end of gradients and the darkest card accent
 
-     Orange as small text on bone is only 3.3:1, which is why the red does
-     the talking. On an orange fill the near-black sits at 4.5:1, where
-     white would be 4.2:1 — so text on orange is dark, not light. */
-  --accent: var(--red);
-  --accent-hi: #c86c2b; /* mix(bone 10%, orange) */
+     The sienna fill is dark now, so text sitting on it flipped from
+     near-black to bone: bone reads 7.7:1 on the fill, where near-black
+     only manages 2:1. Navy is the talking accent — 15.2:1 on the page. */
+  /* Navy as a solid FILL (success states, admin buttons). Straight navy
+     in light mode; dark mode lifts it, because #05192b against the dark
+     ground is nearly invisible. Bone rides on top in both. */
+  --navy-fill: var(--navy);
+  --navy-fill-hover: #12283c; /* mix(bone 6%, navy)-ish */
+  --on-navy: var(--bone);
+
+  --accent: var(--navy);
+  --accent-hi: #883b16; /* mix(bone 10%, orange) */
   --accent-fill: var(--orange);
   --accent-deep: var(--chocolate);
-  --accent-wash: rgba(196, 94, 24, 0.16);
-  --on-accent: var(--black);
-  --on-accent-tint: #1b0d07; /* mix(on-accent 90%, accent) — featured cta hover */
-  --accent-border: rgba(108, 30, 5, 0.45); /* dashed borders */
+  --accent-wash: rgba(125, 40, 0, 0.16);
+  --on-accent: var(--bone);
+  --on-accent-tint: #d4d1c7; /* mix(on-accent 90%, accent) — featured cta hover */
+  --accent-border: rgba(5, 25, 43, 0.45); /* dashed borders */
 
   /* Card accents are tuned against the CARD surface, not the page — the
      card is a different tone, so the page accent doesn't carry over. */
-  --amber: #9d4c14; /* mix(black 22%, orange) */
-  --amber-wash: rgba(196, 94, 24, 0.16);
-  --umber: var(--red);
-  --umber-wash: rgba(108, 30, 5, 0.14);
+  --amber: #652202; /* mix(black 22%, orange) */
+  --amber-wash: rgba(125, 40, 0, 0.16);
+  --umber: var(--navy);
+  --umber-wash: rgba(5, 25, 43, 0.14);
   --olive: var(--chocolate);
   --olive-wash: rgba(43, 32, 24, 0.12);
-  --card-lead: #743910; /* mix(black 45%, orange) */
-  --card-lead-wash: rgba(196, 94, 24, 0.14);
+  --card-lead: #4d1b03; /* mix(black 45%, orange) */
+  --card-lead-wash: rgba(125, 40, 0, 0.14);
 
   /* Atmosphere. Sized in % rather than vh, so the stack spans the whole
      document instead of stopping partway down. Each layer carries
@@ -87,16 +96,16 @@
      visibly across an area this large. */
   --page-glow: radial-gradient(
       120% 60% at 85% 0%,
-      rgba(196, 94, 24, 0.1) 0%,
-      rgba(196, 94, 24, 0.06) 28%,
-      rgba(196, 94, 24, 0.025) 58%,
+      rgba(125, 40, 0, 0.1) 0%,
+      rgba(125, 40, 0, 0.06) 28%,
+      rgba(125, 40, 0, 0.025) 58%,
       transparent 88%
     ),
     radial-gradient(
       110% 55% at 8% 100%,
-      rgba(108, 30, 5, 0.07) 0%,
-      rgba(108, 30, 5, 0.035) 30%,
-      rgba(108, 30, 5, 0.015) 60%,
+      rgba(5, 25, 43, 0.07) 0%,
+      rgba(5, 25, 43, 0.035) 30%,
+      rgba(5, 25, 43, 0.015) 60%,
       transparent 88%
     );
   --bar-bg: rgba(235, 229, 216, 0.92);
@@ -137,73 +146,77 @@
 }
 
 :root[data-theme='dark'] {
-  /* ---- DARK ---- a grey-leaning dark brown: bone into the near-black
-     rather than the orange-leaning chocolate, so the ground reads taupe.
-     The warmth comes from the glow and the accents sitting on it.
+  /* ---- DARK ---- anchored to #1d150c, a deep coffee-brown just above
+     the near-black. Warmer and darker than the old taupe: the ground
+     recedes and the glow layers supply the slight gradient across it.
+     Same lightness hierarchy as before — inset chips darkest, cards a
+     step under the page, raised surfaces a step over it.
      Literals for the same reason as the light block — color-mix is not
-     available on older mobile browsers. Formulas kept as comments. */
-  --bg: #352e28; /* mix(bone 16%, black) */
-  --bg-2: #1f1814; /* mix(bone 6%, black) */
-  --surface: #28211c; /* mix(bone 10%, black) */
-  --surface-2: #403933; /* mix(bone 21%, black) */
+     available on older mobile browsers. */
+  --bg: #1d150c; /* the anchor */
+  --bg-2: #140d07; /* a step toward black — inset chips */
+  --surface: #171008; /* cards sit just under the page */
+  --surface-2: #2a2013; /* raised: modals, hover states */
 
-  --line: #4d463f; /* mix(bone 27%, black) */
-  --line-2: #645e56; /* mix(bone 38%, black) */
+  --line: #3d3122; /* hairlines against the darker cards */
+  --line-2: #584a33;
 
   --ink: var(--bone);
   --ink-2: #c4beb2; /* mix(bone 82%, black) */
   --ink-soft: #948e84; /* mix(bone 60%, black) */
   --ink-faint: #6d675f; /* mix(bone 42%, black) */
 
-  /* Orange text sits on the taupe ground, which is lighter than the
-     near-black was — plain orange only reaches ~3.8:1 on it, so the text
-     tone is lifted toward bone. Fills stay full orange, near-black text
+  /* Plain navy is far too dark to read as text on this ground, so the
+     accent text tone is lifted well toward bone — 54% clears 4.5:1 on
+     both the page and the cards. Fills stay full sienna with bone text
      on top. */
-  --accent: #d28f5d; /* mix(bone 36%, orange) */
-  --accent-hi: #c96e2f; /* mix(bone 12%, orange) */
+  --navy-fill: #213240; /* mix(bone 12%, navy) — visible on the dark ground */
+  --navy-fill-hover: #2b3d4d;
+
+  --accent: #818788; /* mix(bone 54%, navy) */
+  --accent-hi: #8a3f1a; /* mix(bone 12%, orange) */
   --accent-fill: var(--orange);
-  --accent-deep: #743910; /* mix(black 45%, orange) */
-  --accent-wash: rgba(196, 94, 24, 0.2);
-  --on-accent: var(--black);
-  --on-accent-tint: #251810; /* mix(on-accent 90%, accent) */
-  --accent-border: rgba(210, 143, 93, 0.45);
+  --accent-deep: #4d1b03; /* mix(black 45%, orange) */
+  --accent-wash: rgba(125, 40, 0, 0.2);
+  --on-accent: var(--bone);
+  --on-accent-tint: #e0dcd0; /* mix(on-accent 90%, accent) */
+  --accent-border: rgba(129, 135, 136, 0.45);
 
   /* Card accents sit on the card surface, not the page — they separate
      by lightness rather than hue, because anything dark enough to read
      as a different colour fails against this surface. */
-  --amber: #cb783c; /* mix(bone 19%, orange) */
-  --amber-wash: rgba(196, 94, 24, 0.22);
-  --umber: #d08752; /* mix(bone 30%, orange) */
-  --umber-wash: rgba(196, 94, 24, 0.18);
-  --olive: #d39161; /* mix(bone 38%, orange) */
-  --olive-wash: rgba(108, 30, 5, 0.26);
-  --card-lead: #cd7c42; /* mix(bone 22%, orange) */
-  --card-lead-wash: rgba(196, 94, 24, 0.2);
+  --amber: #9a5938; /* mix(bone 26%, orange) */
+  --amber-wash: rgba(125, 40, 0, 0.22);
+  --umber: #616b70; /* mix(bone 40%, navy) */
+  --umber-wash: rgba(5, 25, 43, 0.35);
+  --olive: #ad7b5f; /* mix(bone 44%, orange) */
+  --olive-wash: rgba(80, 13, 13, 0.26);
+  --card-lead: #9c5d3c; /* mix(bone 28%, orange) */
+  --card-lead-wash: rgba(125, 40, 0, 0.2);
 
-  /* Orange ember off the top-right, red cast rising from the bottom-left,
-     and a lifted bone band across the top. The red layer is free warmth —
-     it darkens the ground, so light text over it gains contrast. The
-     orange layers are what the accent text tone is tuned against. */
+  /* Sienna ember off the top-right, navy cast rising from the bottom-left,
+     and a lifted bone band across the top. Both color layers darken the
+     ground, so light text over them keeps its contrast. */
   --page-glow: radial-gradient(
       120% 60% at 85% 0%,
-      rgba(196, 94, 24, 0.1) 0%,
-      rgba(196, 94, 24, 0.06) 28%,
-      rgba(196, 94, 24, 0.025) 58%,
+      rgba(125, 40, 0, 0.12) 0%,
+      rgba(125, 40, 0, 0.07) 28%,
+      rgba(125, 40, 0, 0.03) 58%,
       transparent 88%
     ),
     radial-gradient(
       110% 55% at 8% 100%,
-      rgba(108, 30, 5, 0.18) 0%,
-      rgba(108, 30, 5, 0.09) 30%,
-      rgba(108, 30, 5, 0.035) 60%,
+      rgba(5, 25, 43, 0.26) 0%,
+      rgba(5, 25, 43, 0.13) 30%,
+      rgba(5, 25, 43, 0.05) 60%,
       transparent 88%
     ),
     linear-gradient(
       180deg,
-      rgba(235, 229, 216, 0.06) 0%,
-      rgba(235, 229, 216, 0.03) 14%,
-      rgba(235, 229, 216, 0.012) 34%,
-      transparent 62%
+      rgba(235, 229, 216, 0.07) 0%,
+      rgba(235, 229, 216, 0.035) 16%,
+      rgba(235, 229, 216, 0.015) 36%,
+      transparent 64%
     );
   --bar-bg: rgba(18, 11, 7, 0.88);
   --grain-blend: overlay;

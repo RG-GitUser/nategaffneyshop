@@ -127,7 +127,7 @@ export default function CheckoutModal({ itemId, title, onClose }) {
   return createPortal(
     <div className="pay" role="dialog" aria-modal="true" aria-label={`Buy ${title}`}>
       <div className="pay__scrim" onClick={state === 'ready' ? undefined : onClose} />
-      <div className="pay__card">
+      <div className={`pay__card${state === 'paid' ? ' pay__card--paid' : ''}`}>
         <button className="pay__close" onClick={onClose} aria-label="Close checkout">
           ×
         </button>

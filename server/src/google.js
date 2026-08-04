@@ -17,7 +17,9 @@ const OAUTH_AUTH = 'https://accounts.google.com/o/oauth2/v2/auth'
 const OAUTH_TOKEN = 'https://oauth2.googleapis.com/token'
 const CAL_BASE = 'https://www.googleapis.com/calendar/v3'
 
-const SCOPES = ['https://www.googleapis.com/auth/calendar.events']
+// openid+email add nothing to what we can DO — they only let us show
+// which Google account is connected in the dashboard.
+const SCOPES = ['https://www.googleapis.com/auth/calendar.events', 'openid', 'email']
 
 export const googleConfigured = () =>
   Boolean(config.google.clientId && config.google.clientSecret)
@@ -26,6 +28,29 @@ const SETTINGS_ID = 'google'
 
 async function loadTokens() {
   return collections.settings().findOne({ _id: SETTINGS_ID })
+}
+
+/**
+ * Calendar options, editable from the dashboard. Anything saved there
+ * wins over the .env value; the .env value stays as the default so a
+ * fresh install still works with no settings doc at all.
+ */
+export async function calendarSettings() {
+  const doc = await loadTokens()
+  return {
+    calendarId: doc?.calendarId || config.google.calendarId,
+    timeZone: doc?.timeZone || config.google.timeZone,
+    durationMinutes: doc?.durationMinutes || config.google.durationMinutes,
+    accountEmail: doc?.accountEmail || null,
+  }
+}
+
+export async function saveCalendarSettings({ calendarId, timeZone, durationMinutes }) {
+  await collections.settings().updateOne(
+    { _id: SETTINGS_ID },
+    { $set: { calendarId, timeZone, durationMinutes, settingsUpdatedAt: new Date() } },
+    { upsert: true },
+  )
 }
 
 /** Consent URL. `prompt=consent` + `access_type=offline` is what makes
@@ -66,6 +91,18 @@ export async function exchangeCode(code) {
     )
   }
 
+  // The id_token is a JWT straight from Google's token endpoint over TLS,
+  // so its payload can be read without signature verification here.
+  let accountEmail = null
+  try {
+    const payload = JSON.parse(
+      Buffer.from(data.id_token.split('.')[1], 'base64url').toString(),
+    )
+    accountEmail = payload.email || null
+  } catch {
+    // No email claim — the dashboard just won't show which account it is.
+  }
+
   await collections.settings().updateOne(
     { _id: SETTINGS_ID },
     {
@@ -73,6 +110,7 @@ export async function exchangeCode(code) {
         refreshToken: data.refresh_token,
         connectedAt: new Date(),
         scope: data.scope,
+        accountEmail,
       },
     },
     { upsert: true },
@@ -113,9 +151,8 @@ async function accessToken() {
 
 async function calendarFetch(path, { method = 'GET', body, query } = {}) {
   const token = await accessToken()
-  const url = new URL(
-    `${CAL_BASE}/calendars/${encodeURIComponent(config.google.calendarId)}${path}`,
-  )
+  const { calendarId } = await calendarSettings()
+  const url = new URL(`${CAL_BASE}/calendars/${encodeURIComponent(calendarId)}${path}`)
   for (const [k, v] of Object.entries(query || {})) url.searchParams.set(k, v)
 
   const res = await fetch(url, {
@@ -166,10 +203,10 @@ function endOf(startIso, minutes) {
   return `${datePart}T${pad(Math.floor(total / 60) % 24)}:${pad(total % 60)}:00`
 }
 
-function eventBody(booking, { withConference } = {}) {
+function eventBody(booking, settings, { withConference } = {}) {
   const start = toRfc3339(booking.date, booking.time)
   if (!start) return null
-  const end = endOf(start, config.google.durationMinutes)
+  const end = endOf(start, settings.durationMinutes)
 
   const body = {
     summary: `Coaching — ${booking.name}`,
@@ -182,8 +219,8 @@ function eventBody(booking, { withConference } = {}) {
       `What they want out of it:`,
       booking.note || '(nothing written)',
     ].join('\n'),
-    start: { dateTime: start, timeZone: config.google.timeZone },
-    end: { dateTime: end, timeZone: config.google.timeZone },
+    start: { dateTime: start, timeZone: settings.timeZone },
+    end: { dateTime: end, timeZone: settings.timeZone },
     attendees: [{ email: booking.email, displayName: booking.name }],
     reminders: { useDefault: true },
   }
@@ -203,7 +240,7 @@ function eventBody(booking, { withConference } = {}) {
 
 /** Creates the event with a Meet room and invites the customer. */
 export async function createBookingEvent(booking) {
-  const body = eventBody(booking, { withConference: true })
+  const body = eventBody(booking, await calendarSettings(), { withConference: true })
   if (!body) throw new Error(`Could not read the time "${booking.time}"`)
 
   const event = await calendarFetch('/events', {
@@ -226,7 +263,7 @@ export async function createBookingEvent(booking) {
 }
 
 export async function updateBookingEvent(eventId, booking) {
-  const body = eventBody(booking)
+  const body = eventBody(booking, await calendarSettings())
   if (!body) throw new Error(`Could not read the time "${booking.time}"`)
 
   const event = await calendarFetch(`/events/${encodeURIComponent(eventId)}`, {
