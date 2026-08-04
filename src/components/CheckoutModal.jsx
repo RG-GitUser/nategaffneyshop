@@ -58,7 +58,11 @@ export async function checkoutMode() {
   }
 }
 
-export default function CheckoutModal({ itemId, title, onClose }) {
+/**
+ * Pass either `itemId` (a shop purchase — the session is created here) or
+ * a ready-made `clientSecret` (e.g. a booking payment created upstream).
+ */
+export default function CheckoutModal({ itemId, clientSecret, title, doneNote, onPaid, onClose }) {
   const [state, setState] = useState('loading') // loading | ready | paid | error
   const [error, setError] = useState('')
   const mountRef = useRef(null)
@@ -72,14 +76,18 @@ export default function CheckoutModal({ itemId, title, onClose }) {
         const [cfg] = await Promise.all([getCheckoutConfig(), loadStripeJs()])
         if (cancelled) return
 
-        const res = await fetch(`${API}/api/checkout/session`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ itemId }),
-        })
-        const data = await res.json().catch(() => null)
-        if (!res.ok || !data?.clientSecret) {
-          throw new Error(data?.error || 'Could not start checkout.')
+        let secret = clientSecret
+        if (!secret) {
+          const res = await fetch(`${API}/api/checkout/session`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ itemId }),
+          })
+          const data = await res.json().catch(() => null)
+          if (!res.ok || !data?.clientSecret) {
+            throw new Error(data?.error || 'Could not start checkout.')
+          }
+          secret = data.clientSecret
         }
         if (cancelled) return
 
@@ -88,8 +96,11 @@ export default function CheckoutModal({ itemId, title, onClose }) {
           cfg.account ? { stripeAccount: cfg.account } : undefined,
         )
         const checkout = await stripe.initEmbeddedCheckout({
-          clientSecret: data.clientSecret,
-          onComplete: () => setState('paid'),
+          clientSecret: secret,
+          onComplete: () => {
+            setState('paid')
+            onPaid?.()
+          },
         })
 
         // The modal may have been closed while Stripe was initialising —
@@ -119,7 +130,7 @@ export default function CheckoutModal({ itemId, title, onClose }) {
       checkoutRef.current?.destroy()
       checkoutRef.current = null
     }
-  }, [itemId])
+  }, [itemId, clientSecret])
 
   // Portaled to <body>: the trigger lives inside the offer card's <a>,
   // and a dialog nested in an anchor is both invalid markup and a click
@@ -147,7 +158,7 @@ export default function CheckoutModal({ itemId, title, onClose }) {
           <div className="pay__status" role="status">
             <p className="pay__done-title">Payment received</p>
             <p className="pay__done-note">
-              A receipt is on its way to your email. Thank you!
+              {doneNote || 'A receipt is on its way to your email. Thank you!'}
             </p>
             <button className="btn btn--primary" onClick={onClose}>
               Done

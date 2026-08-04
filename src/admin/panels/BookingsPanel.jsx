@@ -32,10 +32,38 @@ export default function BookingsPanel({ notify }) {
   const [draft, setDraft] = useState(null) // manual-booking modal state
   const [creating, setCreating] = useState(false)
   const [googleOn, setGoogleOn] = useState(false)
+  const [price, setPrice] = useState('') // dollars string; '' = payments off
+  const [savingPrice, setSavingPrice] = useState(false)
 
   useEffect(() => {
     api.googleStatus().then((g) => setGoogleOn(Boolean(g.connected))).catch(() => {})
+    api
+      .bookingPrice()
+      .then((p) => setPrice(p.priceCents ? (p.priceCents / 100).toFixed(2) : ''))
+      .catch(() => {})
   }, [])
+
+  async function savePrice() {
+    const n = Number(price)
+    const priceCents = price.trim() === '' ? null : Math.round(n * 100)
+    if (priceCents !== null && (!Number.isFinite(n) || priceCents < 50)) {
+      notify('Enter a price of at least $0.50, or leave blank to turn payments off.', 'error')
+      return
+    }
+    setSavingPrice(true)
+    try {
+      await api.saveBookingPrice({ priceCents, currency: 'cad' })
+      notify(
+        priceCents
+          ? `Sessions now cost $${(priceCents / 100).toFixed(2)} at booking.`
+          : 'Booking payments turned off — requests are free again.',
+      )
+    } catch (err) {
+      notify(err.message, 'error')
+    } finally {
+      setSavingPrice(false)
+    }
+  }
 
   async function load() {
     setLoading(true)
@@ -58,6 +86,43 @@ export default function BookingsPanel({ notify }) {
   const shown = rows.filter((b) =>
     view === 'archived' ? b.status === 'completed' : b.status !== 'completed',
   )
+
+  /** Cancelling a PAID booking asks what to refund — the 24-hour rule is
+   *  Nate's guideline, not the machine's; he picks per case. */
+  async function cancelBooking(b) {
+    if (!b.paid || !b.paymentIntent) {
+      setStatus(b.id, 'cancelled')
+      return
+    }
+    const amount = b.paidAmount || 0
+    const money = (c) => `$${(c / 100).toFixed(2)}`
+    const choice = await confirmDialog({
+      title: `Cancel ${b.name}'s session?`,
+      message:
+        `They paid ${money(amount)}. Policy: a day's notice → full refund; ` +
+        `less → half is kept. Your call:`,
+      cancelLabel: 'Keep booking',
+      choices: [
+        { value: 'none', label: 'No refund', danger: true },
+        { value: 'half', label: `Refund ${money(Math.round(amount / 2))}` },
+        { value: 'full', label: `Refund ${money(amount)}` },
+      ],
+    })
+    if (!choice) return
+    try {
+      await api.updateBooking(b.id, { status: 'cancelled' })
+      if (choice !== 'none') {
+        const cents = choice === 'full' ? amount : Math.round(amount / 2)
+        await api.refund(b.paymentIntent, { amount: cents })
+        notify(`Cancelled and refunded ${money(cents)}.`)
+      } else {
+        notify('Cancelled — no refund issued.')
+      }
+      load()
+    } catch (err) {
+      notify(err.message, 'error')
+    }
+  }
 
   async function setStatus(id, status) {
     try {
@@ -135,6 +200,22 @@ export default function BookingsPanel({ notify }) {
               ))}
             </select>
           )}
+          <div className="adm-inline" title="What a session costs at booking. Blank = free requests.">
+            <span className="adm-who">Session $</span>
+            <input
+              className="adm-search"
+              style={{ width: 90 }}
+              type="number"
+              min="0.50"
+              step="0.01"
+              placeholder="off"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+            />
+            <button className="adm-mini" onClick={savePrice} disabled={savingPrice}>
+              {savingPrice ? 'Saving…' : 'Set'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -364,6 +445,18 @@ export default function BookingsPanel({ notify }) {
                   </td>
                   <td>
                     <span className={`adm-pill adm-pill--${b.status}`}>{b.status}</span>
+                    {b.paid && (
+                      <>
+                        {' '}
+                        <span className="adm-pill adm-pill--confirmed">paid</span>
+                      </>
+                    )}
+                    {b.awaitingPayment && (
+                      <>
+                        {' '}
+                        <span className="adm-pill adm-pill--pending">unpaid</span>
+                      </>
+                    )}
                   </td>
                   <td className="adm-actions">
                     {b.status !== 'confirmed' && (
@@ -372,7 +465,7 @@ export default function BookingsPanel({ notify }) {
                       </button>
                     )}
                     {b.status !== 'cancelled' && (
-                      <button className="adm-mini" onClick={() => setStatus(b.id, 'cancelled')}>
+                      <button className="adm-mini" onClick={() => cancelBooking(b)}>
                         Cancel
                       </button>
                     )}

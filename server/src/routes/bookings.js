@@ -16,10 +16,36 @@ import {
   updateBookingEvent,
   cancelBookingEvent,
 } from '../google.js'
+import { stripe, stripeReady, onBehalf } from './checkout.js'
+import { config } from '../config.js'
 
 export const bookingsRouter = Router()
 
 const STATUSES = ['pending', 'confirmed', 'cancelled', 'completed']
+
+/**
+ * Pay-to-book. The price lives in settings — until the admin sets one
+ * (and Stripe is configured) bookings stay free requests, so this whole
+ * feature is switched on from the dashboard, not by a deploy.
+ */
+const PRICE_SETTINGS_ID = 'booking'
+
+async function bookingPrice() {
+  const doc = await collections.settings().findOne({ _id: PRICE_SETTINGS_ID })
+  return { priceCents: doc?.priceCents || null, currency: doc?.currency || 'cad' }
+}
+
+/**
+ * An unpaid booking holds its slot only briefly: long enough to finish
+ * checkout, not long enough for an abandoned cart to block the calendar.
+ */
+const HOLD_MS = 30 * 60 * 1000
+const holdsSlot = () => ({
+  $or: [
+    { awaitingPayment: { $ne: true } },
+    { createdAt: { $gte: new Date(Date.now() - HOLD_MS) } },
+  ],
+})
 
 const createSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD'),
@@ -49,7 +75,40 @@ function parseId(id, res) {
   return new ObjectId(id)
 }
 
-/** Public — submit a booking request. */
+/** Public — what booking costs, if anything. */
+bookingsRouter.get('/price', async (_req, res, next) => {
+  try {
+    const p = await bookingPrice()
+    res.json({ ...p, enabled: Boolean(p.priceCents) && stripeReady })
+  } catch (err) {
+    next(err)
+  }
+})
+
+/** Admin — set (or clear) the session price. Null switches payments off. */
+bookingsRouter.put('/price', requireAdmin, async (req, res, next) => {
+  try {
+    const parsed = z
+      .object({
+        priceCents: z.number().int().min(50).max(9999999).nullable(),
+        currency: z.enum(['cad', 'usd']).default('cad'),
+      })
+      .safeParse(req.body)
+    if (!parsed.success) return res.status(400).json({ error: 'Invalid price' })
+
+    await collections.settings().updateOne(
+      { _id: PRICE_SETTINGS_ID },
+      { $set: { ...parsed.data, updatedAt: new Date(), updatedBy: req.admin.email } },
+      { upsert: true },
+    )
+    await audit(req.admin.email, 'booking.price', parsed.data)
+    res.json({ ok: true })
+  } catch (err) {
+    next(err)
+  }
+})
+
+/** Public — submit a booking request; when a price is set, checkout opens. */
 bookingsRouter.post('/', publicLimiter, async (req, res, next) => {
   try {
     const parsed = createSchema.safeParse(req.body)
@@ -65,6 +124,7 @@ bookingsRouter.post('/', publicLimiter, async (req, res, next) => {
       date: parsed.data.date,
       time: parsed.data.time,
       status: { $in: ['pending', 'confirmed'] },
+      ...holdsSlot(),
     })
     if (taken) {
       return res
@@ -72,19 +132,68 @@ bookingsRouter.post('/', publicLimiter, async (req, res, next) => {
         .json({ error: 'That time was just taken. Please pick another.' })
     }
 
+    const { priceCents, currency } = await bookingPrice()
+    const paying = Boolean(priceCents) && stripeReady
+
     const doc = {
       ...parsed.data,
       status: 'pending',
+      ...(paying ? { awaitingPayment: true, priceCents, currency } : {}),
       createdAt: new Date(),
       updatedAt: new Date(),
     }
     const { insertedId } = await collections.bookings().insertOne(doc)
 
-    // Fire and forget — the mailer swallows its own errors, so a bad SMTP
-    // password can never turn into a failed booking.
-    notifyNewBooking(doc)
+    if (!paying) {
+      // Fire and forget — the mailer swallows its own errors, so a bad SMTP
+      // password can never turn into a failed booking.
+      notifyNewBooking(doc)
+      return res.status(201).json({ ok: true, id: insertedId.toString() })
+    }
 
-    res.status(201).json({ ok: true, id: insertedId.toString() })
+    // Paid flow: the slot is held while they check out; Nate hears about
+    // it from the webhook once the money is in.
+    try {
+      const embedded = Boolean(config.stripePublishableKey)
+      const site = (config.allowedOrigins[0] || '').replace(/\/$/, '')
+      const session = await stripe.checkout.sessions.create(
+        {
+          mode: 'payment',
+          line_items: [
+            {
+              quantity: 1,
+              price_data: {
+                currency,
+                unit_amount: priceCents,
+                product_data: {
+                  name: 'Coaching session',
+                  description: `${parsed.data.date} at ${parsed.data.time}`,
+                },
+              },
+            },
+          ],
+          customer_creation: 'always',
+          metadata: { bookingId: insertedId.toString(), title: 'Coaching session' },
+          ...(embedded
+            ? { ui_mode: 'embedded', redirect_on_completion: 'never' }
+            : {
+                success_url: `${site}/?booked=1&session={CHECKOUT_SESSION_ID}`,
+                cancel_url: `${site}/#booking`,
+              }),
+        },
+        ...onBehalf,
+      )
+      return res.status(201).json({
+        ok: true,
+        id: insertedId.toString(),
+        payment: embedded ? { clientSecret: session.client_secret } : { url: session.url },
+      })
+    } catch (stripeErr) {
+      // Don't leave an unpayable booking holding the slot.
+      await collections.bookings().deleteOne({ _id: insertedId })
+      console.error('[booking] checkout session failed:', stripeErr.message)
+      return res.status(502).json({ error: 'Could not start payment. Please try again.' })
+    }
   } catch (err) {
     next(err)
   }
@@ -98,7 +207,11 @@ bookingsRouter.get('/taken', async (_req, res, next) => {
     const rows = await collections
       .bookings()
       .find(
-        { date: { $gte: today }, status: { $in: ['pending', 'confirmed'] } },
+        {
+          date: { $gte: today },
+          status: { $in: ['pending', 'confirmed'] },
+          ...holdsSlot(),
+        },
         { projection: { date: 1, time: 1, _id: 0 } },
       )
       .toArray()
@@ -134,6 +247,7 @@ bookingsRouter.post('/admin', requireAdmin, async (req, res, next) => {
       date: fields.date,
       time: fields.time,
       status: { $in: ['pending', 'confirmed'] },
+      ...holdsSlot(),
     })
     if (taken) {
       return res.status(409).json({ error: 'Another booking already holds that slot' })
@@ -237,6 +351,7 @@ bookingsRouter.patch('/:id', requireAdmin, async (req, res, next) => {
         date,
         time,
         status: { $in: ['pending', 'confirmed'] },
+        ...holdsSlot(),
       })
       if (clash) {
         return res.status(409).json({ error: 'Another booking already holds that slot' })

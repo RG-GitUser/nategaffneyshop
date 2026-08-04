@@ -60,12 +60,25 @@ export function ConfirmHost() {
           <button className="adm-mini" onClick={() => done(false)} autoFocus>
             {state.opts.cancelLabel || 'Cancel'}
           </button>
-          <button
-            className={`adm-save ${state.opts.danger ? 'adm-btn-danger' : 'btn btn--primary'}`}
-            onClick={() => done(true)}
-          >
-            {state.opts.confirmLabel || 'Confirm'}
-          </button>
+          {state.opts.choices ? (
+            // Multi-choice: each button resolves with its value.
+            state.opts.choices.map((c) => (
+              <button
+                key={c.value}
+                className={`adm-save ${c.danger ? 'adm-btn-danger' : 'btn btn--primary'}`}
+                onClick={() => done(c.value)}
+              >
+                {c.label}
+              </button>
+            ))
+          ) : (
+            <button
+              className={`adm-save ${state.opts.danger ? 'adm-btn-danger' : 'btn btn--primary'}`}
+              onClick={() => done(true)}
+            >
+              {state.opts.confirmLabel || 'Confirm'}
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -9,12 +9,12 @@ import { requireAdmin } from '../middleware/auth.js'
 
 export const checkoutRouter = Router()
 
-const stripeReady =
+export const stripeReady =
   Boolean(config.stripeSecretKey) &&
   !config.stripeSecretKey.includes('placeholder') &&
   !config.stripeSecretKey.includes('xxx')
 
-const stripe = stripeReady ? new Stripe(config.stripeSecretKey) : null
+export const stripe = stripeReady ? new Stripe(config.stripeSecretKey) : null
 
 /**
  * Connect: everything happens on the connected account, so the money
@@ -26,7 +26,7 @@ const stripe = stripeReady ? new Stripe(config.stripeSecretKey) : null
  * rather than ignoring it. Spreading an empty array passes nothing at
  * all, which is what a standalone account needs.
  */
-const onBehalf = config.stripeAccountId
+export const onBehalf = config.stripeAccountId
   ? [{ stripeAccount: config.stripeAccountId }]
   : []
 
@@ -209,6 +209,31 @@ checkoutRouter.post('/webhook', async (req, res) => {
   try {
     if (event.type === 'checkout.session.completed') {
       const s = event.data.object
+
+      // A coaching-session payment: mark the booking paid and only now
+      // tell Nate — an unpaid request isn't news yet.
+      if (s.metadata?.bookingId && ObjectId.isValid(s.metadata.bookingId)) {
+        const _id = new ObjectId(s.metadata.bookingId)
+        const booking = await collections.bookings().findOneAndUpdate(
+          { _id },
+          {
+            $set: {
+              paid: true,
+              awaitingPayment: false,
+              paymentIntent: s.payment_intent,
+              paidAmount: s.amount_total,
+              paidCurrency: s.currency,
+              updatedAt: new Date(),
+            },
+          },
+          { returnDocument: 'after' },
+        )
+        if (booking) {
+          const { notifyNewBooking } = await import('../mailer.js')
+          notifyNewBooking(booking)
+        }
+      }
+
       await collections.orders().updateOne(
         { sessionId: s.id },
         {

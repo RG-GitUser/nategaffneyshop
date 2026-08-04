@@ -77,6 +77,8 @@ export const api = {
   googleSaveSettings: (settings) =>
     request('/google/settings', { method: 'PUT', body: settings }),
   createBooking: (booking) => request('/bookings/admin', { method: 'POST', body: booking }),
+  bookingPrice: () => request('/bookings/price'),
+  saveBookingPrice: (body) => request('/bookings/price', { method: 'PUT', body }),
 
   // analytics
   metricsSummary: (days = 30) => request(`/metrics/summary?days=${days}`),

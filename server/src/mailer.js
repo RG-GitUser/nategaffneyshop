@@ -201,7 +201,9 @@ export function notifyBookingConfirmed(booking) {
       `You're booked in for ${when(booking)}.`,
       ``,
       ...callLines,
-      `Reschedule or cancel free up to 24 hours before.`,
+      booking.paid
+        ? `Cancel a day or more ahead for a full refund. With less notice, half the fee is kept.`
+        : `Reschedule or cancel free up to 24 hours before.`,
       ``,
       `— Nate`,
     ].join('\n'),
@@ -215,7 +217,11 @@ export function notifyBookingConfirmed(booking) {
         (booking.meetUrl
           ? button(booking.meetUrl, 'Join the call')
           : paragraph('I’ll send the call link before we start.')) +
-        muted('Reschedule or cancel free up to 24 hours before. — Nate'),
+        muted(
+          booking.paid
+            ? 'Cancel a day or more ahead for a full refund. With less notice, half the fee is kept. — Nate'
+            : 'Reschedule or cancel free up to 24 hours before. — Nate',
+        ),
     }),
   })
 }
