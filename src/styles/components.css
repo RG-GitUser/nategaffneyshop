@@ -132,14 +132,14 @@
 .profile__tagline {
   margin-top: 16px;
   font-weight: 600;
-  font-size: 0.98rem;
+  font-size: 1.05rem;
   color: var(--ink);
   letter-spacing: -0.01em;
 }
 
 .profile__blurb {
   margin-top: 8px;
-  font-size: 0.92rem;
+  font-size: 1rem;
   color: var(--ink-soft);
   max-width: 34ch;
   line-height: 1.6;
@@ -610,7 +610,7 @@
 
 .offer__desc {
   margin-top: 8px;
-  font-size: 0.88rem;
+  font-size: 1rem;
   color: var(--ink-soft);
   line-height: 1.6;
 }
