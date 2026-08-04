@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
 import { StatusBar, VizToggle } from './charts.jsx'
+import { confirmDialog } from '../confirm.jsx'
 
 const STATUSES = ['pending', 'confirmed', 'completed', 'cancelled']
 
@@ -83,7 +84,13 @@ export default function BookingsPanel({ notify }) {
   }
 
   async function remove(id) {
-    if (!confirm('Delete this booking permanently? This cannot be undone.')) return
+    const ok = await confirmDialog({
+      title: 'Delete this booking?',
+      message: 'It is removed permanently — this cannot be undone.',
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
     try {
       await api.deleteBooking(id)
       notify('Booking deleted.')

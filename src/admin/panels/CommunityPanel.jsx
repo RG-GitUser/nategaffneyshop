@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
+import { confirmDialog } from '../confirm.jsx'
 
 const when = (iso) =>
   iso ? new Date(iso).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' }) : '—'
@@ -31,7 +32,15 @@ export default function CommunityPanel({ notify }) {
 
   async function setBan(member, ban) {
     const verb = ban ? 'Ban' : 'Unban'
-    if (ban && !window.confirm(`Ban ${member.email}? They are signed out immediately and can no longer join or post.`)) return
+    if (ban) {
+      const ok = await confirmDialog({
+        title: `Ban ${member.name}?`,
+        message: `${member.phone || member.email} is signed out immediately, can no longer join or post, and gets a notification.`,
+        confirmLabel: 'Ban',
+        danger: true,
+      })
+      if (!ok) return
+    }
     try {
       await (ban ? api.chatBanMember(member.email) : api.chatUnbanMember(member.email))
       notify(`${verb}ned ${member.email}.`)
@@ -42,7 +51,13 @@ export default function CommunityPanel({ notify }) {
   }
 
   async function removeMessage(id) {
-    if (!window.confirm('Remove this message from the chat? The record is kept here.')) return
+    const ok = await confirmDialog({
+      title: 'Remove this message?',
+      message: 'It disappears from the chat; the record stays here.',
+      confirmLabel: 'Remove',
+      danger: true,
+    })
+    if (!ok) return
     try {
       await api.chatRemoveMessage(id)
       notify('Message removed.')

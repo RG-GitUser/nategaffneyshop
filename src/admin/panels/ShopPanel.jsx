@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
 import ImageDrop from '../ImageDrop.jsx'
+import { confirmDialog } from '../confirm.jsx'
 
 const BLANK = {
   kind: 'product',
@@ -73,10 +74,13 @@ export default function ShopPanel({ notify }) {
       // not the Charge amount, then wondering why clicking doesn't open
       // checkout. Make saving that state a conscious choice.
       if (payload.kind === 'product') {
-        const ok = window.confirm(
-          'No Charge amount is set, so this card will NOT open checkout — ' +
-            'it will just follow its link.\n\nSave it that way anyway?',
-        )
+        const ok = await confirmDialog({
+          title: 'Save without a charge amount?',
+          message:
+            'No Charge amount is set, so this card will NOT open checkout — ' +
+            'it will just follow its link.',
+          confirmLabel: 'Save anyway',
+        })
         if (!ok) return
       }
     }
@@ -93,7 +97,13 @@ export default function ShopPanel({ notify }) {
   }
 
   async function remove(item) {
-    if (!confirm(`Delete "${item.title}"? This cannot be undone.`)) return
+    const ok = await confirmDialog({
+      title: `Delete "${item.title}"?`,
+      message: 'The item is removed permanently — this cannot be undone.',
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
     try {
       await api.deleteShopItem(item.id)
       notify('Item deleted.')

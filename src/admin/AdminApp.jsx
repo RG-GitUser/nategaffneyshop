@@ -10,6 +10,7 @@ import CommunityPanel from './panels/CommunityPanel.jsx'
 import MediaPanel from './panels/MediaPanel.jsx'
 import AccountPanel from './panels/AccountPanel.jsx'
 import ThemeToggle from '../components/ThemeToggle.jsx'
+import { ConfirmHost } from './confirm.jsx'
 
 const TABS = [
   { id: 'analytics', label: 'Analytics', Panel: AnalyticsPanel },
@@ -99,6 +100,9 @@ export default function AdminApp() {
         <main className="adm-main">
           <Active notify={notify} me={me} onSignedOut={() => setMe(null)} />
         </main>
+
+        {/* Inside .adm so the dialog inherits the admin's design tokens */}
+        <ConfirmHost />
 
         {toast && (
           <div className={`adm-toast adm-toast--${toast.kind}`} role="status">

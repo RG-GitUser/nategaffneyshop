@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
+import { confirmDialog } from '../confirm.jsx'
 
 const money = (cents, currency = 'cad') =>
   new Intl.NumberFormat('en-CA', {
@@ -48,13 +49,15 @@ export default function PaymentsPanel({ notify }) {
       notify('Enter an amount between 0 and the payment total.', 'error')
       return
     }
-    if (
-      !confirm(
-        `Refund ${money(cents, refunding.currency)} for ${refunding.id}?\n\n` +
-          'This moves real money and cannot be undone from here.',
-      )
-    )
-      return
+    const ok = await confirmDialog({
+      title: `Refund ${money(cents, refunding.currency)}?`,
+      message:
+        `Payment ${refunding.id}.\n` +
+        'This moves real money and cannot be undone from here.',
+      confirmLabel: 'Refund',
+      danger: true,
+    })
+    if (!ok) return
 
     try {
       await api.refund(refunding.id, { amount: cents })

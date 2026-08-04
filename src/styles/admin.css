@@ -540,6 +540,32 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* styled confirm dialog */
+.adm-confirm__msg {
+  margin-top: 10px;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--ink-2);
+  white-space: pre-line;
+}
+
+.adm-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-md);
+  background: var(--st-cancelled-fill);
+  color: #fff;
+  font-weight: 600;
+  transition: filter 0.16s var(--ease);
+}
+
+@media (hover: hover) {
+  .adm-btn-danger:hover {
+    filter: brightness(1.08);
+  }
+}
+
 /* ---------- alerts & toast ---------- */
 .adm-alert {
   padding: 12px 16px;

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
+import { confirmDialog } from '../confirm.jsx'
 
 export default function AccountPanel({ notify, me }) {
   const [current, setCurrent] = useState('')
@@ -57,11 +58,12 @@ export default function AccountPanel({ notify, me }) {
   }
 
   async function disconnectGoogle() {
-    // window.confirm explicitly — plain `confirm` is shadowed by the
-    // repeat-password state above.
-    const sure = window.confirm(
-      'Disconnect Google Calendar? New bookings will stop getting Meet links.',
-    )
+    const sure = await confirmDialog({
+      title: 'Disconnect Google Calendar?',
+      message: 'New bookings will stop getting Meet links and calendar invites.',
+      confirmLabel: 'Disconnect',
+      danger: true,
+    })
     if (!sure) return
     try {
       await api.googleDisconnect()
@@ -228,9 +230,11 @@ export default function AccountPanel({ notify, me }) {
                 Connect once and every confirmed booking gets a Meet link and a
                 calendar invite automatically.
               </p>
-              <button className="btn btn--primary adm-save" onClick={connectGoogle}>
-                Connect Google Calendar
-              </button>
+              <div className="adm-actions" style={{ marginTop: 18 }}>
+                <button className="btn btn--primary adm-save" onClick={connectGoogle}>
+                  Connect Google Calendar
+                </button>
+              </div>
             </>
           )}
         </section>
