@@ -2,7 +2,7 @@ import { Router } from 'express'
 import Stripe from 'stripe'
 import { z } from 'zod'
 import { config } from '../config.js'
-import { audit } from '../db.js'
+import { audit, collections } from '../db.js'
 import { requireAdmin } from '../middleware/auth.js'
 
 export const paymentsRouter = Router()
@@ -93,8 +93,24 @@ paymentsRouter.get('/', async (req, res, next) => {
     if (req.query.starting_after) params.starting_after = req.query.starting_after
 
     const list = await stripe.paymentIntents.list(params, ...onBehalf)
+
+    // Stripe's intents don't say WHAT was bought — the webhook's order
+    // records do (shop item titles and "Coaching session" alike), so
+    // label each payment from them where a match exists.
+    const orders = await collections
+      .orders()
+      .find(
+        { paymentIntent: { $in: list.data.map((pi) => pi.id) } },
+        { projection: { paymentIntent: 1, title: 1 } },
+      )
+      .toArray()
+    const titles = new Map(orders.map((o) => [o.paymentIntent, o.title]))
+
     res.json({
-      data: list.data.map(summarise),
+      data: list.data.map((pi) => ({
+        ...summarise(pi),
+        label: titles.get(pi.id) || pi.description || null,
+      })),
       hasMore: list.has_more,
       lastId: list.data.at(-1)?.id ?? null,
       account: config.stripeAccountId || null,

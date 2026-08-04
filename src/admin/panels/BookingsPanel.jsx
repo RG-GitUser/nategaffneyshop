@@ -126,8 +126,11 @@ export default function BookingsPanel({ notify }) {
 
   async function setStatus(id, status) {
     try {
-      await api.updateBooking(id, { status })
+      const result = await api.updateBooking(id, { status })
       notify(`Booking marked ${status}.`)
+      // Surface partial failures (calendar sync, payment link) — the
+      // update went through, but Nate needs to know what didn't.
+      for (const w of result.warnings || []) notify(w, 'error')
       load()
     } catch (err) {
       notify(err.message, 'error')
