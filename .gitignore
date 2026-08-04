@@ -8,3 +8,6 @@ dist-ssr
 .env.*
 !.env.example
 .vite
+
+# local dev uploads (in-memory-DB test artifacts)
+server/uploads-dev/
