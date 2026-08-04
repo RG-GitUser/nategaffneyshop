@@ -511,6 +511,7 @@
   --card-accent: var(--accent);
   --card-wash: var(--accent-wash);
   display: flex;
+  flex-wrap: wrap; /* lets an image banner take the full first row */
   gap: 16px;
   padding: 18px;
   border-radius: var(--r-lg);
@@ -557,6 +558,23 @@
 
 .offer:active {
   transform: scale(0.995);
+}
+
+/* optional card image: full-bleed banner above the numbered row */
+.offer__media {
+  flex: 1 1 100%;
+  margin: -18px -18px 0; /* bleed over the card's 18px padding */
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.offer__media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* numbered like a catalog, not decorated with an emoji */

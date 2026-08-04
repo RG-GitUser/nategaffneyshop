@@ -25,6 +25,8 @@ const itemSchema = z.object({
   accent: z.enum(['navy', 'umber', 'olive', 'amber']).default('navy'),
   tag: z.string().max(40).optional().nullable(),
   rating: z.string().max(10).optional().nullable(),
+  /** Uploaded card image URL (from /api/media). Optional. */
+  image: z.string().max(500).optional().nullable(),
   order: z.number().int().default(0),
   visible: z.boolean().default(true),
 })

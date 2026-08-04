@@ -59,6 +59,12 @@ export default function OfferCard({ offer, index = 0 }) {
       aria-busy={busy || undefined}
       style={{ animationDelay: `${120 + index * 60}ms` }}
     >
+      {offer.image && (
+        <div className="offer__media">
+          <img src={offer.image} alt="" loading="lazy" />
+        </div>
+      )}
+
       <span className="offer__index" aria-hidden="true">
         {number}
       </span>

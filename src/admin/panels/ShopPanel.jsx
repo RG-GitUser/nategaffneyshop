@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
+import ImageDrop from '../ImageDrop.jsx'
 
 const BLANK = {
   kind: 'product',
   title: '',
   description: '',
+  image: '',
   price: '',
   oldPrice: '',
   amount: '', // dollars, converted to priceCents on save
@@ -53,7 +55,7 @@ export default function ShopPanel({ notify }) {
     }
     // Strip empty optional strings so they store as absent, not "".
     const payload = { ...draft }
-    for (const k of ['price', 'oldPrice', 'tag', 'rating']) {
+    for (const k of ['price', 'oldPrice', 'tag', 'rating', 'image']) {
       if (!payload[k]) payload[k] = null
     }
     payload.order = Number(payload.order) || 0
@@ -241,6 +243,26 @@ export default function ShopPanel({ notify }) {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className="adm-field adm-field--wide">
+                <label>Card image</label>
+                <ImageDrop
+                  slot="shop"
+                  value={draft.image || ''}
+                  notify={notify}
+                  onUploaded={(url) => setDraft({ ...draft, image: url })}
+                  hint="Optional. Shown at the top of the card, cropped to 16:9."
+                />
+                {draft.image && (
+                  <button
+                    type="button"
+                    className="adm-mini adm-mini--danger"
+                    onClick={() => setDraft({ ...draft, image: '' })}
+                  >
+                    Remove image
+                  </button>
+                )}
               </div>
 
               <div className="adm-field adm-field--wide">

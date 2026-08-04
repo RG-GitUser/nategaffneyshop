@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
-import { StatusBar } from './charts.jsx'
+import { StatusBar, VizToggle } from './charts.jsx'
 
 const STATUSES = ['pending', 'confirmed', 'completed', 'cancelled']
 
@@ -27,6 +27,7 @@ export default function BookingsPanel({ notify }) {
   const [filter, setFilter] = useState('')
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(null) // { id, date, time }
+  const [view, setView] = useState('active') // active | archived (completed)
   const [draft, setDraft] = useState(null) // manual-booking modal state
   const [creating, setCreating] = useState(false)
   const [googleOn, setGoogleOn] = useState(false)
@@ -50,6 +51,12 @@ export default function BookingsPanel({ notify }) {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter])
+
+  // "Done" bookings live in their own Archived view instead of cluttering
+  // the working list; clicking Done moves them there on the next load.
+  const shown = rows.filter((b) =>
+    view === 'archived' ? b.status === 'completed' : b.status !== 'completed',
+  )
 
   async function setStatus(id, status) {
     try {
@@ -99,18 +106,28 @@ export default function BookingsPanel({ notify }) {
           <button className="btn btn--primary adm-save" onClick={() => setDraft(EMPTY_DRAFT)}>
             Add booking
           </button>
-          <select
-            className="adm-select"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          >
-            <option value="">All statuses</option>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+          <VizToggle
+            value={view}
+            onChange={setView}
+            options={[
+              { value: 'active', label: 'Active' },
+              { value: 'archived', label: 'Archived' },
+            ]}
+          />
+          {view === 'active' && (
+            <select
+              className="adm-select"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            >
+              <option value="">All statuses</option>
+              {STATUSES.filter((s) => s !== 'completed').map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
@@ -240,12 +257,12 @@ export default function BookingsPanel({ notify }) {
         </div>
       )}
 
-      {!loading && filter === '' && rows.length > 0 && (
+      {!loading && view === 'active' && filter === '' && shown.length > 0 && (
         <div className="adm-statusbar-block">
           <StatusBar
-            items={STATUSES.filter((s) => rows.some((b) => b.status === s)).map((s) => ({
+            items={STATUSES.filter((s) => shown.some((b) => b.status === s)).map((s) => ({
               label: s,
-              value: rows.filter((b) => b.status === s).length,
+              value: shown.filter((b) => b.status === s).length,
               color: STATUS_COLORS[s],
             }))}
           />
@@ -254,8 +271,12 @@ export default function BookingsPanel({ notify }) {
 
       {loading ? (
         <p className="adm-muted">Loading…</p>
-      ) : rows.length === 0 ? (
-        <p className="adm-muted">No bookings yet.</p>
+      ) : shown.length === 0 ? (
+        <p className="adm-muted">
+          {view === 'archived'
+            ? 'Nothing archived yet — mark a booking Done and it moves here.'
+            : 'No bookings yet.'}
+        </p>
       ) : (
         <div className="adm-table-wrap">
           <table className="adm-table">
@@ -269,7 +290,7 @@ export default function BookingsPanel({ notify }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((b) => (
+              {shown.map((b) => (
                 <tr key={b.id}>
                   <td>
                     {editing?.id === b.id ? (
