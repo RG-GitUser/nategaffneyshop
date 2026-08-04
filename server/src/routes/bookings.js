@@ -15,6 +15,7 @@ import {
   createBookingEvent,
   updateBookingEvent,
   cancelBookingEvent,
+  calendarSettings,
 } from '../google.js'
 import { stripe, stripeReady, onBehalf } from './checkout.js'
 import { config } from '../config.js'
@@ -75,11 +76,16 @@ function parseId(id, res) {
   return new ObjectId(id)
 }
 
-/** Public — what booking costs, if anything. */
+/** Public — what booking costs and how long a session runs, so the site's
+ *  copy follows the dashboard settings instead of hardcoded strings. */
 bookingsRouter.get('/price', async (_req, res, next) => {
   try {
-    const p = await bookingPrice()
-    res.json({ ...p, enabled: Boolean(p.priceCents) && stripeReady })
+    const [p, cal] = await Promise.all([bookingPrice(), calendarSettings()])
+    res.json({
+      ...p,
+      durationMinutes: cal.durationMinutes || null,
+      enabled: Boolean(p.priceCents) && stripeReady,
+    })
   } catch (err) {
     next(err)
   }

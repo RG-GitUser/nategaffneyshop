@@ -172,8 +172,10 @@ export default function BookingCalendar() {
         <div className="booking__intro">
           <p className="booking__desc">{booking.description}</p>
           <ul className="booking__facts mono">
-            <li>{booking.duration}</li>
-            <li>{booking.price}</li>
+            <li>{price?.durationMinutes ? `${price.durationMinutes} min` : booking.duration}</li>
+            <li>
+              {price?.priceCents ? `$${(price.priceCents / 100).toFixed(0)}` : booking.price}
+            </li>
             <li>{booking.timezone}</li>
           </ul>
         </div>
