@@ -53,9 +53,11 @@ export async function loadContent() {
       }
     }
 
-    // Only take over the shop when the admin has actually added items,
-    // otherwise an empty collection would blank the section.
-    if (Array.isArray(shop) && shop.length > 0) {
+    // A working API is the source of truth for the shop — even when it's
+    // empty. The bundled demo cards in content.js only ever show when the
+    // API is unreachable (dev without the server, or an outage), never as
+    // filler on the live site. An empty list simply hides the section.
+    if (Array.isArray(shop)) {
       mergeInPlace(defaults.offers, shop)
     }
   } catch (err) {

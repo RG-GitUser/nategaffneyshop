@@ -26,18 +26,20 @@ export default function App() {
             <FeaturedVideo />
             <FeaturedCard />
 
-            <section className="section">
-              <div className="section__head">
-                <span className="eyebrow">The catalog</span>
-                <h2 className="section__title">Where to start</h2>
-              </div>
+            {offers.length > 0 && (
+              <section className="section">
+                <div className="section__head">
+                  <span className="eyebrow">The catalog</span>
+                  <h2 className="section__title">Where to start</h2>
+                </div>
 
-              <div className="offers">
-                {offers.map((offer, i) => (
-                  <OfferCard key={offer.title} offer={offer} index={i} />
-                ))}
-              </div>
-            </section>
+                <div className="offers">
+                  {offers.map((offer, i) => (
+                    <OfferCard key={offer.title} offer={offer} index={i} />
+                  ))}
+                </div>
+              </section>
+            )}
 
             <BookingCalendar />
             <GroupChat />
