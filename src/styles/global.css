@@ -31,26 +31,28 @@
   /* ---- LIGHT ---- lighter all round, and the containers pull toward
      white so they read neutral rather than yellow-beige. Bone survives
      as the page tint and the small inset chips; the cards float above
-     it in near-white. Lines derive from the surface so they grey with
-     it instead of staying beige. */
-  --bg: color-mix(in srgb, #ffffff 30%, var(--bone));
-  --bg-2: var(--bone);
-  --surface: color-mix(in srgb, #ffffff 55%, var(--bone));
-  --surface-2: color-mix(in srgb, #ffffff 72%, var(--bone));
+     it in near-white.
 
-  --line: color-mix(in srgb, var(--black) 13%, var(--surface));
-  --line-2: color-mix(in srgb, var(--black) 24%, var(--surface));
+     EVERY value here is a precomputed literal, not a color-mix() —
+     older mobile browsers (iOS < 16.2, Chrome < 111) don't support
+     color-mix at all, and since the whole palette derives from it, those
+     phones rendered a page with no backgrounds and broken text. The
+     original mix formulas are kept as comments; recompute by evaluating
+     the formula in any modern browser. */
+  --bg: #f1ede4; /* mix(#fff 30%, bone) */
+  --bg-2: var(--bone);
+  --surface: #f6f3ed; /* mix(#fff 55%, bone) */
+  --surface-2: #f9f8f4; /* mix(#fff 72%, bone) */
+
+  --line: #d8d5cf; /* mix(black 13%, surface) */
+  --line-2: #bfbcb6; /* mix(black 24%, surface) */
 
   --ink: var(--black);
-  --ink-2: color-mix(in srgb, var(--black) 84%, var(--bone));
-  --ink-soft: color-mix(in srgb, var(--black) 64%, var(--bone));
-  --ink-faint: color-mix(in srgb, var(--black) 46%, var(--bone));
+  --ink-2: #352e28; /* mix(black 84%, bone) */
+  --ink-soft: #605952; /* mix(black 64%, bone) */
+  --ink-faint: #878178; /* mix(black 46%, bone) */
 
-  /* Deep burnt orange.
-     --accent      = orange TEXT/borders sitting on the page background
-     --accent-fill = deeper orange used as a solid BACKGROUND under --on-accent
-     Those two pull in opposite directions on contrast, hence the split. */
-  /* All three warm tones earn a job here rather than the brown carrying
+  /* All three warm tones earn a job rather than one brown carrying
      everything:
        orange     solid fills — buttons, active states, the featured card
        red        accent text, labels, links, small marks
@@ -60,57 +62,54 @@
      the talking. On an orange fill the near-black sits at 4.5:1, where
      white would be 4.2:1 — so text on orange is dark, not light. */
   --accent: var(--red);
-  --accent-hi: color-mix(in srgb, var(--bone) 10%, var(--orange));
+  --accent-hi: #c86c2b; /* mix(bone 10%, orange) */
   --accent-fill: var(--orange);
   --accent-deep: var(--chocolate);
-  --accent-wash: color-mix(in srgb, var(--orange) 16%, transparent);
+  --accent-wash: rgba(196, 94, 24, 0.16);
   --on-accent: var(--black);
+  --on-accent-tint: #1b0d07; /* mix(on-accent 90%, accent) — featured cta hover */
+  --accent-border: rgba(108, 30, 5, 0.45); /* dashed borders */
 
   /* Card accents are tuned against the CARD surface, not the page — the
-     card is a different tone, so the page accent doesn't carry over. On
-     bone there's plenty of room, so these are four genuinely different
-     warm colours. */
-  --amber: color-mix(in srgb, var(--black) 22%, var(--orange));
-  --amber-wash: color-mix(in srgb, var(--orange) 16%, transparent);
+     card is a different tone, so the page accent doesn't carry over. */
+  --amber: #9d4c14; /* mix(black 22%, orange) */
+  --amber-wash: rgba(196, 94, 24, 0.16);
   --umber: var(--red);
-  --umber-wash: color-mix(in srgb, var(--red) 14%, transparent);
+  --umber-wash: rgba(108, 30, 5, 0.14);
   --olive: var(--chocolate);
-  --olive-wash: color-mix(in srgb, var(--chocolate) 12%, transparent);
-  --card-lead: color-mix(in srgb, var(--black) 45%, var(--orange));
-  --card-lead-wash: color-mix(in srgb, var(--orange) 14%, transparent);
+  --olive-wash: rgba(43, 32, 24, 0.12);
+  --card-lead: #743910; /* mix(black 45%, orange) */
+  --card-lead-wash: rgba(196, 94, 24, 0.14);
 
   /* Atmosphere. Sized in % rather than vh, so the stack spans the whole
-     document instead of stopping partway down — the page keeps a faint
-     warmth all the way to the footer.
-     Each layer carries intermediate stops: a straight colour-to-
-     transparent falloff bands visibly across an area this large, and the
-     extra stops soften it into something you feel rather than see. */
+     document instead of stopping partway down. Each layer carries
+     intermediate stops: a straight colour-to-transparent falloff bands
+     visibly across an area this large. */
   --page-glow: radial-gradient(
       120% 60% at 85% 0%,
-      color-mix(in srgb, var(--orange) 10%, transparent) 0%,
-      color-mix(in srgb, var(--orange) 6%, transparent) 28%,
-      color-mix(in srgb, var(--orange) 2.5%, transparent) 58%,
+      rgba(196, 94, 24, 0.1) 0%,
+      rgba(196, 94, 24, 0.06) 28%,
+      rgba(196, 94, 24, 0.025) 58%,
       transparent 88%
     ),
     radial-gradient(
       110% 55% at 8% 100%,
-      color-mix(in srgb, var(--red) 7%, transparent) 0%,
-      color-mix(in srgb, var(--red) 3.5%, transparent) 30%,
-      color-mix(in srgb, var(--red) 1.5%, transparent) 60%,
+      rgba(108, 30, 5, 0.07) 0%,
+      rgba(108, 30, 5, 0.035) 30%,
+      rgba(108, 30, 5, 0.015) 60%,
       transparent 88%
     );
-  --bar-bg: color-mix(in srgb, var(--bone) 92%, transparent);
+  --bar-bg: rgba(235, 229, 216, 0.92);
   --grain-blend: multiply;
   --grain-opacity: 0.055;
 
   /* Shadows are the near-black at low opacity, so even the depth stays
      inside the palette rather than being a generic grey. */
-  --shadow-sm: 0 1px 2px color-mix(in srgb, var(--black) 8%, transparent);
-  --shadow-md: 0 3px 14px color-mix(in srgb, var(--black) 12%, transparent);
-  --shadow-lg: 0 12px 34px color-mix(in srgb, var(--black) 16%, transparent);
-  --avatar-shadow: 0 2px 6px color-mix(in srgb, var(--black) 16%, transparent),
-    0 14px 30px color-mix(in srgb, var(--black) 24%, transparent),
-    0 30px 64px color-mix(in srgb, var(--black) 20%, transparent);
+  --shadow-sm: 0 1px 2px rgba(18, 11, 7, 0.08);
+  --shadow-md: 0 3px 14px rgba(18, 11, 7, 0.12);
+  --shadow-lg: 0 12px 34px rgba(18, 11, 7, 0.16);
+  --avatar-shadow: 0 2px 6px rgba(18, 11, 7, 0.16),
+    0 14px 30px rgba(18, 11, 7, 0.24), 0 30px 64px rgba(18, 11, 7, 0.2);
 
   /* ---- type ----
      Apple Garamond can't be served on the web (proprietary Apple font), so
@@ -140,92 +139,81 @@
 :root[data-theme='dark'] {
   /* ---- DARK ---- a grey-leaning dark brown: bone into the near-black
      rather than the orange-leaning chocolate, so the ground reads taupe.
-     The warmth comes from the glow and the accents sitting on it. */
-  --bg: color-mix(in srgb, var(--bone) 16%, var(--black));
-  --bg-2: color-mix(in srgb, var(--bone) 6%, var(--black));
-  --surface: color-mix(in srgb, var(--bone) 10%, var(--black));
-  --surface-2: color-mix(in srgb, var(--bone) 21%, var(--black));
+     The warmth comes from the glow and the accents sitting on it.
+     Literals for the same reason as the light block — color-mix is not
+     available on older mobile browsers. Formulas kept as comments. */
+  --bg: #352e28; /* mix(bone 16%, black) */
+  --bg-2: #1f1814; /* mix(bone 6%, black) */
+  --surface: #28211c; /* mix(bone 10%, black) */
+  --surface-2: #403933; /* mix(bone 21%, black) */
 
-  --line: color-mix(in srgb, var(--bone) 27%, var(--black));
-  --line-2: color-mix(in srgb, var(--bone) 38%, var(--black));
+  --line: #4d463f; /* mix(bone 27%, black) */
+  --line-2: #645e56; /* mix(bone 38%, black) */
 
   --ink: var(--bone);
-  --ink-2: color-mix(in srgb, var(--bone) 82%, var(--black));
-  --ink-soft: color-mix(in srgb, var(--bone) 60%, var(--black));
-  --ink-faint: color-mix(in srgb, var(--bone) 42%, var(--black));
+  --ink-2: #c4beb2; /* mix(bone 82%, black) */
+  --ink-soft: #948e84; /* mix(bone 60%, black) */
+  --ink-faint: #6d675f; /* mix(bone 42%, black) */
 
-  /* Orange text sits on the chocolate ground here, which is lighter than
-     the near-black was — plain orange only reaches ~3.8:1 on it, so the
-     text tone is lifted toward bone. Fills stay full orange with the
-     near-black on top. */
-  --accent: color-mix(in srgb, var(--bone) 36%, var(--orange));
-  --accent-hi: color-mix(in srgb, var(--bone) 12%, var(--orange));
+  /* Orange text sits on the taupe ground, which is lighter than the
+     near-black was — plain orange only reaches ~3.8:1 on it, so the text
+     tone is lifted toward bone. Fills stay full orange, near-black text
+     on top. */
+  --accent: #d28f5d; /* mix(bone 36%, orange) */
+  --accent-hi: #c96e2f; /* mix(bone 12%, orange) */
   --accent-fill: var(--orange);
-  --accent-deep: color-mix(in srgb, var(--black) 45%, var(--orange));
-  --accent-wash: color-mix(in srgb, var(--orange) 20%, transparent);
+  --accent-deep: #743910; /* mix(black 45%, orange) */
+  --accent-wash: rgba(196, 94, 24, 0.2);
   --on-accent: var(--black);
+  --on-accent-tint: #251810; /* mix(on-accent 90%, accent) */
+  --accent-border: rgba(210, 143, 93, 0.45);
 
-  /* Cards sit lighter than the page here, so plain orange only reaches
-     4.05:1 on them. Every card accent is lifted toward bone instead.
-     They separate by lightness rather than hue: anything dark enough to
-     read as a different colour fails against this surface — a lifted red
-     measured 2.06:1 — so lightness is the only axis available. */
-  --amber: color-mix(in srgb, var(--bone) 19%, var(--orange));
-  --amber-wash: color-mix(in srgb, var(--orange) 22%, transparent);
-  --umber: color-mix(in srgb, var(--bone) 30%, var(--orange));
-  --umber-wash: color-mix(in srgb, var(--orange) 18%, transparent);
-  --olive: color-mix(in srgb, var(--bone) 38%, var(--orange));
-  --olive-wash: color-mix(in srgb, var(--red) 26%, transparent);
-  --card-lead: color-mix(in srgb, var(--bone) 22%, var(--orange));
-  --card-lead-wash: color-mix(in srgb, var(--orange) 20%, transparent);
+  /* Card accents sit on the card surface, not the page — they separate
+     by lightness rather than hue, because anything dark enough to read
+     as a different colour fails against this surface. */
+  --amber: #cb783c; /* mix(bone 19%, orange) */
+  --amber-wash: rgba(196, 94, 24, 0.22);
+  --umber: #d08752; /* mix(bone 30%, orange) */
+  --umber-wash: rgba(196, 94, 24, 0.18);
+  --olive: #d39161; /* mix(bone 38%, orange) */
+  --olive-wash: rgba(108, 30, 5, 0.26);
+  --card-lead: #cd7c42; /* mix(bone 22%, orange) */
+  --card-lead-wash: rgba(196, 94, 24, 0.2);
 
-  /* Three layers, warmest at the top and falling away to the near-black
-     ground by roughly half the viewport:
-       1. orange ember off the top-right
-       2. a softer warm wash from the top-left so the light reads as spread
-          rather than a single spotlight
-       3. a lifted warm band across the very top — this is the tone that
-          "emerges" up there. Composited over the near-black it lifts it a little,
-          so it lifts the black without going anywhere near grey. */
-  /* Kept deliberately faint. Pushed harder, the warm top-right corner
-     lifts the background enough that orange text over it drops to about
-     3.7:1 — the glow would be costing readability for atmosphere. */
-  /* The rich version: a real orange ember off the top-right, a red cast
-     rising from the bottom-left, and a lifted band across the top. The
-     red layer is free warmth — it darkens the ground, so light text over
-     it gains contrast rather than losing it. The orange layers are what
-     the accent-text tone is tuned against below. */
+  /* Orange ember off the top-right, red cast rising from the bottom-left,
+     and a lifted bone band across the top. The red layer is free warmth —
+     it darkens the ground, so light text over it gains contrast. The
+     orange layers are what the accent text tone is tuned against. */
   --page-glow: radial-gradient(
       120% 60% at 85% 0%,
-      color-mix(in srgb, var(--orange) 10%, transparent) 0%,
-      color-mix(in srgb, var(--orange) 6%, transparent) 28%,
-      color-mix(in srgb, var(--orange) 2.5%, transparent) 58%,
+      rgba(196, 94, 24, 0.1) 0%,
+      rgba(196, 94, 24, 0.06) 28%,
+      rgba(196, 94, 24, 0.025) 58%,
       transparent 88%
     ),
     radial-gradient(
       110% 55% at 8% 100%,
-      color-mix(in srgb, var(--red) 18%, transparent) 0%,
-      color-mix(in srgb, var(--red) 9%, transparent) 30%,
-      color-mix(in srgb, var(--red) 3.5%, transparent) 60%,
+      rgba(108, 30, 5, 0.18) 0%,
+      rgba(108, 30, 5, 0.09) 30%,
+      rgba(108, 30, 5, 0.035) 60%,
       transparent 88%
     ),
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--bone) 6%, transparent) 0%,
-      color-mix(in srgb, var(--bone) 3%, transparent) 14%,
-      color-mix(in srgb, var(--bone) 1.2%, transparent) 34%,
+      rgba(235, 229, 216, 0.06) 0%,
+      rgba(235, 229, 216, 0.03) 14%,
+      rgba(235, 229, 216, 0.012) 34%,
       transparent 62%
     );
-  --bar-bg: color-mix(in srgb, var(--black) 88%, transparent);
+  --bar-bg: rgba(18, 11, 7, 0.88);
   --grain-blend: overlay;
   --grain-opacity: 0.05;
 
-  --shadow-sm: 0 1px 2px color-mix(in srgb, var(--black) 55%, transparent);
-  --shadow-md: 0 4px 16px color-mix(in srgb, var(--black) 60%, transparent);
-  --shadow-lg: 0 12px 38px color-mix(in srgb, var(--black) 70%, transparent);
-  --avatar-shadow: 0 2px 8px color-mix(in srgb, var(--black) 65%, transparent),
-    0 16px 34px color-mix(in srgb, var(--black) 70%, transparent),
-    0 34px 70px color-mix(in srgb, var(--black) 60%, transparent);
+  --shadow-sm: 0 1px 2px rgba(18, 11, 7, 0.55);
+  --shadow-md: 0 4px 16px rgba(18, 11, 7, 0.6);
+  --shadow-lg: 0 12px 38px rgba(18, 11, 7, 0.7);
+  --avatar-shadow: 0 2px 8px rgba(18, 11, 7, 0.65),
+    0 16px 34px rgba(18, 11, 7, 0.7), 0 34px 70px rgba(18, 11, 7, 0.6);
 }
 
 /* ---------- reset ---------- */
@@ -250,6 +238,7 @@ html {
 }
 
 body {
+  min-height: 100vh; /* fallback where dvh is unsupported */
   min-height: 100dvh;
   background: var(--bg);
   color: var(--ink);
@@ -470,7 +459,7 @@ p {
 .page {
   position: relative;
   padding: clamp(18px, 4vw, 44px) var(--pad-x)
-    calc(96px + env(safe-area-inset-bottom));
+    calc(48px + env(safe-area-inset-bottom));
 }
 
 @media (min-width: 900px) {

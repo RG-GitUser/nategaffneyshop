@@ -152,7 +152,7 @@
    LegalPage wraps anything in square brackets with this automatically —
    once every bracket is filled in, the highlighting disappears on its own. */
 .legal__todo {
-  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  background: var(--accent-wash);
   color: var(--accent-deep);
   border-bottom: 1px dashed var(--accent);
   padding: 1px 4px;

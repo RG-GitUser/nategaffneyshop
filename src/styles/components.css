@@ -255,7 +255,7 @@
   display: inline-block;
   padding: 7px 12px;
   border-radius: var(--r-sm);
-  background: color-mix(in srgb, var(--on-accent) 22%, transparent);
+  background: rgba(18, 11, 7, 0.22);
   font-family: var(--mono);
   font-size: 0.62rem;
   font-weight: 700;
@@ -281,12 +281,12 @@
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--on-accent) 72%, transparent);
+  color: rgba(18, 11, 7, 0.72);
 }
 
 .featured__desc {
   margin-top: 16px;
-  color: color-mix(in srgb, var(--on-accent) 88%, transparent);
+  color: rgba(18, 11, 7, 0.88);
   font-size: 1rem;
   line-height: 1.6;
   max-width: 46ch;
@@ -304,12 +304,12 @@
   position: relative;
   padding: 10px 0 10px 22px;
   font-size: 0.96rem;
-  color: color-mix(in srgb, var(--on-accent) 92%, transparent);
-  border-top: 1px solid color-mix(in srgb, var(--on-accent) 25%, transparent);
+  color: rgba(18, 11, 7, 0.92);
+  border-top: 1px solid rgba(18, 11, 7, 0.25);
 }
 
 .featured__bullets li:last-child {
-  border-bottom: 1px solid color-mix(in srgb, var(--on-accent) 25%, transparent);
+  border-bottom: 1px solid rgba(18, 11, 7, 0.25);
 }
 
 .featured__bullets li::before {
@@ -349,7 +349,7 @@
   .featured__cta:hover {
     /* tint the cream slightly toward the orange — works in both themes,
        unlike a hardcoded #fff which blew out on dark */
-    background: color-mix(in srgb, var(--on-accent) 90%, var(--accent));
+    background: var(--on-accent-tint);
     color: var(--accent-deep);
   }
 }
@@ -375,14 +375,14 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--on-accent) 85%, transparent);
+  color: rgba(18, 11, 7, 0.85);
 }
 
 .pulse {
   width: 7px;
   height: 7px;
   background: var(--on-accent);
-  box-shadow: 0 0 0 0 color-mix(in srgb, var(--on-accent) 60%, transparent);
+  box-shadow: 0 0 0 0 rgba(18, 11, 7, 0.6);
   animation: pulse 2.2s infinite;
 }
 
@@ -398,7 +398,7 @@
 .featured__note {
   margin-top: 8px;
   font-size: 0.76rem;
-  color: color-mix(in srgb, var(--on-accent) 62%, transparent);
+  color: rgba(18, 11, 7, 0.62);
 }
 
 /* ---------- Featured video ---------- */
@@ -632,7 +632,7 @@
   padding: 8px 11px;
   border-radius: var(--r-sm);
   border: 1px solid var(--red);
-  background: color-mix(in srgb, var(--red) 12%, transparent);
+  background: rgba(108, 30, 5, 0.12);
   color: var(--red);
   font-size: 0.8rem;
 }
@@ -755,12 +755,14 @@
 }
 
 .cal__blank {
-  aspect-ratio: 1;
+  height: 40px;
 }
 
 .cal__day {
-  aspect-ratio: 1;
-  min-height: 40px; /* stays a comfortable tap target on small phones */
+  /* Fixed height, fluid width: aspect-ratio would pin the width to the
+     min-height and overflow the 7-column grid on 320px phones, clipping
+     the Saturday column behind the card edge. */
+  height: 40px;
   display: grid;
   place-items: center;
   border-radius: var(--r-sm);
@@ -927,7 +929,7 @@
   padding: 12px 15px;
   border-radius: var(--r-md);
   border: 1px solid var(--red);
-  background: color-mix(in srgb, var(--red) 12%, transparent);
+  background: rgba(108, 30, 5, 0.12);
   color: var(--red);
   font-size: 0.88rem;
 }
@@ -994,7 +996,7 @@
 
 @media (hover: hover) {
   .chat__meet:hover {
-    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    background: var(--accent-wash);
   }
   .chat__meet:hover .chat__meet-cta {
     gap: 9px;
@@ -1105,7 +1107,7 @@
   padding: 11px 14px;
   border-radius: var(--r-md);
   border: 1px solid var(--red);
-  background: color-mix(in srgb, var(--red) 12%, transparent);
+  background: rgba(108, 30, 5, 0.12);
   color: var(--red);
   font-size: 0.86rem;
 }
@@ -1311,7 +1313,7 @@
   padding: 14px 16px;
   border-radius: var(--r-md);
   background: var(--accent-wash);
-  border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+  border: 1px dashed var(--accent-border);
   font-size: 0.85rem;
   color: var(--ink-2);
   line-height: 1.6;
@@ -1718,5 +1720,25 @@
 @media (min-width: 900px) {
   .stickybar {
     display: none;
+  }
+}
+
+
+/* ============================================================
+   FALLBACKS for browsers without aspect-ratio (iOS < 15, older
+   Android WebView). Without these the portrait, video thumbnail and
+   about photo collapse to zero height — the "page full of missing
+   images" failure. Fixed heights approximate the ratios at the
+   column width; modern browsers never see these.
+   ============================================================ */
+@supports not (aspect-ratio: 1 / 1) {
+  .avatar {
+    height: 500px;
+  }
+  .film__media {
+    height: 200px;
+  }
+  .about__media {
+    height: 220px;
   }
 }

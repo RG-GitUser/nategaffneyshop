@@ -11,6 +11,7 @@
 
 /* ---------- login ---------- */
 .adm-login {
+  min-height: 100vh; /* fallback where dvh is unsupported */
   min-height: 100dvh;
   display: grid;
   place-items: center;
@@ -378,7 +379,7 @@
 
 .adm-pill--cancelled,
 .adm-pill--canceled {
-  background: color-mix(in srgb, var(--red) 16%, transparent);
+  background: rgba(108, 30, 5, 0.16);
   color: var(--red);
   border-color: var(--red);
 }
@@ -435,7 +436,7 @@
 
 .adm-alert--error {
   border-color: var(--red);
-  background: color-mix(in srgb, var(--red) 12%, transparent);
+  background: rgba(108, 30, 5, 0.12);
   color: var(--red);
   margin-bottom: 0;
 }
@@ -473,7 +474,7 @@
   display: grid;
   place-items: center;
   padding: 18px;
-  background: color-mix(in srgb, var(--black) 62%, transparent);
+  background: rgba(18, 11, 7, 0.62);
   backdrop-filter: blur(3px);
 }
 
