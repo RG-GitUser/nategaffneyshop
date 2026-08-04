@@ -17,8 +17,12 @@ git pull
 echo "── building frontend ────────────────────"
 npm ci
 npm run build
-rm -rf site
-cp -r dist site
+# Additive publish: old hashed assets stay behind, so a phone holding
+# yesterday's cached HTML still finds its CSS instead of rendering bare.
+mkdir -p site
+cp -r dist/. site/
+# prune hashed assets older than 30 days so the folder doesn't grow forever
+find site/assets -type f -mtime +30 -delete 2>/dev/null || true
 
 echo "── server deps ──────────────────────────"
 cd server
