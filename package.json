@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "lint:css": "node scripts/lint-css.mjs",
+    "build": "node scripts/lint-css.mjs && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
