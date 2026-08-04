@@ -1,7 +1,35 @@
 /* ============================================================
    ADMIN DASHBOARD
    Same tokens as the public site, denser layout.
+
+   Type: the admin works in the plainer grotesk (Inter) — a tool, not a
+   page — with two deliberate exceptions kept in the site serif: the big
+   "Dashboard" title and the Calendar panel's title.
    ============================================================ */
+
+.adm,
+.adm-login {
+  --ui-font: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    sans-serif;
+  font-family: var(--ui-font);
+}
+
+/* Headings inherit the serif from the global h1-h4 rule, so pull them
+   back to the UI font here… */
+.adm h1,
+.adm h2,
+.adm h3,
+.adm-login h1 {
+  font-family: var(--ui-font);
+  letter-spacing: 0;
+}
+
+/* …except the two that stay in the serif on purpose. */
+.adm-title,
+.adm-h2--serif {
+  font-family: var(--display) !important;
+  letter-spacing: 0.022em !important;
+}
 
 .adm {
   max-width: 1180px;

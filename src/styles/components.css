@@ -1192,6 +1192,106 @@
   cursor: not-allowed;
 }
 
+/* ---------- In-page Stripe checkout ---------- */
+.pay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+}
+
+.pay__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(18, 11, 7, 0.62);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+/* Stripe's form is light-themed, so the card stays white in both themes
+   rather than clashing with it in dark mode. */
+.pay__card {
+  position: relative;
+  width: min(460px, 100%);
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: var(--r-xl);
+  border-top: 4px solid var(--orange);
+  box-shadow: var(--shadow-lg);
+  padding: 18px;
+}
+
+.pay__close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 2;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-sm);
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #6b6b6b;
+  background: #ffffff;
+}
+
+.pay__close:hover {
+  color: var(--red);
+}
+
+.pay__status {
+  padding: 38px 16px 26px;
+  text-align: center;
+  font-family: var(--body);
+  color: #120b07;
+}
+
+.pay__error {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--red);
+  background: rgba(108, 30, 5, 0.08);
+  color: var(--red);
+  font-size: 0.9rem;
+}
+
+.pay__done-title {
+  font-family: var(--display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--red);
+}
+
+.pay__done-note {
+  margin: 10px 0 18px;
+  font-size: 0.92rem;
+  color: #6b6b6b;
+}
+
+.pay__frame {
+  min-height: 40px;
+}
+
+/* Small phones: let the sheet use the whole screen */
+@media (max-width: 480px) {
+  .pay {
+    padding: 0;
+    place-items: stretch;
+  }
+  .pay__card {
+    width: 100%;
+    max-height: none;
+    border-radius: 0;
+  }
+}
+
 /* ---------- Newsletter ---------- */
 .newsletter__inner {
   border-radius: var(--r-xl);

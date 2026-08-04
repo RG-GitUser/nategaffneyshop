@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ArrowRight, Star } from './Icons.jsx'
+import CheckoutModal, { checkoutMode } from './CheckoutModal.jsx'
 
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
@@ -8,6 +9,7 @@ export default function OfferCard({ offer, index = 0 }) {
   const number = String(index + 1).padStart(2, '0')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [paying, setPaying] = useState(false)
 
   /** Items stored with a priceCents go through Stripe Checkout. Anything
    *  else keeps its plain href, so link-out cards still work. */
@@ -15,9 +17,20 @@ export default function OfferCard({ offer, index = 0 }) {
 
   async function startCheckout(e) {
     e.preventDefault()
-    if (busy) return
+    if (busy || paying) return
     setBusy(true)
     setError('')
+
+    // Embedded when the server has a publishable key: the payment form
+    // opens in a modal right here. Otherwise fall back to redirecting to
+    // Stripe's hosted page, so payments work either way.
+    const cfg = await checkoutMode()
+    if (cfg?.embedded) {
+      setBusy(false)
+      setPaying(true)
+      return
+    }
+
     try {
       const res = await fetch(`${API}/api/checkout/session`, {
         method: 'POST',
@@ -83,6 +96,14 @@ export default function OfferCard({ offer, index = 0 }) {
 
         {error && <p className="offer__error">{error}</p>}
       </div>
+
+      {paying && (
+        <CheckoutModal
+          itemId={offer.id}
+          title={offer.title}
+          onClose={() => setPaying(false)}
+        />
+      )}
     </a>
   )
 }

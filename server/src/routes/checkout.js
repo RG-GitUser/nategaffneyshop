@@ -39,6 +39,22 @@ const limiter = rateLimit({
 })
 
 /**
+ * Public config for the frontend: whether embedded checkout is on, and
+ * the keys Stripe.js needs. Both values are public by design — the
+ * publishable key can only tokenise, and the account id identifies, not
+ * authenticates. Served from here rather than baked into the bundle so
+ * changing them is an .env edit, not a rebuild.
+ */
+checkoutRouter.get('/config', (_req, res) => {
+  const embedded = stripeReady && Boolean(config.stripePublishableKey)
+  res.json({
+    embedded,
+    publishableKey: embedded ? config.stripePublishableKey : null,
+    account: embedded ? config.stripeAccountId || null : null,
+  })
+})
+
+/**
  * Start a checkout for a shop item.
  *
  * The request carries an item id and nothing else. Price, currency and
@@ -71,6 +87,16 @@ checkoutRouter.post('/session', limiter, async (req, res, next) => {
 
     const site = (config.allowedOrigins[0] || '').replace(/\/$/, '')
 
+    /**
+     * Embedded when a publishable key is configured: the payment form
+     * mounts inside the page and never leaves it. redirect_on_completion
+     * 'never' keeps even the success step in-app — the frontend's
+     * onComplete callback shows the thank-you, and the webhook records
+     * the order regardless. Hosted redirect remains the fallback so
+     * payments still work before the publishable key is set.
+     */
+    const embedded = Boolean(config.stripePublishableKey)
+
     const session = await stripe.checkout.sessions.create(
       {
         mode: 'payment',
@@ -89,15 +115,19 @@ checkoutRouter.post('/session', limiter, async (req, res, next) => {
         ],
         // Stripe sends the receipt; we also store the address for our records.
         customer_creation: 'always',
-        success_url: `${site}/?paid=1&session={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${site}/#offers`,
         // Read back in the webhook to know what was bought.
         metadata: { itemId: item._id.toString(), title: item.title },
+        ...(embedded
+          ? { ui_mode: 'embedded', redirect_on_completion: 'never' }
+          : {
+              success_url: `${site}/?paid=1&session={CHECKOUT_SESSION_ID}`,
+              cancel_url: `${site}/#offers`,
+            }),
       },
       ...onBehalf,
     )
 
-    res.json({ url: session.url })
+    res.json(embedded ? { clientSecret: session.client_secret } : { url: session.url })
   } catch (err) {
     /**
      * Anything the Stripe SDK raises is an upstream problem, not a bug

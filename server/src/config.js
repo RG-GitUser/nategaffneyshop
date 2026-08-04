@@ -90,6 +90,14 @@ export const config = {
   stripeAccountId: optional('STRIPE_ACCOUNT_ID'),
 
   /**
+   * Publishable key (pk_…) — the one Stripe key that is DESIGNED to be
+   * public; it can only tokenise, never charge or read. Setting it turns
+   * on the in-page embedded checkout; without it the site falls back to
+   * redirecting to Stripe's hosted page.
+   */
+  stripePublishableKey: optional('STRIPE_PUBLISHABLE_KEY'),
+
+  /**
    * Refund behaviour, which differs by charge type:
    *
    *   Direct charges     — the charge lives on the connected account.

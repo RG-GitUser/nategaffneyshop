@@ -64,7 +64,7 @@ export default function BookingsPanel({ notify }) {
     <div>
       <div className="adm-panel-head">
         <div>
-          <h2 className="adm-h2">Calendar</h2>
+          <h2 className="adm-h2 adm-h2--serif">Calendar</h2>
           <p className="adm-sub">Confirm, reschedule or cancel booking requests.</p>
         </div>
         <select
