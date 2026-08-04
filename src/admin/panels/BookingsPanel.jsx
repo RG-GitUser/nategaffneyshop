@@ -5,10 +5,10 @@ import { StatusBar } from './charts.jsx'
 const STATUSES = ['pending', 'confirmed', 'completed', 'cancelled']
 
 const STATUS_COLORS = {
-  pending: 'var(--amber)',
-  confirmed: 'var(--olive)',
-  completed: 'var(--viz-1)',
-  cancelled: 'var(--red)',
+  pending: 'var(--st-pending-fill)',
+  confirmed: 'var(--st-confirmed-fill)',
+  completed: 'var(--st-completed-fill)',
+  cancelled: 'var(--st-cancelled-fill)',
 }
 
 const EMPTY_DRAFT = {

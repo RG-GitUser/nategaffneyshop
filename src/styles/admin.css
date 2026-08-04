@@ -26,6 +26,25 @@
   --viz-other: #a8a396;
 }
 
+.adm {
+  /* Status colors — semantic and deliberately livelier than the brand
+     browns: amber=pending, green=confirmed/succeeded, blue=completed,
+     red=cancelled. Text steps are dark enough to read on the light
+     cards; -fill steps are the vivid versions for bars and swatches. */
+  --st-pending: #9a6300;
+  --st-pending-fill: #f0a51f;
+  --st-pending-wash: rgba(240, 165, 31, 0.16);
+  --st-confirmed: #0c7a45;
+  --st-confirmed-fill: #23b876;
+  --st-confirmed-wash: rgba(35, 184, 118, 0.14);
+  --st-completed: #1d5fb4;
+  --st-completed-fill: #3c86e0;
+  --st-completed-wash: rgba(60, 134, 224, 0.13);
+  --st-cancelled: #b23a2e;
+  --st-cancelled-fill: #d9584a;
+  --st-cancelled-wash: rgba(217, 88, 74, 0.13);
+}
+
 /* Same hues re-stepped for the dark surface (#171008) — not an automatic
    flip; validated separately. */
 :root[data-theme='dark'] .adm {
@@ -35,6 +54,16 @@
   --viz-4: #c98500;
   --viz-5: #d55181;
   --viz-other: #6d675f;
+
+  /* status text lifts to stay readable on the dark cards */
+  --st-pending: #f5b83d;
+  --st-pending-wash: rgba(240, 165, 31, 0.18);
+  --st-confirmed: #3ecb87;
+  --st-confirmed-wash: rgba(35, 184, 118, 0.16);
+  --st-completed: #63a4f0;
+  --st-completed-wash: rgba(60, 134, 224, 0.16);
+  --st-cancelled: #ee7a6d;
+  --st-cancelled-wash: rgba(217, 88, 74, 0.16);
 }
 
 /* Headings inherit the serif from the global h1-h4 rule, so pull them
@@ -453,22 +482,28 @@
 
 .adm-pill--confirmed,
 .adm-pill--succeeded {
-  background: var(--olive-wash);
-  color: var(--olive);
-  border-color: var(--olive);
+  background: var(--st-confirmed-wash);
+  color: var(--st-confirmed);
+  border-color: var(--st-confirmed);
 }
 
 .adm-pill--pending {
-  background: var(--amber-wash);
-  color: var(--amber);
-  border-color: var(--amber);
+  background: var(--st-pending-wash);
+  color: var(--st-pending);
+  border-color: var(--st-pending);
+}
+
+.adm-pill--completed {
+  background: var(--st-completed-wash);
+  color: var(--st-completed);
+  border-color: var(--st-completed);
 }
 
 .adm-pill--cancelled,
 .adm-pill--canceled {
-  background: rgba(80, 13, 13, 0.16);
-  color: var(--red);
-  border-color: var(--red);
+  background: var(--st-cancelled-wash);
+  color: var(--st-cancelled);
+  border-color: var(--st-cancelled);
 }
 
 /* ---------- stats ---------- */
