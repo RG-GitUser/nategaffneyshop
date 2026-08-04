@@ -170,13 +170,10 @@ export const newsletter = {
   // Set to a real figure to show a subscriber count, or leave null to hide it.
   subscribers: null,
   finePrint: 'One email a week. Unsubscribe anytime.',
-  // Recent issues build more trust than any promise about the newsletter.
-  // Swap in real ones — link them out if they're public.
-  recentIssues: [
-    { no: '042', title: 'The b-roll rule I break on every shoot' },
-    { no: '041', title: 'I posted daily for 30 days. Here’s the actual math.' },
-    { no: '040', title: 'Why your hook isn’t the problem' },
-  ],
+  // Optional right-hand rail of recent issues. Empty = hidden, and the
+  // signup form takes the full width. Add rows as { no, title } to bring
+  // it back once there are real issues to show.
+  recentIssues: [],
 }
 
 /**
@@ -203,7 +200,7 @@ export const groupChat = {
   mode: 'native',
 
   eyebrow: 'The group chat',
-  title: 'Join the circle',
+  title: 'Join the conversation',
   description:
     'A running conversation with other people making things — what they’re working on, what’s stuck, what actually worked. Drop in whenever.',
   cta: 'Get my code',

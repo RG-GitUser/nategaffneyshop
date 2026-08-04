@@ -1192,7 +1192,9 @@
 }
 
 @media (min-width: 860px) {
-  .newsletter__inner {
+  /* Two columns only when the issues rail actually renders — otherwise a
+     260px dead gutter sits beside the form. */
+  .newsletter__inner:has(.newsletter__issues) {
     display: grid;
     grid-template-columns: 1fr 260px;
   }

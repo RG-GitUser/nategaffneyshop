@@ -134,16 +134,21 @@
 }
 
 :root[data-theme='dark'] {
-  /* ---- DARK ---- grounded on the warm chocolate, not the near-black.
-     The near-black stays in the palette for text on orange fills and for
+  /* ---- DARK ---- a lifted warm brown ground, not the near-black.
+     Lighter than plain chocolate by a breath of bone, warmed by a trace
+     of orange — the near-black stays for text on orange fills and for
      pushing surfaces darker where depth is needed. */
-  --bg: var(--chocolate);
-  --bg-2: color-mix(in srgb, var(--black) 30%, var(--chocolate));
+  --bg: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--orange) 5%, var(--chocolate)),
+    var(--bone) 5%
+  );
+  --bg-2: color-mix(in srgb, var(--black) 28%, var(--chocolate));
   --surface: color-mix(in srgb, var(--black) 22%, var(--chocolate));
-  --surface-2: color-mix(in srgb, var(--bone) 6%, var(--chocolate));
+  --surface-2: color-mix(in srgb, var(--bone) 8%, var(--chocolate));
 
-  --line: color-mix(in srgb, var(--bone) 12%, var(--chocolate));
-  --line-2: color-mix(in srgb, var(--bone) 22%, var(--chocolate));
+  --line: color-mix(in srgb, var(--bone) 14%, var(--chocolate));
+  --line-2: color-mix(in srgb, var(--bone) 25%, var(--chocolate));
 
   --ink: var(--bone);
   --ink-2: color-mix(in srgb, var(--bone) 82%, var(--black));
@@ -154,11 +159,11 @@
      the near-black was — plain orange only reaches ~3.8:1 on it, so the
      text tone is lifted toward bone. Fills stay full orange with the
      near-black on top. */
-  --accent: color-mix(in srgb, var(--bone) 22%, var(--orange));
+  --accent: color-mix(in srgb, var(--bone) 36%, var(--orange));
   --accent-hi: color-mix(in srgb, var(--bone) 12%, var(--orange));
   --accent-fill: var(--orange);
   --accent-deep: color-mix(in srgb, var(--black) 45%, var(--orange));
-  --accent-wash: color-mix(in srgb, var(--orange) 16%, transparent);
+  --accent-wash: color-mix(in srgb, var(--orange) 20%, transparent);
   --on-accent: var(--black);
 
   /* Cards sit lighter than the page here, so plain orange only reaches
@@ -167,13 +172,13 @@
      read as a different colour fails against this surface — a lifted red
      measured 2.06:1 — so lightness is the only axis available. */
   --amber: color-mix(in srgb, var(--bone) 14%, var(--orange));
-  --amber-wash: color-mix(in srgb, var(--orange) 16%, transparent);
+  --amber-wash: color-mix(in srgb, var(--orange) 22%, transparent);
   --umber: color-mix(in srgb, var(--bone) 30%, var(--orange));
-  --umber-wash: color-mix(in srgb, var(--orange) 12%, transparent);
+  --umber-wash: color-mix(in srgb, var(--orange) 18%, transparent);
   --olive: color-mix(in srgb, var(--bone) 38%, var(--orange));
-  --olive-wash: color-mix(in srgb, var(--orange) 14%, transparent);
+  --olive-wash: color-mix(in srgb, var(--red) 26%, transparent);
   --card-lead: color-mix(in srgb, var(--bone) 22%, var(--orange));
-  --card-lead-wash: color-mix(in srgb, var(--orange) 14%, transparent);
+  --card-lead-wash: color-mix(in srgb, var(--orange) 20%, transparent);
 
   /* Three layers, warmest at the top and falling away to the near-black
      ground by roughly half the viewport:
@@ -186,25 +191,30 @@
   /* Kept deliberately faint. Pushed harder, the warm top-right corner
      lifts the background enough that orange text over it drops to about
      3.7:1 — the glow would be costing readability for atmosphere. */
+  /* The rich version: a real orange ember off the top-right, a red cast
+     rising from the bottom-left, and a lifted band across the top. The
+     red layer is free warmth — it darkens the ground, so light text over
+     it gains contrast rather than losing it. The orange layers are what
+     the accent-text tone is tuned against below. */
   --page-glow: radial-gradient(
       120% 60% at 85% 0%,
-      color-mix(in srgb, var(--orange) 3.5%, transparent) 0%,
-      color-mix(in srgb, var(--orange) 2%, transparent) 28%,
-      color-mix(in srgb, var(--orange) 1%, transparent) 58%,
+      color-mix(in srgb, var(--orange) 10%, transparent) 0%,
+      color-mix(in srgb, var(--orange) 6%, transparent) 28%,
+      color-mix(in srgb, var(--orange) 2.5%, transparent) 58%,
       transparent 88%
     ),
     radial-gradient(
       110% 55% at 8% 100%,
-      color-mix(in srgb, var(--orange) 5%, transparent) 0%,
-      color-mix(in srgb, var(--orange) 2.5%, transparent) 30%,
-      color-mix(in srgb, var(--orange) 1%, transparent) 60%,
+      color-mix(in srgb, var(--red) 18%, transparent) 0%,
+      color-mix(in srgb, var(--red) 9%, transparent) 30%,
+      color-mix(in srgb, var(--red) 3.5%, transparent) 60%,
       transparent 88%
     ),
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--bone) 2%, transparent) 0%,
-      color-mix(in srgb, var(--bone) 1%, transparent) 14%,
-      color-mix(in srgb, var(--bone) 0.5%, transparent) 34%,
+      color-mix(in srgb, var(--bone) 6%, transparent) 0%,
+      color-mix(in srgb, var(--bone) 3%, transparent) 14%,
+      color-mix(in srgb, var(--bone) 1.2%, transparent) 34%,
       transparent 62%
     );
   --bar-bg: color-mix(in srgb, var(--black) 88%, transparent);

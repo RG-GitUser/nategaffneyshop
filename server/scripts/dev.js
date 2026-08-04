@@ -10,6 +10,10 @@
  * Use this to click through the dashboard before the droplet exists.
  * Production uses `npm start` against the real MONGODB_URI.
  */
+// Load .env before anything reads process.env — DEV_ADMIN_* below is
+// consumed at module top, long before the server's own config import
+// would have loaded dotenv.
+import 'dotenv/config'
 import { MongoMemoryServer } from 'mongodb-memory-server'
 import bcrypt from 'bcryptjs'
 import { MongoClient } from 'mongodb'
