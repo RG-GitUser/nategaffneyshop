@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
-import { BreakdownBars, Donut, TrafficChart, VizToggle, foldTop } from './charts.jsx'
+import { BreakdownBars, Donut, TrafficChart, VIZ, VizToggle, foldTop } from './charts.jsx'
 
 const money = (cents, currency = 'cad') =>
   new Intl.NumberFormat('en-CA', {
@@ -11,14 +11,52 @@ const money = (cents, currency = 'cad') =>
 const when = (iso) => new Date(iso).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' })
 
 /* Pad to a continuous run of calendar days so quiet days show as zero
-   instead of silently disappearing from the time axis. */
-const padDays = (byDay, n) => {
-  const map = new Map(byDay.map((d) => [d.day, d]))
+   instead of silently disappearing from the time axis. Revenue arrives in
+   cents and is converted to dollars for the chart. */
+const padDays = (activity, n) => {
+  const map = new Map(activity.map((d) => [d.day, d]))
   return Array.from({ length: n }, (_, i) => {
     const day = new Date(Date.now() - (n - 1 - i) * 86400000).toISOString().slice(0, 10)
-    const row = map.get(day)
-    return { day, views: row?.views || 0, visits: row?.visits || 0 }
+    const row = map.get(day) || {}
+    return {
+      day,
+      views: row.views || 0,
+      visits: row.visits || 0,
+      revenue: (row.revenue || 0) / 100,
+      orders: row.orders || 0,
+      messages: row.messages || 0,
+      newMembers: row.newMembers || 0,
+    }
   })
+}
+
+/* The chart's metric filter. Colors are fixed per metric so a metric never
+   changes color between visits. Revenue plots alone — dollars can't share
+   an axis with counts. */
+const METRICS = {
+  traffic: {
+    label: 'Views & visits',
+    series: [
+      { key: 'views', label: 'Views', color: VIZ[0] },
+      { key: 'visits', label: 'Visits', color: VIZ[1] },
+    ],
+  },
+  views: { label: 'Page views', series: [{ key: 'views', label: 'Page views', color: VIZ[0] }] },
+  visits: { label: 'Visits', series: [{ key: 'visits', label: 'Visits', color: VIZ[1] }] },
+  revenue: {
+    label: 'Revenue',
+    money: true,
+    series: [{ key: 'revenue', label: 'Revenue', color: VIZ[2] }],
+  },
+  orders: { label: 'Orders', series: [{ key: 'orders', label: 'Orders', color: VIZ[3] }] },
+  newMembers: {
+    label: 'New chat members',
+    series: [{ key: 'newMembers', label: 'New chat members', color: VIZ[4] }],
+  },
+  messages: {
+    label: 'Chat messages',
+    series: [{ key: 'messages', label: 'Chat messages', color: VIZ[1] }],
+  },
 }
 
 export default function AnalyticsPanel({ notify }) {
@@ -26,6 +64,7 @@ export default function AnalyticsPanel({ notify }) {
   const [days, setDays] = useState(30)
   const [loading, setLoading] = useState(true)
   const [trafficView, setTrafficView] = useState('bars')
+  const [metric, setMetric] = useState('traffic')
   const [pagesView, setPagesView] = useState('share')
   const [salesView, setSalesView] = useState('share')
 
@@ -43,7 +82,16 @@ export default function AnalyticsPanel({ notify }) {
   if (!data) return <p className="adm-muted">No data yet.</p>
 
   const { traffic, sales, chat } = data
-  const series = padDays(traffic.byDay, Math.min(data.windowDays, 14))
+  const series = padDays(data.activity || traffic.byDay, Math.min(data.windowDays, 14))
+  const chosen = METRICS[metric]
+  const chartFmt = chosen.money
+    ? (v) =>
+        new Intl.NumberFormat('en-CA', {
+          style: 'currency',
+          currency: (sales.currency || 'cad').toUpperCase(),
+          maximumFractionDigits: 0,
+        }).format(v)
+    : undefined
 
   const pageItems = foldTop(traffic.topPages.map((p) => ({ label: p.path, value: p.views })))
   const saleItems = foldTop(
@@ -100,21 +148,31 @@ export default function AnalyticsPanel({ notify }) {
 
       <section className="adm-group">
         <div className="adm-group-head">
-          <h3 className="adm-h3">Traffic by day</h3>
-          <VizToggle
-            value={trafficView}
-            onChange={setTrafficView}
-            options={[
-              { value: 'bars', label: 'Bars' },
-              { value: 'line', label: 'Line' },
-            ]}
-          />
+          <h3 className="adm-h3">Activity by day</h3>
+          <div className="adm-inline">
+            <select
+              className="adm-select"
+              value={metric}
+              onChange={(e) => setMetric(e.target.value)}
+              aria-label="Which metric to chart"
+            >
+              {Object.entries(METRICS).map(([id, m]) => (
+                <option key={id} value={id}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+            <VizToggle
+              value={trafficView}
+              onChange={setTrafficView}
+              options={[
+                { value: 'bars', label: 'Bars' },
+                { value: 'line', label: 'Line' },
+              ]}
+            />
+          </div>
         </div>
-        {traffic.totalViews === 0 ? (
-          <p className="adm-muted">Nothing counted yet — views appear as people open the site.</p>
-        ) : (
-          <TrafficChart data={series} mode={trafficView} />
-        )}
+        <TrafficChart data={series} mode={trafficView} series={chosen.series} fmt={chartFmt} />
       </section>
 
       <div className="adm-cols">

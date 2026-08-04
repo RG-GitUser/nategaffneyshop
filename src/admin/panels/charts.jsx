@@ -63,8 +63,14 @@ function barPath(x, y, w, h, r) {
 const fmtDay = (iso) =>
   new Date(`${iso}T00:00:00`).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
 
-/** Views + visits over time. mode: 'bars' | 'line'. */
-export function TrafficChart({ data, mode }) {
+/**
+ * Daily time chart for one or two series. mode: 'bars' | 'line'.
+ * series: [{ key, label, color }] — two at most, sharing one axis, so
+ * never mix a money series with a count series.
+ * fmt formats values for ticks and the tooltip (e.g. currency).
+ */
+export function TrafficChart({ data, mode, series, fmt }) {
+  const format = fmt || ((v) => v.toLocaleString())
   const [wrapRef, width] = useMeasuredWidth()
   const [hover, setHover] = useState(null)
 
@@ -75,8 +81,8 @@ export function TrafficChart({ data, mode }) {
   const innerH = H - pad.t - pad.b
 
   const yTop = useMemo(
-    () => niceScale(Math.max(1, ...data.map((d) => Math.max(d.views, d.visits)))),
-    [data],
+    () => niceScale(Math.max(1, ...data.flatMap((d) => series.map((s) => d[s.key] || 0)))),
+    [data, series],
   )
   const y = (v) => pad.t + innerH - (v / yTop.max) * innerH
   const slot = innerW / data.length
@@ -95,14 +101,15 @@ export function TrafficChart({ data, mode }) {
 
   return (
     <div>
-      <div className="adm-viz-legend" aria-hidden="true">
-        <span className="adm-viz-key">
-          <i className="adm-viz-swatch" style={{ background: VIZ[0] }} /> Views
-        </span>
-        <span className="adm-viz-key">
-          <i className="adm-viz-swatch" style={{ background: VIZ[1] }} /> Visits
-        </span>
-      </div>
+      {series.length > 1 && (
+        <div className="adm-viz-legend" aria-hidden="true">
+          {series.map((s) => (
+            <span className="adm-viz-key" key={s.key}>
+              <i className="adm-viz-swatch" style={{ background: s.color }} /> {s.label}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="adm-viz-wrap" ref={wrapRef}>
         {width > 0 && (
@@ -124,7 +131,7 @@ export function TrafficChart({ data, mode }) {
                   className={t === 0 ? 'adm-viz-axis' : 'adm-viz-grid'}
                 />
                 <text x={pad.l - 8} y={y(t) + 3.5} textAnchor="end" className="adm-viz-tick">
-                  {t.toLocaleString()}
+                  {format(t)}
                 </text>
               </g>
             ))}
@@ -142,29 +149,31 @@ export function TrafficChart({ data, mode }) {
             {mode === 'bars'
               ? data.map((d, i) => {
                   const cx = xMid(i)
+                  const w = series.length === 1 ? Math.min(18, slot * 0.5) : barW
                   return (
                     <g key={d.day}>
-                      {d.views > 0 && (
-                        <path
-                          d={barPath(cx - barW - 1, y(d.views), barW, y(0) - y(d.views), 4)}
-                          fill={VIZ[0]}
-                        />
-                      )}
-                      {d.visits > 0 && (
-                        <path
-                          d={barPath(cx + 1, y(d.visits), barW, y(0) - y(d.visits), 4)}
-                          fill={VIZ[1]}
-                        />
-                      )}
+                      {series.map((s, si) => {
+                        const v = d[s.key] || 0
+                        if (v <= 0) return null
+                        const x =
+                          series.length === 1 ? cx - w / 2 : cx + (si === 0 ? -w - 1 : 1)
+                        return (
+                          <path
+                            key={s.key}
+                            d={barPath(x, y(v), w, y(0) - y(v), 4)}
+                            fill={s.color}
+                          />
+                        )
+                      })}
                     </g>
                   )
                 })
-              : ['views', 'visits'].map((key, s) => (
-                  <g key={key}>
+              : series.map((s) => (
+                  <g key={s.key}>
                     <polyline
-                      points={data.map((d, i) => `${xMid(i)},${y(d[key])}`).join(' ')}
+                      points={data.map((d, i) => `${xMid(i)},${y(d[s.key] || 0)}`).join(' ')}
                       fill="none"
-                      stroke={VIZ[s]}
+                      stroke={s.color}
                       strokeWidth="2"
                       strokeLinejoin="round"
                       strokeLinecap="round"
@@ -172,9 +181,9 @@ export function TrafficChart({ data, mode }) {
                     {hover != null && (
                       <circle
                         cx={xMid(hover)}
-                        cy={y(data[hover][key])}
+                        cy={y(data[hover][s.key] || 0)}
                         r="4"
-                        fill={VIZ[s]}
+                        fill={s.color}
                         className="adm-viz-dot"
                       />
                     )}
@@ -212,14 +221,12 @@ export function TrafficChart({ data, mode }) {
             }}
           >
             <strong>{fmtDay(hovered.day)}</strong>
-            <span>
-              <i className="adm-viz-swatch" style={{ background: VIZ[0] }} /> Views{' '}
-              <b>{hovered.views.toLocaleString()}</b>
-            </span>
-            <span>
-              <i className="adm-viz-swatch" style={{ background: VIZ[1] }} /> Visits{' '}
-              <b>{hovered.visits.toLocaleString()}</b>
-            </span>
+            {series.map((s) => (
+              <span key={s.key}>
+                <i className="adm-viz-swatch" style={{ background: s.color }} /> {s.label}{' '}
+                <b>{format(hovered[s.key] || 0)}</b>
+              </span>
+            ))}
           </div>
         )}
       </div>

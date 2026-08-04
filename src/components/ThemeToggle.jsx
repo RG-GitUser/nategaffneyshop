@@ -20,7 +20,7 @@ export default function ThemeToggle() {
     // Keeps the mobile browser chrome in step with the page.
     const meta = document.querySelector('meta[name="theme-color"]')
     if (meta) {
-      meta.setAttribute('content', theme === 'dark' ? '#1D150C' : '#EBE5D8')
+      meta.setAttribute('content', theme === 'dark' ? '#0E0A06' : '#EBE5D8')
     }
 
     try {

@@ -55,7 +55,9 @@ metricsRouter.get('/summary', requireAdmin, async (req, res, next) => {
     const since = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000)
     const sinceDay = since.toISOString().slice(0, 10)
 
-    const [byDay, byPath, orders, recentOrders, chat, bookings] = await Promise.all([
+    const dayOf = { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }
+
+    const [byDay, byPath, orders, recentOrders, chat, bookings, ordersByDay, msgsByDay, membersByDay] = await Promise.all([
       collections
         .pageViews()
         .aggregate([
@@ -117,10 +119,63 @@ metricsRouter.get('/summary', requireAdmin, async (req, res, next) => {
           { $group: { _id: '$status', n: { $sum: 1 } } },
         ])
         .toArray(),
+      // Per-day series for the chart's metric filter. UTC day strings, the
+      // same convention the beacon uses for pageViews.
+      collections
+        .orders()
+        .aggregate([
+          { $match: { createdAt: { $gte: since }, status: 'paid' } },
+          { $group: { _id: dayOf, orders: { $sum: 1 }, revenue: { $sum: '$amount' } } },
+        ])
+        .toArray(),
+      collections
+        .chatMessages()
+        .aggregate([
+          { $match: { createdAt: { $gte: since }, deleted: { $ne: true } } },
+          { $group: { _id: dayOf, n: { $sum: 1 } } },
+        ])
+        .toArray(),
+      collections
+        .chatMembers()
+        .aggregate([
+          { $match: { joinedAt: { $gte: since } } },
+          {
+            $group: {
+              _id: { $dateToString: { format: '%Y-%m-%d', date: '$joinedAt' } },
+              n: { $sum: 1 },
+            },
+          },
+        ])
+        .toArray(),
     ])
+
+    // One merged row per day, zero where a metric had nothing.
+    const activityMap = new Map()
+    const rowFor = (day) => {
+      if (!activityMap.has(day)) {
+        activityMap.set(day, {
+          day,
+          views: 0,
+          visits: 0,
+          revenue: 0,
+          orders: 0,
+          messages: 0,
+          newMembers: 0,
+        })
+      }
+      return activityMap.get(day)
+    }
+    byDay.forEach((d) => Object.assign(rowFor(d._id), { views: d.views, visits: d.visits }))
+    ordersByDay.forEach((d) =>
+      Object.assign(rowFor(d._id), { orders: d.orders, revenue: d.revenue }),
+    )
+    msgsByDay.forEach((d) => Object.assign(rowFor(d._id), { messages: d.n }))
+    membersByDay.forEach((d) => Object.assign(rowFor(d._id), { newMembers: d.n }))
+    const activity = [...activityMap.values()].sort((a, b) => a.day.localeCompare(b.day))
 
     res.json({
       windowDays: daysBack,
+      activity,
       traffic: {
         totalViews: byDay.reduce((s, d) => s + d.views, 0),
         totalVisits: byDay.reduce((s, d) => s + d.visits, 0),

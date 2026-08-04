@@ -45,7 +45,7 @@
   --st-cancelled-wash: rgba(217, 88, 74, 0.13);
 }
 
-/* Same hues re-stepped for the dark surface (#171008) — not an automatic
+/* Same hues re-stepped for the dark surface (#0e0a06) — not an automatic
    flip; validated separately. */
 :root[data-theme='dark'] .adm {
   --viz-1: #3987e5;
