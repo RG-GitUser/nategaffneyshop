@@ -3,10 +3,10 @@ import { api } from './api.js'
 import Login from './Login.jsx'
 import ContentPanel from './panels/ContentPanel.jsx'
 import ShopPanel from './panels/ShopPanel.jsx'
+import ServicesPanel from './panels/ServicesPanel.jsx'
 import BookingsPanel from './panels/BookingsPanel.jsx'
 import PaymentsPanel from './panels/PaymentsPanel.jsx'
 import AnalyticsPanel from './panels/AnalyticsPanel.jsx'
-import CommunityPanel from './panels/CommunityPanel.jsx'
 import MediaPanel from './panels/MediaPanel.jsx'
 import AccountPanel from './panels/AccountPanel.jsx'
 import ThemeToggle from '../components/ThemeToggle.jsx'
@@ -14,11 +14,13 @@ import { ConfirmHost } from './confirm.jsx'
 
 const TABS = [
   { id: 'analytics', label: 'Analytics', Panel: AnalyticsPanel },
-  { id: 'community', label: 'Community', Panel: CommunityPanel },
+  // Community tab parked for now — to bring it back, re-import
+  // CommunityPanel and restore its entry here.
   { id: 'bookings', label: 'Calendar', Panel: BookingsPanel },
   { id: 'payments', label: 'Payments', Panel: PaymentsPanel },
   { id: 'content', label: 'Content', Panel: ContentPanel },
   { id: 'shop', label: 'Shop', Panel: ShopPanel },
+  { id: 'services', label: 'Services', Panel: ServicesPanel },
   { id: 'media', label: 'Images', Panel: MediaPanel },
   { id: 'account', label: 'Account', Panel: AccountPanel },
 ]

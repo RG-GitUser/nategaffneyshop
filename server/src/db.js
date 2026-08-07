@@ -14,6 +14,7 @@ export async function connect() {
   await db.collection('bookings').createIndex({ date: 1, time: 1 })
   await db.collection('bookings').createIndex({ status: 1, createdAt: -1 })
   await db.collection('shopItems').createIndex({ order: 1 })
+  await db.collection('services').createIndex({ order: 1 })
   // Stripe can deliver the same event more than once, so the session id is
   // unique and the handler upserts against it.
   await db.collection('orders').createIndex({ sessionId: 1 }, { unique: true })
@@ -64,6 +65,7 @@ export const collections = {
   settings: () => getDb().collection('settings'),
   content: () => getDb().collection('content'),
   shopItems: () => getDb().collection('shopItems'),
+  services: () => getDb().collection('services'),
   bookings: () => getDb().collection('bookings'),
   orders: () => getDb().collection('orders'),
   pageViews: () => getDb().collection('pageViews'),

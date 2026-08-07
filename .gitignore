@@ -11,3 +11,5 @@ dist-ssr
 
 # local dev uploads (in-memory-DB test artifacts)
 server/uploads-dev/
+# paid PDFs — customer deliverables, never in the repo
+server/private-pdfs/

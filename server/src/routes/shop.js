@@ -1,13 +1,18 @@
 import { Router } from 'express'
+import { join, basename } from 'node:path'
 import { ObjectId } from 'mongodb'
+import jwt from 'jsonwebtoken'
 import { z } from 'zod'
+import { config } from '../config.js'
 import { collections, audit } from '../db.js'
 import { requireAdmin } from '../middleware/auth.js'
 
 export const shopRouter = Router()
 
 const itemSchema = z.object({
-  kind: z.enum(['product', 'link']).default('product'),
+  /** 'pdf' sells a paywalled download: pay through checkout like a
+   *  product, then the webhook emails a time-limited download link. */
+  kind: z.enum(['product', 'link', 'pdf']).default('product'),
   title: z.string().min(1).max(120),
   description: z.string().max(1000).default(''),
   price: z.string().max(40).optional().nullable(),
@@ -29,6 +34,10 @@ const itemSchema = z.object({
   image: z.string().max(500).optional().nullable(),
   order: z.number().int().default(0),
   visible: z.boolean().default(true),
+  /** Filename in config.pdfDir (from /api/media/pdf) — never a public URL. */
+  pdfFile: z.string().max(300).optional().nullable(),
+  /** The original filename, shown in the dashboard only. */
+  pdfName: z.string().max(200).optional().nullable(),
 })
 
 const toClient = (doc) => ({ ...doc, id: doc._id.toString(), _id: undefined })
@@ -41,7 +50,8 @@ function parseId(id, res) {
   return new ObjectId(id)
 }
 
-/** Public — visible items only, in display order. */
+/** Public — visible items only, in display order. The stored PDF filename
+ *  stays server-side; the public card only needs to know the kind. */
 shopRouter.get('/', async (_req, res, next) => {
   try {
     const items = await collections
@@ -49,9 +59,57 @@ shopRouter.get('/', async (_req, res, next) => {
       .find({ visible: { $ne: false } })
       .sort({ order: 1 })
       .toArray()
-    res.json(items.map(toClient))
+    res.json(
+      items.map((doc) => {
+        const item = toClient(doc)
+        delete item.pdfFile
+        delete item.pdfName
+        return item
+      }),
+    )
   } catch (err) {
     next(err)
+  }
+})
+
+/**
+ * Paywalled PDF download. The token is a short-lived JWT minted by the
+ * Stripe webhook after payment and emailed to the buyer — possession of
+ * a valid token IS the proof of purchase, and the order it points at is
+ * re-checked so a refunded/unpaid session can't fetch the file.
+ */
+shopRouter.get('/download', async (req, res) => {
+  const denied = () =>
+    res.status(403).json({
+      error:
+        'This download link is invalid or has expired. Reply to your purchase email and we will send a fresh one.',
+    })
+
+  try {
+    const payload = jwt.verify(String(req.query.token || ''), config.jwtSecret, {
+      algorithms: ['HS256'],
+    })
+    if (payload.purpose !== 'pdf-download' || !payload.sid) return denied()
+
+    const order = await collections.orders().findOne({ sessionId: payload.sid })
+    if (!order || order.status !== 'paid') return denied()
+    if (!order.itemId || !ObjectId.isValid(order.itemId)) return denied()
+
+    const item = await collections
+      .shopItems()
+      .findOne({ _id: new ObjectId(order.itemId) })
+    if (!item || item.kind !== 'pdf' || !item.pdfFile) return denied()
+
+    // basename() so a stored value can never walk out of pdfDir.
+    const file = join(config.pdfDir, basename(item.pdfFile))
+    const niceName = `${(item.title || 'download').replace(/[^\w\- ]+/g, '').trim() || 'download'}.pdf`
+    res.download(file, niceName, (err) => {
+      if (err && !res.headersSent) {
+        res.status(404).json({ error: 'The file is missing. Reply to your purchase email.' })
+      }
+    })
+  } catch {
+    return denied()
   }
 })
 

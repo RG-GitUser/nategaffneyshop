@@ -24,8 +24,6 @@ const padDays = (activity, n) => {
       visits: row.visits || 0,
       revenue: (row.revenue || 0) / 100,
       orders: row.orders || 0,
-      messages: row.messages || 0,
-      newMembers: row.newMembers || 0,
     }
   })
 }
@@ -49,14 +47,6 @@ const METRICS = {
     series: [{ key: 'revenue', label: 'Revenue', color: VIZ[2] }],
   },
   orders: { label: 'Orders', series: [{ key: 'orders', label: 'Orders', color: VIZ[3] }] },
-  newMembers: {
-    label: 'New chat members',
-    series: [{ key: 'newMembers', label: 'New chat members', color: VIZ[4] }],
-  },
-  messages: {
-    label: 'Chat messages',
-    series: [{ key: 'messages', label: 'Chat messages', color: VIZ[1] }],
-  },
 }
 
 export default function AnalyticsPanel({ notify }) {
@@ -81,7 +71,7 @@ export default function AnalyticsPanel({ notify }) {
   if (loading && !data) return <p className="adm-muted">Loading…</p>
   if (!data) return <p className="adm-muted">No data yet.</p>
 
-  const { traffic, sales, chat } = data
+  const { traffic, sales } = data
   const series = padDays(data.activity || traffic.byDay, Math.min(data.windowDays, 14))
   const chosen = METRICS[metric]
   const chartFmt = chosen.money
@@ -135,14 +125,6 @@ export default function AnalyticsPanel({ notify }) {
         <div className="adm-stat">
           <span className="adm-stat__label">Orders ({data.windowDays}d)</span>
           <span className="adm-stat__value">{sales.totalOrders}</span>
-        </div>
-        <div className="adm-stat">
-          <span className="adm-stat__label">New chat members ({data.windowDays}d)</span>
-          <span className="adm-stat__value">{chat.newMembers}</span>
-        </div>
-        <div className="adm-stat">
-          <span className="adm-stat__label">Chat messages ({data.windowDays}d)</span>
-          <span className="adm-stat__value">{chat.messagesWindow}</span>
         </div>
       </div>
 

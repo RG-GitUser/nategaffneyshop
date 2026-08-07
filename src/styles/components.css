@@ -834,14 +834,6 @@
   color: var(--ink-faint);
 }
 
-.cal__dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  border: 1px solid var(--line-2);
-  background: var(--bg);
-}
-
 /* --- time slots --- */
 .slots {
   margin-top: 24px;
@@ -2019,4 +2011,37 @@
   .about__media {
     height: 220px;
   }
+}
+/* ---------- custom containers (built in the dashboard) ---------- */
+.custom-copy {
+  padding: clamp(20px, 3.4vw, 30px);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+  display: grid;
+  gap: 12px;
+}
+
+.custom-copy p {
+  color: var(--ink-2);
+  line-height: 1.7;
+  max-width: 68ch;
+}
+
+/* Accent spine, picked per container in the dashboard. */
+.custom-copy--navy {
+  border-left: 4px solid var(--navy);
+}
+
+.custom-copy--umber {
+  border-left: 4px solid var(--umber);
+}
+
+.custom-copy--olive {
+  border-left: 4px solid var(--olive);
+}
+
+.custom-copy--amber {
+  border-left: 4px solid var(--amber);
 }

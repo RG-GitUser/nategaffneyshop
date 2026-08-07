@@ -9,6 +9,7 @@ import { verifyMail } from './mailer.js'
 import { authRouter } from './routes/auth.js'
 import { contentRouter } from './routes/content.js'
 import { shopRouter } from './routes/shop.js'
+import { servicesRouter } from './routes/services.js'
 import { bookingsRouter } from './routes/bookings.js'
 import { paymentsRouter } from './routes/payments.js'
 import { mediaRouter } from './routes/media.js'
@@ -81,6 +82,7 @@ app.get('/health', (_req, res) => res.json({ ok: true }))
 app.use('/api/auth', authRouter)
 app.use('/api/content', contentRouter)
 app.use('/api/shop', shopRouter)
+app.use('/api/services', servicesRouter)
 app.use('/api/bookings', bookingsRouter)
 app.use('/api/payments', paymentsRouter)
 app.use('/api/media', mediaRouter)

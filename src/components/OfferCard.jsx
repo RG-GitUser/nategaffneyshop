@@ -5,7 +5,7 @@ import CheckoutModal, { checkoutMode } from './CheckoutModal.jsx'
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
 export default function OfferCard({ offer, index = 0 }) {
-  const isProduct = offer.kind === 'product'
+  const isProduct = offer.kind === 'product' || offer.kind === 'pdf'
   const number = String(index + 1).padStart(2, '0')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -107,6 +107,11 @@ export default function OfferCard({ offer, index = 0 }) {
         <CheckoutModal
           itemId={offer.id}
           title={offer.title}
+          doneNote={
+            offer.kind === 'pdf'
+              ? 'Payment received — your download link is on its way to your email.'
+              : undefined
+          }
           onClose={() => setPaying(false)}
         />
       )}

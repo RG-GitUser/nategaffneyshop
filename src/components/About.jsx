@@ -4,6 +4,9 @@ import { about } from '../content.js'
 export default function About() {
   const [imgFailed, setImgFailed] = useState(false)
 
+  // Content deleted in the admin dashboard hides the section.
+  if (!about.heading && !(about.paragraphs || []).length) return null
+
   // No image configured (or it 404'd) — drop the media column entirely
   // rather than leaving an empty placeholder panel behind.
   const showMedia = Boolean(about.image) && !imgFailed

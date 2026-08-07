@@ -5,7 +5,8 @@ export default function Newsletter() {
   const [email, setEmail] = useState('')
   const [done, setDone] = useState(false)
 
-  if (!newsletter) return null
+  // Content deleted in the admin dashboard also hides the section.
+  if (!newsletter || (!newsletter.name && !newsletter.description)) return null
 
   function handleSubmit(e) {
     // No provider wired up yet? Confirm on the page rather than firing the

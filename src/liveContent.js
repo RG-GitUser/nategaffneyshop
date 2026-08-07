@@ -38,9 +38,10 @@ async function fetchJson(path) {
 
 export async function loadContent() {
   try {
-    const [content, shop] = await Promise.all([
+    const [content, shop, services] = await Promise.all([
       fetchJson('/content').catch(() => null),
       fetchJson('/shop').catch(() => null),
+      fetchJson('/services').catch(() => null),
     ])
 
     if (content) {
@@ -59,6 +60,11 @@ export async function loadContent() {
     // filler on the live site. An empty list simply hides the section.
     if (Array.isArray(shop)) {
       mergeInPlace(defaults.offers, shop)
+    }
+
+    // Same deal for service cards — the Services tab is the source of truth.
+    if (Array.isArray(services)) {
+      mergeInPlace(defaults.services, services)
     }
   } catch (err) {
     console.warn('[content] falling back to bundled defaults:', err.message)

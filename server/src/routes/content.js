@@ -14,6 +14,9 @@ const DOC_ID = 'site'
  * bundled defaults. Anything unrecognised is dropped.
  */
 const ALLOWED_KEYS = [
+  'sections',
+  'archived',
+  'custom',
   'profile',
   'socials',
   'featuredVideo',

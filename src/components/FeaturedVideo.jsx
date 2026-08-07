@@ -5,7 +5,9 @@ import { featuredVideo } from '../content.js'
 export default function FeaturedVideo() {
   const [failed, setFailed] = useState(!featuredVideo?.thumbnail)
 
-  if (!featuredVideo) return null
+  // No URL, no video: deleting the YouTube URL in the dashboard removes
+  // the whole section from the page.
+  if (!featuredVideo?.href) return null
 
   return (
     <section className="film rise">

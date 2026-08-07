@@ -83,6 +83,32 @@ export function sendChatCode(email, code) {
   })
 }
 
+/** To a shop buyer — their paid PDF is ready to download. */
+export function sendPdfDownload({ to, title, url }) {
+  send({
+    to,
+    subject: `Your download — ${title}`,
+    text: [
+      `Thanks for the purchase! Download "${title}" here:`,
+      ``,
+      url,
+      ``,
+      `The link works for 7 days. If it expires, reply to this email and we'll send a fresh one.`,
+    ].join('\n'),
+    html: wrap({
+      eyebrow: 'Your download',
+      title,
+      preheader: 'Your PDF is ready.',
+      body:
+        paragraph('Thanks for the purchase! Your PDF is ready:') +
+        button(url, 'Download the PDF') +
+        muted(
+          'The link works for 7 days. If it expires, reply to this email and we’ll send a fresh one.',
+        ),
+    }),
+  })
+}
+
 /** To Nate — a confirmed session's payment landed. */
 export function notifyBookingPaid(booking) {
   const amount = booking.paidAmount

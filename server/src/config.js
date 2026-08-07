@@ -62,6 +62,19 @@ export const config = {
   uploadDir: optional('UPLOAD_DIR', './uploads'),
   uploadPublicUrl: optional('UPLOAD_PUBLIC_URL', '/uploads').replace(/\/$/, ''),
 
+  /**
+   * Paid PDFs live OUTSIDE uploadDir on purpose: everything in uploadDir
+   * is served publicly by the static /uploads mount, and these files must
+   * only ever leave through the token-checked download route.
+   */
+  pdfDir: optional('PDF_DIR', './private-pdfs'),
+
+  /**
+   * Public base URL of this API, used when a link to it goes into an
+   * email (PDF download links). Falls back to localhost in dev.
+   */
+  apiPublicUrl: optional('API_PUBLIC_URL', '').replace(/\/$/, ''),
+
   smtp: {
     host: optional('SMTP_HOST'),
     port: Number(optional('SMTP_PORT', '465')),

@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { ObjectId } from 'mongodb'
+import jwt from 'jsonwebtoken'
 import Stripe from 'stripe'
 import rateLimit from 'express-rate-limit'
 import { z } from 'zod'
@@ -253,6 +254,43 @@ checkoutRouter.post('/webhook', async (req, res) => {
         { upsert: true }, // idempotent: Stripe can deliver the same event twice
       )
       await audit('stripe-webhook', 'order.paid', { sessionId: s.id, title: s.metadata?.title })
+
+      /**
+       * A paid PDF gets its download link by email. The flag flip is a
+       * conditional update on the order row, so when Stripe delivers the
+       * same event twice only the first delivery sends the email.
+       */
+      if (
+        s.payment_status === 'paid' &&
+        s.customer_details?.email &&
+        s.metadata?.itemId &&
+        ObjectId.isValid(s.metadata.itemId)
+      ) {
+        const item = await collections
+          .shopItems()
+          .findOne({ _id: new ObjectId(s.metadata.itemId) })
+
+        if (item?.kind === 'pdf' && item.pdfFile) {
+          const claimed = await collections.orders().updateOne(
+            { sessionId: s.id, downloadEmailSent: { $ne: true } },
+            { $set: { downloadEmailSent: true } },
+          )
+          if (claimed.modifiedCount === 1) {
+            const token = jwt.sign(
+              { purpose: 'pdf-download', sid: s.id },
+              config.jwtSecret,
+              { expiresIn: '7d', algorithm: 'HS256' },
+            )
+            const base = config.apiPublicUrl || `http://localhost:${config.port}`
+            const { sendPdfDownload } = await import('../mailer.js')
+            sendPdfDownload({
+              to: s.customer_details.email,
+              title: item.title,
+              url: `${base}/api/shop/download?token=${token}`,
+            })
+          }
+        }
+      }
     }
   } catch (err) {
     console.error('[webhook] handler failed:', err.message)

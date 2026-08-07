@@ -32,6 +32,47 @@ function sniffImageType(buf) {
   return null
 }
 
+/**
+ * Paid PDF upload. Bigger limit than images, and the file is written to
+ * config.pdfDir — which the static /uploads mount can't see — so the only
+ * way to it is the paywalled /api/shop/download route.
+ */
+const pdfUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024, files: 1 },
+})
+
+mediaRouter.post('/pdf', requireAdmin, pdfUpload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' })
+
+    // Same idea as the image sniff: trust the bytes, not the extension.
+    if (req.file.buffer.toString('ascii', 0, 5) !== '%PDF-') {
+      return res.status(400).json({ error: 'That file is not a PDF' })
+    }
+
+    const filename = `pdf-${Date.now()}-${randomBytes(4).toString('hex')}.pdf`
+    await mkdir(config.pdfDir, { recursive: true })
+    await writeFile(join(config.pdfDir, filename), req.file.buffer)
+
+    await audit(req.admin.email, 'media.upload-pdf', {
+      filename,
+      name: req.file.originalname,
+      bytes: req.file.size,
+    })
+
+    res.status(201).json({ filename, name: req.file.originalname })
+  } catch (err) {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({
+        error:
+          err.code === 'LIMIT_FILE_SIZE' ? 'PDF must be under 25MB' : err.message,
+      })
+    }
+    next(err)
+  }
+})
+
 mediaRouter.post('/', requireAdmin, upload.single('file'), async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' })

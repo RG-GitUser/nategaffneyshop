@@ -177,7 +177,7 @@ export default function BookingsPanel({ notify }) {
             Confirm, reschedule or cancel requests — or book someone in yourself.
           </p>
         </div>
-        <div className="adm-inline">
+        <div className="adm-toolbar">
           <button className="btn btn--primary adm-save" onClick={() => setDraft(EMPTY_DRAFT)}>
             Add booking
           </button>

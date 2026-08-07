@@ -70,7 +70,8 @@ export default function BookingCalendar() {
       .catch(() => setPrice(null))
   }, [])
 
-  if (!booking) return null
+  // Content deleted in the admin dashboard also hides the section.
+  if (!booking || (!booking.title && !booking.description)) return null
 
   const blackouts = booking.blackouts || []
 
@@ -259,10 +260,7 @@ export default function BookingCalendar() {
                 })}
               </div>
 
-              <p className="cal__legend mono">
-                <span className="cal__dot" aria-hidden="true" />
-                Open for booking
-              </p>
+              <p className="cal__legend mono">Open for booking</p>
             </div>
 
             {/* ── step 2: pick a time ── */}

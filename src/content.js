@@ -6,6 +6,45 @@
  * ─────────────────────────────────────────────────────────────
  */
 
+/**
+ * The order of the main sections on the page, top to bottom.
+ * Rearrange in the admin dashboard (Content tab) or here. Unknown ids are
+ * ignored; any section missing from this list renders at the end, so
+ * nothing can disappear by accident.
+ */
+export const sections = [
+  'featuredVideo',
+  'featured',
+  'offers',
+  'services',
+  'booking',
+  'groupChat',
+  'about',
+  'newsletter',
+  'testimonials',
+  'faqs',
+]
+
+/**
+ * Custom containers added from the admin dashboard (Content tab →
+ * "Add container"). Each is { id, title, fields: [{ id, label, value }] }
+ * and renders as its own section, positioned by the `sections` order.
+ */
+export const custom = []
+
+/**
+ * Archived section ids: kept with all their content but left off the
+ * public page until restored from the dashboard.
+ */
+export const archived = []
+
+/**
+ * Service cards, managed entirely from the admin Services tab. Shaped
+ * like offers: { title, description, price, tag, cta, href, accent }.
+ * Empty list hides the section.
+ */
+export const services = []
+
 export const profile = {
   name: 'Nate Gaffney',
   handle: '@nategaffney',

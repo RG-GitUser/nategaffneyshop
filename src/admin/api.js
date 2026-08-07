@@ -57,6 +57,12 @@ export const api = {
   updateShopItem: (id, item) => request(`/shop/${id}`, { method: 'PUT', body: item }),
   deleteShopItem: (id) => request(`/shop/${id}`, { method: 'DELETE' }),
 
+  // services
+  listServices: () => request('/services/all'),
+  createService: (item) => request('/services', { method: 'POST', body: item }),
+  updateService: (id, item) => request(`/services/${id}`, { method: 'PUT', body: item }),
+  deleteService: (id) => request(`/services/${id}`, { method: 'DELETE' }),
+
   // bookings
   listBookings: (status) =>
     request(`/bookings${status ? `?status=${encodeURIComponent(status)}` : ''}`),
@@ -99,5 +105,10 @@ export const api = {
     form.append('file', file)
     form.append('slot', slot)
     return request('/media', { method: 'POST', body: form, isForm: true })
+  },
+  uploadPdf: (file) => {
+    const form = new FormData()
+    form.append('file', file)
+    return request('/media/pdf', { method: 'POST', body: form, isForm: true })
   },
 }

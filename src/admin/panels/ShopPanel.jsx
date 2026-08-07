@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
 import ImageDrop from '../ImageDrop.jsx'
+import PdfDrop from '../PdfDrop.jsx'
 import { confirmDialog } from '../confirm.jsx'
 
 const BLANK = {
@@ -19,6 +20,8 @@ const BLANK = {
   rating: '',
   order: 0,
   visible: true,
+  pdfFile: '',
+  pdfName: '',
 }
 
 /** Stripe works in cents; the form works in dollars. */
@@ -56,7 +59,7 @@ export default function ShopPanel({ notify }) {
     }
     // Strip empty optional strings so they store as absent, not "".
     const payload = { ...draft }
-    for (const k of ['price', 'oldPrice', 'tag', 'rating', 'image']) {
+    for (const k of ['price', 'oldPrice', 'tag', 'rating', 'image', 'pdfFile', 'pdfName']) {
       if (!payload[k]) payload[k] = null
     }
     payload.order = Number(payload.order) || 0
@@ -68,6 +71,20 @@ export default function ShopPanel({ notify }) {
       notify('Stripe’s minimum charge is 50 cents.', 'error')
       return
     }
+
+    // A PDF item is a paywalled download — it needs the file and a charge,
+    // or there is nothing to sell and nothing to gate it behind.
+    if (payload.kind === 'pdf') {
+      if (!payload.pdfFile) {
+        notify('Upload the PDF first.', 'error')
+        return
+      }
+      if (!payload.priceCents) {
+        notify('Set a charge amount — the PDF is only sent after payment.', 'error')
+        return
+      }
+    }
+
     if (!payload.priceCents) {
       payload.currency = null
       // The single most common mistake: filling the display "Price" but
@@ -132,9 +149,19 @@ export default function ShopPanel({ notify }) {
             items stay off the public site.
           </p>
         </div>
-        <button className="btn btn--primary adm-save" onClick={() => setDraft({ ...BLANK })}>
-          Add item
-        </button>
+        <div className="adm-toolbar">
+          <button
+            className="adm-mini"
+            onClick={() =>
+              setDraft({ ...BLANK, kind: 'pdf', cta: 'Get the PDF', href: '#' })
+            }
+          >
+            Add PDF content
+          </button>
+          <button className="btn btn--primary adm-save" onClick={() => setDraft({ ...BLANK })}>
+            Add item
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -164,6 +191,7 @@ export default function ShopPanel({ notify }) {
                   <td>{it.order}</td>
                   <td>
                     <strong>{it.title}</strong>
+                    {it.kind === 'pdf' && <span className="adm-pill" style={{ marginLeft: 8 }}>PDF</span>}
                     <br />
                     <span className="adm-muted">{it.description?.slice(0, 60)}</span>
                   </td>
@@ -237,6 +265,7 @@ export default function ShopPanel({ notify }) {
                 >
                   <option value="product">Product (shows a price)</option>
                   <option value="link">Link (no price)</option>
+                  <option value="pdf">PDF download (paid)</option>
                 </select>
               </div>
 
@@ -254,6 +283,20 @@ export default function ShopPanel({ notify }) {
                   ))}
                 </select>
               </div>
+
+              {draft.kind === 'pdf' && (
+                <div className="adm-field adm-field--wide">
+                  <label>The PDF</label>
+                  <PdfDrop
+                    value={draft.pdfName || draft.pdfFile || ''}
+                    notify={notify}
+                    onUploaded={(filename, name) =>
+                      setDraft({ ...draft, pdfFile: filename, pdfName: name })
+                    }
+                    hint="Kept private — buyers get an emailed download link only after Stripe confirms their payment."
+                  />
+                </div>
+              )}
 
               <div className="adm-field adm-field--wide">
                 <label>Card image</label>

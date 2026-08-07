@@ -24,9 +24,14 @@ export function confirmDialog(opts) {
 
 export function ConfirmHost() {
   const [state, setState] = useState(null) // { opts, resolve }
+  const [typed, setTyped] = useState('')
 
   useEffect(() => {
-    show = (opts) => new Promise((resolve) => setState({ opts, resolve }))
+    show = (opts) =>
+      new Promise((resolve) => {
+        setTyped('')
+        setState({ opts, resolve })
+      })
     return () => {
       show = null
     }
@@ -56,8 +61,29 @@ export function ConfirmHost() {
       <div className="adm-modal__card">
         {state.opts.title && <h3 className="adm-h3">{state.opts.title}</h3>}
         <p className="adm-confirm__msg">{state.opts.message}</p>
+        {state.opts.verifyText && (
+          /* Type-to-confirm for the truly destructive stuff: the confirm
+             button stays dead until the name matches exactly. */
+          <div className="adm-confirm__verify">
+            <label htmlFor="adm-confirm-verify">
+              Type <strong>{state.opts.verifyText}</strong> to confirm
+            </label>
+            <input
+              id="adm-confirm-verify"
+              type="text"
+              autoFocus
+              autoComplete="off"
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+            />
+          </div>
+        )}
         <div className="adm-modal__actions">
-          <button className="adm-mini" onClick={() => done(false)} autoFocus>
+          <button
+            className="adm-mini"
+            onClick={() => done(false)}
+            autoFocus={!state.opts.verifyText}
+          >
             {state.opts.cancelLabel || 'Cancel'}
           </button>
           {state.opts.choices ? (
@@ -74,6 +100,10 @@ export function ConfirmHost() {
           ) : (
             <button
               className={`adm-save ${state.opts.danger ? 'adm-btn-danger' : 'btn btn--primary'}`}
+              disabled={Boolean(
+                state.opts.verifyText &&
+                  typed.trim() !== state.opts.verifyText.trim(),
+              )}
               onClick={() => done(true)}
             >
               {state.opts.confirmLabel || 'Confirm'}
