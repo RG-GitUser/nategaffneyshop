@@ -510,6 +510,9 @@
   /* per-card accent, scoped so it can't collide with the global --accent */
   --card-accent: var(--accent);
   --card-wash: var(--accent-wash);
+  /* A grid item may not shrink below its content unless told to — without
+     this an unbroken run of text drags the whole card off the page. */
+  min-width: 0;
   display: flex;
   flex-wrap: wrap; /* lets an image banner take the full first row */
   gap: 16px;
@@ -612,6 +615,7 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 
 .offer__tag {
@@ -631,6 +635,9 @@
   font-size: 1.1rem;
   color: var(--ink-soft);
   line-height: 1.6;
+  /* Break inside a word rather than let one unbroken run of characters
+     stretch the card past the page edge. */
+  overflow-wrap: anywhere;
 }
 
 .offer__desc--clamped {
