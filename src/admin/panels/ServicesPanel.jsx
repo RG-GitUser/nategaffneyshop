@@ -198,7 +198,7 @@ export default function ServicesPanel({ notify }) {
                 ['price', 'Price (e.g. $150 / session)'],
                 ['tag', 'Tag (e.g. Most popular)'],
                 ['cta', 'Button text'],
-                ['href', 'Link URL (#book jumps to the calendar)'],
+                ['href', 'Link URL (#book opens the coaching calendar)'],
                 ['order', 'Order'],
               ].map(([key, label]) => (
                 <div className="adm-field" key={key}>

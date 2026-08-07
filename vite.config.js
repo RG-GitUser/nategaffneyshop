@@ -5,8 +5,38 @@ import { fileURLToPath } from 'node:url'
 
 const root = dirname(fileURLToPath(import.meta.url))
 
+/**
+ * The extra pages are real directories (coaching/index.html, privacy/…).
+ * In production nginx serves them for the naked path too (try_files $uri/),
+ * but Vite's dev server falls back to the landing page for any path it
+ * doesn't recognise — so /coaching without the trailing slash would quietly
+ * render the wrong page. Redirect to the slashed form instead, in both
+ * `vite` (dev) and `vite preview`.
+ */
+function pageTrailingSlash() {
+  const pages = ['/privacy', '/terms', '/coaching', '/admin']
+  const redirect = (req, res, next) => {
+    const [path, query] = req.url.split('?')
+    if (!pages.includes(path)) return next()
+    res.statusCode = 301
+    res.setHeader('Location', `${path}/${query ? `?${query}` : ''}`)
+    res.end()
+  }
+  return {
+    name: 'page-trailing-slash',
+    // Braces matter: configureServer treats a returned value as a post
+    // hook, and `.use()` returns the (callable) middleware stack.
+    configureServer(server) {
+      server.middlewares.use(redirect)
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(redirect)
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), pageTrailingSlash()],
   server: {
     port: 5173,
     host: true, // lets you open the site on your phone over local wifi
@@ -47,6 +77,7 @@ export default defineConfig({
         main: resolve(root, 'index.html'),
         privacy: resolve(root, 'privacy/index.html'),
         terms: resolve(root, 'terms/index.html'),
+        coaching: resolve(root, 'coaching/index.html'),
         admin: resolve(root, 'admin/index.html'),
       },
     },

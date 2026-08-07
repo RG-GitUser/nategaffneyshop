@@ -25,7 +25,11 @@ const SECTIONS_META = [
   { id: 'featuredVideo', label: 'Featured video' },
   { id: 'offers', label: 'Products', note: 'Cards are managed in the Products tab.' },
   { id: 'services', label: 'Services', note: 'Cards are managed in the Services tab.' },
-  { id: 'booking', label: 'Coaching / calendar' },
+  {
+    id: 'booking',
+    label: 'Coaching / calendar',
+    note: 'Also lives on its own page at /coaching/. Archiving here only takes it off the landing page — the /coaching/ link keeps working.',
+  },
   { id: 'about', label: 'About ("Hey, I’m Nate")' },
   { id: 'newsletter', label: 'Newsletter' },
   { id: 'testimonials', label: 'Testimonials' },

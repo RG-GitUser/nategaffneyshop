@@ -16,7 +16,6 @@ export const sections = [
   'featuredVideo',
   'offers',
   'services',
-  'booking',
   'about',
   'newsletter',
   'testimonials',
@@ -33,8 +32,14 @@ export const custom = []
 /**
  * Archived section ids: kept with all their content but left off the
  * public page until restored from the dashboard.
+ *
+ * 'booking' starts here: the coaching calendar lives on its own page at
+ * /coaching/ (shared as a direct link) and is off the landing page by
+ * default. Restore "Coaching / calendar" in the admin Content tab — or
+ * move 'booking' back into `sections` above — to show it on the landing
+ * page again; /coaching/ keeps working either way.
  */
-export const archived = []
+export const archived = ['booking']
 
 /**
  * Service cards, managed entirely from the admin Services tab. Shaped
@@ -112,7 +117,7 @@ export const offers = [
       '45 minutes, just us. Bring your work, your rough cut, or the thing you can’t figure out. You leave with a plan.',
     price: '$150',
     cta: 'Book a call',
-    href: '#book', // jumps to the calendar section
+    href: '#book', // the calendar — on this page when restored, else /coaching/
     accent: 'umber',
     rating: '5.0',
   },
@@ -138,7 +143,9 @@ export const offers = [
 ]
 
 /**
- * Coaching calendar. Set to null to remove the section entirely.
+ * Coaching calendar. Always shown on its own page at /coaching/; only on
+ * the landing page when restored from the archive (see `archived` above).
+ * Set to null to remove it everywhere.
  *
  * IMPORTANT: this collects a booking *request*. It can't see Nate's real
  * calendar, so it can't prevent two people picking the same slot. Either

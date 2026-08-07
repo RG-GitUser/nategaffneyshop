@@ -1,0 +1,31 @@
+/* ============================================================
+   COACHING PAGE — /coaching/
+   The booking calendar on its own, link-shared page. Everything
+   else it shows comes from the main stylesheets; this only adds
+   the small header above the calendar.
+   ============================================================ */
+
+.coaching-head {
+  margin-bottom: clamp(22px, 4vw, 34px);
+}
+
+/* Same treatment as .legal__back, minus the legal page's own layout. */
+.coaching-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  transition: color 0.16s var(--ease), gap 0.16s var(--ease);
+}
+
+@media (hover: hover) {
+  .coaching-back:hover {
+    color: var(--accent);
+    gap: 11px;
+  }
+}
