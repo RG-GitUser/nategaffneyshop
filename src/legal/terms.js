@@ -2,15 +2,14 @@
  * Terms & Conditions content.
  *
  * ⚠️  DRAFT — HAS NOT BEEN REVIEWED BY A LAWYER.
- * Written for a Canadian sole proprietor / small company selling digital
- * products and 1:1 coaching. Everything in [SQUARE BRACKETS] must be filled
- * in before this goes live, and the whole thing should be reviewed by a
- * lawyer in your province before you take money against it.
+ * Written for a Canadian small company selling digital products and 1:1
+ * coaching. The whole thing should be reviewed by a lawyer in New
+ * Brunswick before money is taken against it.
  */
 
 export const terms = {
   title: 'Terms & Conditions',
-  updated: '3 August 2026',
+  updated: '7 August 2026',
   intro: [
     'These terms are the agreement between you and Wabanaki Software Solutions Inc. ("we", "us") for everything sold or offered through this website. Please read them before you buy anything or book a session.',
     'By buying a product, booking a session, subscribing to the newsletter, or otherwise using this site, you agree to these terms. If you do not agree with them, please do not use the site or buy anything from it.',
@@ -19,7 +18,7 @@ export const terms = {
     {
       heading: '1. Who you are dealing with',
       paragraphs: [
-        'This site is operated by Wabanaki Software Solutions Inc., [sole proprietorship / corporation] registered in [PROVINCE], Canada.',
+        'This site is operated by Wabanaki Software Solutions Inc., a corporation registered in New Brunswick, Canada.',
         'You can reach us at support@nategaffney.store for any question about these terms, an order, or a booking.',
       ],
     },
@@ -46,7 +45,7 @@ export const terms = {
     {
       heading: '4. Prices, taxes and payment',
       paragraphs: [
-        'All prices are shown in [CURRENCY, e.g. Canadian dollars (CAD)] unless clearly stated otherwise. Applicable sales taxes ([GST/HST or as applicable]) are added where required by law and shown before you confirm payment.',
+        'All prices are shown in Canadian dollars (CAD) unless clearly stated otherwise. Applicable sales taxes (GST/HST) are added where required by law and shown before you confirm payment.',
         'If your card or bank account is in another currency, your bank sets the exchange rate and may add its own conversion or foreign transaction fee. We have no control over and do not receive any part of those fees.',
       ],
     },
@@ -197,7 +196,7 @@ export const terms = {
     {
       heading: '21. Governing law',
       paragraphs: [
-        'These terms are governed by the laws of the Province of [PROVINCE] and the federal laws of Canada that apply there. Disputes will be handled by the courts of [PROVINCE], though this does not remove any right you have to bring a claim in the courts of the place where you live.',
+        'These terms are governed by the laws of the Province of New Brunswick and the federal laws of Canada that apply there. Disputes will be handled by the courts of New Brunswick, though this does not remove any right you have to bring a claim in the courts of the place where you live.',
         'We would much rather sort out a problem directly — please email us first and give us a fair chance to fix it.',
       ],
     },

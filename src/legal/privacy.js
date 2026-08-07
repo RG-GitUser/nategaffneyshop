@@ -3,15 +3,14 @@
  *
  * ⚠️  DRAFT — HAS NOT BEEN REVIEWED BY A LAWYER.
  * Written against Canadian federal privacy law (PIPEDA) and anti-spam law
- * (CASL), with a nod to GDPR for visitors in the UK/EU. Everything in
- * [SQUARE BRACKETS] must be filled in before this goes live. Have a lawyer
+ * (CASL), with a nod to GDPR for visitors in the UK/EU. Have a lawyer
  * review it, and re-check it whenever you add a new tool that touches
  * personal data (analytics, a CRM, a different email provider).
  */
 
 export const privacy = {
   title: 'Privacy Policy',
-  updated: '3 August 2026',
+  updated: '7 August 2026',
   intro: [
     'This policy explains what personal information Wabanaki Software Solutions Inc. ("we", "us") collects through this website, why we collect it, who we share it with, and what control you have over it.',
     'The short version: we collect as little as we can get away with, we do not sell your information to anyone, and we never see your card details.',
@@ -87,7 +86,7 @@ export const privacy = {
       heading: '7. How long we keep it',
       list: [
         '<strong>Purchase and tax records</strong> — kept as long as Canadian tax law requires, currently at least six years.',
-        '<strong>Booking records</strong> — kept for [RETENTION PERIOD, e.g. two years] after the session, so we have a record of what was agreed.',
+        '<strong>Booking records</strong> — kept for two years after the session, so we have a record of what was agreed.',
         '<strong>Newsletter subscription</strong> — kept until you unsubscribe, plus a minimal record of the unsubscribe so we do not email you again by mistake.',
         '<strong>Emails you send us</strong> — kept for as long as needed to deal with the matter, then deleted periodically.',
         '<strong>Server logs</strong> — kept for a short period by our host, then rotated out.',
