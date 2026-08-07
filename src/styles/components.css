@@ -641,6 +641,18 @@
   overflow: hidden;
 }
 
+/* Read more open: the card takes the whole row and the copy flows into
+   side-by-side columns, like the custom containers — not one narrow
+   column running down the page. Column count follows the width. */
+.offer--expanded {
+  grid-column: 1 / -1;
+}
+
+.offer--expanded .offer__desc {
+  column-width: 30ch;
+  column-gap: clamp(18px, 2.6vw, 30px);
+}
+
 /* "Read more" under a clamped description. Styled like the mono CTA so it
    reads as part of the card's own furniture. */
 .offer__more {

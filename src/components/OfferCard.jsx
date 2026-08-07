@@ -61,7 +61,7 @@ export default function OfferCard({ offer, index = 0 }) {
 
   return (
     <a
-      className={`offer offer--${offer.accent || 'navy'} rise`}
+      className={`offer offer--${offer.accent || 'navy'} rise${expanded ? ' offer--expanded' : ''}`}
       href={offer.href}
       onClick={buyable ? startCheckout : undefined}
       aria-busy={busy || undefined}
