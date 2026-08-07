@@ -93,7 +93,7 @@ if (failed) {
 } else {
   console.log('  Stripe is fully working. Remaining steps:')
   if (!whsec) console.log('    - npm run setup-webhook   (records paid orders)')
-  console.log('    - set a Charge amount on each item in Admin -> Shop')
+  console.log('    - set a Charge amount on each item in Admin -> Products')
 }
 console.log('')
 process.exit(failed ? 1 : 0)

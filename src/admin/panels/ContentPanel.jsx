@@ -23,7 +23,7 @@ import * as defaults from '../../content.js'
  */
 const SECTIONS_META = [
   { id: 'featuredVideo', label: 'Featured video' },
-  { id: 'offers', label: 'The catalog', note: 'Cards are managed in the Shop tab.' },
+  { id: 'offers', label: 'Products', note: 'Cards are managed in the Products tab.' },
   { id: 'services', label: 'Services', note: 'Cards are managed in the Services tab.' },
   { id: 'booking', label: 'Coaching / calendar' },
   { id: 'about', label: 'About ("Hey, I’m Nate")' },
@@ -783,7 +783,7 @@ export default function ContentPanel({ notify }) {
               deleted. It’s all kept safe. Press Restore and the container
               comes back at the bottom of the page, ready to drag into place
               (don’t forget to Save). Some rows have no Delete button: their
-              cards live in another tab, like Shop or Services. Archiving
+              cards live in another tab, like Products or Services. Archiving
               just hides the section. To delete those cards, do it from
               their own tab.
             </p>

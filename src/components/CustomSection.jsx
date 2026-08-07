@@ -31,11 +31,17 @@ export default function CustomSection({ container }) {
               loading="lazy"
             />
           ) : (
-            f.value
-              .split('\n')
-              .map((s) => s.trim())
-              .filter(Boolean)
-              .map((p, j) => <p key={`${f.id || i}-${j}`}>{p}</p>)
+            // One cell per field, so fields sit side by side on wide
+            // screens instead of stacking into one long column.
+            <div key={f.id || i} className="custom-copy__item">
+              {f.value
+                .split('\n')
+                .map((s) => s.trim())
+                .filter(Boolean)
+                .map((p, j) => (
+                  <p key={j}>{p}</p>
+                ))}
+            </div>
           ),
         )}
       </div>

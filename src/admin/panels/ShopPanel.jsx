@@ -143,9 +143,9 @@ export default function ShopPanel({ notify }) {
     <div>
       <div className="adm-panel-head">
         <div>
-          <h2 className="adm-h2">Shop items</h2>
+          <h2 className="adm-h2">Products</h2>
           <p className="adm-sub">
-            The cards under “Where to start”. Order controls the sequence; hidden
+            The cards under “Products”. Order controls the sequence; hidden
             items stay off the public site.
           </p>
         </div>

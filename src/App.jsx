@@ -19,7 +19,7 @@ function Offers() {
     <section className="section">
       <div className="section__head">
         <span className="eyebrow">The catalog</span>
-        <h2 className="section__title">Where to start</h2>
+        <h2 className="section__title">Products</h2>
       </div>
 
       <div className="offers">

@@ -18,7 +18,7 @@ const TABS = [
   { id: 'bookings', label: 'Calendar', Panel: BookingsPanel },
   { id: 'payments', label: 'Payments', Panel: PaymentsPanel },
   { id: 'content', label: 'Content', Panel: ContentPanel },
-  { id: 'shop', label: 'Shop', Panel: ShopPanel },
+  { id: 'shop', label: 'Products', Panel: ShopPanel },
   { id: 'services', label: 'Services', Panel: ServicesPanel },
   // Images tab retired — uploads now live inside the Content containers
   // themselves (and the Shop item editor). MediaPanel.jsx is kept parked.

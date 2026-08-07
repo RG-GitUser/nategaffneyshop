@@ -633,6 +633,33 @@
   line-height: 1.6;
 }
 
+.offer__desc--clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+}
+
+/* "Read more" under a clamped description. Styled like the mono CTA so it
+   reads as part of the card's own furniture. */
+.offer__more {
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--card-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  align-self: flex-start;
+}
+
 .offer__foot {
   margin-top: 16px;
   padding-top: 14px;
@@ -2019,6 +2046,15 @@
   background: var(--surface);
   border: 1px solid var(--line);
   box-shadow: var(--shadow-sm);
+  display: grid;
+  /* Each field is a cell: side by side where there's room, one column
+     on phones. min() keeps a narrow screen from overflowing. */
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  align-items: start;
+  gap: clamp(14px, 2.4vw, 24px);
+}
+
+.custom-copy__item {
   display: grid;
   gap: 12px;
 }

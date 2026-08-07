@@ -10,6 +10,11 @@ export default function OfferCard({ offer, index = 0 }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [paying, setPaying] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+
+  /** Long copy is clamped so one wordy card can't swallow the page; the
+   *  cutoff is roughly what four clamped lines can hold. */
+  const longDesc = (offer.description || '').length > 180
 
   /** Items stored with a priceCents go through Stripe Checkout. Anything
    *  else keeps its plain href, so link-out cards still work. */
@@ -78,7 +83,26 @@ export default function OfferCard({ offer, index = 0 }) {
           {offer.tag && <span className="offer__tag">{offer.tag}</span>}
         </div>
 
-        <p className="offer__desc">{offer.description}</p>
+        <p className={`offer__desc${longDesc && !expanded ? ' offer__desc--clamped' : ''}`}>
+          {offer.description}
+        </p>
+
+        {longDesc && (
+          <button
+            type="button"
+            className="offer__more"
+            aria-expanded={expanded}
+            onClick={(e) => {
+              // The whole card is a link (or a checkout trigger) — this
+              // toggle must do neither.
+              e.preventDefault()
+              e.stopPropagation()
+              setExpanded((v) => !v)
+            }}
+          >
+            {expanded ? 'Read less' : 'Read more'}
+          </button>
+        )}
 
         <div className="offer__foot">
           {isProduct ? (

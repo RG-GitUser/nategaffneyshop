@@ -14,8 +14,8 @@ export default function Services() {
   return (
     <section className="section" id="services">
       <div className="section__head">
-        <span className="eyebrow">Services</span>
-        <h2 className="section__title">Ways we can work together</h2>
+        <span className="eyebrow">Work with me</span>
+        <h2 className="section__title">Services</h2>
       </div>
 
       <div className="offers">
