@@ -7,7 +7,6 @@ import ServicesPanel from './panels/ServicesPanel.jsx'
 import BookingsPanel from './panels/BookingsPanel.jsx'
 import PaymentsPanel from './panels/PaymentsPanel.jsx'
 import AnalyticsPanel from './panels/AnalyticsPanel.jsx'
-import MediaPanel from './panels/MediaPanel.jsx'
 import AccountPanel from './panels/AccountPanel.jsx'
 import ThemeToggle from '../components/ThemeToggle.jsx'
 import { ConfirmHost } from './confirm.jsx'
@@ -21,7 +20,8 @@ const TABS = [
   { id: 'content', label: 'Content', Panel: ContentPanel },
   { id: 'shop', label: 'Shop', Panel: ShopPanel },
   { id: 'services', label: 'Services', Panel: ServicesPanel },
-  { id: 'media', label: 'Images', Panel: MediaPanel },
+  // Images tab retired — uploads now live inside the Content containers
+  // themselves (and the Shop item editor). MediaPanel.jsx is kept parked.
   { id: 'account', label: 'Account', Panel: AccountPanel },
 ]
 

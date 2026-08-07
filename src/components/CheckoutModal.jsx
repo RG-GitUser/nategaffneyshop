@@ -59,10 +59,19 @@ export async function checkoutMode() {
 }
 
 /**
- * Pass either `itemId` (a shop purchase — the session is created here) or
+ * Pass either `itemId` (a purchase — the session is created here; set
+ * `itemType` to 'service' for a service card, default is a shop item) or
  * a ready-made `clientSecret` (e.g. a booking payment created upstream).
  */
-export default function CheckoutModal({ itemId, clientSecret, title, doneNote, onPaid, onClose }) {
+export default function CheckoutModal({
+  itemId,
+  itemType = 'shop',
+  clientSecret,
+  title,
+  doneNote,
+  onPaid,
+  onClose,
+}) {
   const [state, setState] = useState('loading') // loading | ready | paid | error
   const [error, setError] = useState('')
   const mountRef = useRef(null)
@@ -81,7 +90,7 @@ export default function CheckoutModal({ itemId, clientSecret, title, doneNote, o
           const res = await fetch(`${API}/api/checkout/session`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ itemId }),
+            body: JSON.stringify({ itemId, itemType }),
           })
           const data = await res.json().catch(() => null)
           if (!res.ok || !data?.clientSecret) {
@@ -130,7 +139,7 @@ export default function CheckoutModal({ itemId, clientSecret, title, doneNote, o
       checkoutRef.current?.destroy()
       checkoutRef.current = null
     }
-  }, [itemId, clientSecret])
+  }, [itemId, itemType, clientSecret])
 
   // Portaled to <body>: the trigger lives inside the offer card's <a>,
   // and a dialog nested in an anchor is both invalid markup and a click

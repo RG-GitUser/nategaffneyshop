@@ -35,7 +35,10 @@ export default function OfferCard({ offer, index = 0 }) {
       const res = await fetch(`${API}/api/checkout/session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itemId: offer.id }),
+        body: JSON.stringify({
+          itemId: offer.id,
+          itemType: offer.checkoutType || 'shop',
+        }),
       })
       const data = await res.json().catch(() => null)
       if (!res.ok || !data?.url) {
@@ -106,6 +109,7 @@ export default function OfferCard({ offer, index = 0 }) {
       {paying && (
         <CheckoutModal
           itemId={offer.id}
+          itemType={offer.checkoutType || 'shop'}
           title={offer.title}
           doneNote={
             offer.kind === 'pdf'

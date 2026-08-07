@@ -26,13 +26,14 @@ StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=ng-api
 
-# Hardening. The process only needs to write to the uploads directory,
-# so everything else on disk is read-only to it.
+# Hardening. The process only needs to write to the public uploads
+# directory and the private paid-PDF directory, so everything else on
+# disk is read-only to it.
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/www/nategaffneyshop/uploads
+ReadWritePaths=/var/www/nategaffneyshop/uploads /var/www/nategaffneyshop/pdfs
 ProtectKernelTunables=true
 ProtectControlGroups=true
 RestrictSUIDSGID=true

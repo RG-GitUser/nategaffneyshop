@@ -189,20 +189,23 @@ export default function BookingsPanel({ notify }) {
               { value: 'archived', label: 'Archived' },
             ]}
           />
-          {view === 'active' && (
-            <select
-              className="adm-select"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            >
-              <option value="">All statuses</option>
-              {STATUSES.filter((s) => s !== 'completed').map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          )}
+          {/* Stays mounted in both views — unmounting it made the whole
+              toolbar reflow and the buttons jump when switching. */}
+          <select
+            className="adm-select"
+            style={view === 'active' ? undefined : { visibility: 'hidden' }}
+            aria-hidden={view !== 'active'}
+            tabIndex={view === 'active' ? undefined : -1}
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          >
+            <option value="">All statuses</option>
+            {STATUSES.filter((s) => s !== 'completed').map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
           <div
             className="adm-inline"
             title="Session price. When set, confirming a booking emails the customer a payment link. Blank = free."

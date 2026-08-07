@@ -1,17 +1,16 @@
 /**
- * A container built in the admin dashboard ("Add container"). Field labels
- * are for the admin's reference; visitors see the title and the field
- * values, each rendered as its own block of paragraphs.
+ * A container built in the admin dashboard ("Add container"). Text fields
+ * render as paragraphs (blank lines split them); image fields render
+ * full-width, with the field's label as alt text. Field labels on text
+ * fields are for the admin's reference only.
  */
 export default function CustomSection({ container }) {
   if (!container) return null
 
-  const blocks = (container.fields || [])
-    .map((f) => (f.value || '').trim())
-    .filter(Boolean)
+  const fields = (container.fields || []).filter((f) => (f.value || '').trim())
 
   // Nothing written yet (or everything deleted) — stay off the page.
-  if (!container.title && blocks.length === 0) return null
+  if (!container.title && fields.length === 0) return null
 
   return (
     <section className="section rise">
@@ -22,12 +21,22 @@ export default function CustomSection({ container }) {
       )}
 
       <div className={`custom-copy custom-copy--${container.accent || 'navy'}`}>
-        {blocks.map((block, i) =>
-          block
-            .split('\n')
-            .map((s) => s.trim())
-            .filter(Boolean)
-            .map((p, j) => <p key={`${i}-${j}`}>{p}</p>),
+        {fields.map((f, i) =>
+          f.type === 'image' ? (
+            <img
+              key={f.id || i}
+              className="custom-copy__img"
+              src={f.value.trim()}
+              alt={f.label || ''}
+              loading="lazy"
+            />
+          ) : (
+            f.value
+              .split('\n')
+              .map((s) => s.trim())
+              .filter(Boolean)
+              .map((p, j) => <p key={`${f.id || i}-${j}`}>{p}</p>)
+          ),
         )}
       </div>
     </section>

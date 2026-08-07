@@ -7,14 +7,20 @@ import { requireAdmin } from '../middleware/auth.js'
 export const servicesRouter = Router()
 
 /**
- * Service cards on the landing page — same display shape as shop items,
- * minus checkout: a service card shows a price as text and links out
- * (usually to #book, the coaching calendar, or a contact address).
+ * Service cards on the landing page — same display shape as shop items.
+ * A service with a `priceCents` opens Stripe Checkout when clicked, just
+ * like a shop item; without one it links out (usually to #book, the
+ * coaching calendar, or a contact address).
  */
 const serviceSchema = z.object({
   title: z.string().min(1).max(120),
   description: z.string().max(1000).default(''),
   price: z.string().max(40).optional().nullable(),
+  /** What Stripe actually charges, in cents. Read from the database at
+   *  checkout so the browser can never send its own amount. Null = the
+   *  card is a link, not a purchase. */
+  priceCents: z.number().int().min(50).max(99999999).optional().nullable(),
+  currency: z.string().length(3).optional().nullable(),
   tag: z.string().max(40).optional().nullable(),
   cta: z.string().min(1).max(60).default('Get in touch'),
   href: z.string().max(500).default('#book'),

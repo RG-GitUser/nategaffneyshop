@@ -2045,3 +2045,9 @@
 .custom-copy--amber {
   border-left: 4px solid var(--amber);
 }
+
+.custom-copy__img {
+  display: block;
+  width: 100%;
+  border-radius: var(--r-md);
+}

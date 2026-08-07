@@ -64,7 +64,7 @@ export const profile = {
 export const socials = [
   { label: 'Instagram', href: 'https://www.instagram.com/nategaffney/', icon: 'instagram' },
   { label: 'YouTube', href: 'https://www.youtube.com/@nategaffney', icon: 'youtube' },
-  { label: 'TikTok', href: '#', icon: 'tiktok' },
+  { label: 'TikTok', href: 'https://www.tiktok.com/@nategaffney', icon: 'tiktok' },
   { label: 'Email', href: 'mailto:support@nategaffney.store', icon: 'mail' },
 ]
 

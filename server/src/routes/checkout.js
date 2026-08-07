@@ -70,13 +70,21 @@ checkoutRouter.post('/session', limiter, async (req, res, next) => {
     }
 
     const parsed = z
-      .object({ itemId: z.string().min(1).max(64) })
+      .object({
+        itemId: z.string().min(1).max(64),
+        // Which catalog the id points at: shop items or service cards.
+        itemType: z.enum(['shop', 'service']).default('shop'),
+      })
       .safeParse(req.body)
     if (!parsed.success || !ObjectId.isValid(parsed.data.itemId)) {
       return res.status(400).json({ error: 'Unknown item' })
     }
 
-    const item = await collections.shopItems().findOne({
+    const coll =
+      parsed.data.itemType === 'service'
+        ? collections.services()
+        : collections.shopItems()
+    const item = await coll.findOne({
       _id: new ObjectId(parsed.data.itemId),
       visible: { $ne: false },
     })
@@ -117,7 +125,11 @@ checkoutRouter.post('/session', limiter, async (req, res, next) => {
         // Stripe sends the receipt; we also store the address for our records.
         customer_creation: 'always',
         // Read back in the webhook to know what was bought.
-        metadata: { itemId: item._id.toString(), title: item.title },
+        metadata: {
+          itemId: item._id.toString(),
+          title: item.title,
+          itemType: parsed.data.itemType,
+        },
         ...(embedded
           ? { ui_mode: 'embedded', redirect_on_completion: 'never' }
           : {
@@ -242,6 +254,7 @@ checkoutRouter.post('/webhook', async (req, res) => {
             sessionId: s.id,
             paymentIntent: s.payment_intent,
             itemId: s.metadata?.itemId ?? null,
+            itemType: s.metadata?.itemType ?? null,
             title: s.metadata?.title ?? null,
             amount: s.amount_total,
             currency: s.currency,
@@ -264,6 +277,7 @@ checkoutRouter.post('/webhook', async (req, res) => {
         s.payment_status === 'paid' &&
         s.customer_details?.email &&
         s.metadata?.itemId &&
+        s.metadata?.itemType !== 'service' &&
         ObjectId.isValid(s.metadata.itemId)
       ) {
         const item = await collections

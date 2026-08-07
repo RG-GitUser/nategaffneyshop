@@ -14,6 +14,8 @@
 // consumed at module top, long before the server's own config import
 // would have loaded dotenv.
 import 'dotenv/config'
+import { mkdir } from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
 import { MongoMemoryServer } from 'mongodb-memory-server'
 import bcrypt from 'bcryptjs'
 import { MongoClient } from 'mongodb'
@@ -23,8 +25,19 @@ import { MongoClient } from 'mongodb'
 const DEV_EMAIL = process.env.DEV_ADMIN_EMAIL || 'admin@example.com'
 const DEV_PASSWORD = process.env.DEV_ADMIN_PASSWORD || 'localdevpassword'
 
-console.log('Starting in-memory MongoDB…')
-const mongo = await MongoMemoryServer.create()
+/**
+ * The database files persist in server/.devdb (gitignored), so content
+ * edited through the dashboard survives API restarts — without this,
+ * every code change that needed a restart silently reset the site to the
+ * bundled defaults. Delete the folder for a truly fresh start.
+ */
+const DATA_DIR = fileURLToPath(new URL('../.devdb', import.meta.url))
+await mkdir(DATA_DIR, { recursive: true })
+
+console.log('Starting local MongoDB (data kept in server/.devdb)…')
+const mongo = await MongoMemoryServer.create({
+  instance: { dbPath: DATA_DIR, storageEngine: 'wiredTiger' },
+})
 const uri = mongo.getUri()
 
 // Defaults good enough to boot. Anything already set in the real
@@ -41,16 +54,23 @@ process.env.STRIPE_SECRET_KEY ||= 'sk_test_placeholder'
 process.env.COOKIE_DOMAIN = '' // localhost must not have a cookie domain
 
 // Seed the admin before the app boots so you can sign in straight away.
+// Upsert, not insert — with a persistent data dir this runs every boot.
 const client = new MongoClient(uri)
 await client.connect()
 await client
   .db(process.env.MONGODB_DB)
   .collection('admins')
-  .insertOne({
-    email: DEV_EMAIL,
-    passwordHash: await bcrypt.hash(DEV_PASSWORD, 10),
-    createdAt: new Date(),
-  })
+  .updateOne(
+    { email: DEV_EMAIL },
+    {
+      $setOnInsert: {
+        email: DEV_EMAIL,
+        passwordHash: await bcrypt.hash(DEV_PASSWORD, 10),
+        createdAt: new Date(),
+      },
+    },
+    { upsert: true },
+  )
 await client.close()
 
 console.log('')
@@ -58,7 +78,7 @@ console.log('  API      http://localhost:8080')
 console.log(`  Sign in  ${DEV_EMAIL} / ${DEV_PASSWORD}`)
 console.log('  Admin UI http://localhost:5173/admin/  (run `npm run dev` in the project root)')
 console.log('')
-console.log('  In-memory database — everything is wiped when you stop this.')
+console.log('  Data persists in server/.devdb — delete that folder to reset.')
 console.log('')
 
 await import('../src/index.js')

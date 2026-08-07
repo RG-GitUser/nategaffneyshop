@@ -7,6 +7,8 @@ const BLANK = {
   description: '',
   price: '',
   tag: '',
+  amount: '', // dollars, converted to priceCents on save
+  currency: 'cad',
   cta: 'Get in touch',
   href: '#book',
   accent: 'navy',
@@ -14,11 +16,18 @@ const BLANK = {
   visible: true,
 }
 
+/** Stripe works in cents; the form works in dollars. */
+const toCents = (dollars) => {
+  const n = Number(String(dollars).replace(/[^0-9.]/g, ''))
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) : null
+}
+const toDollars = (cents) => (cents ? (cents / 100).toFixed(2) : '')
+
 /**
- * The service cards on the landing page ("Services" section). Cards are
- * display + link only — the price is text, and the link usually points at
- * #book (the coaching calendar) or a contact address. Paid checkout stays
- * in the Shop tab.
+ * The service cards on the landing page ("Services" section). A service
+ * with a charge amount opens Stripe Checkout when clicked, exactly like a
+ * paid shop item; without one the card just follows its link (usually
+ * #book, the coaching calendar, or a contact address).
  */
 export default function ServicesPanel({ notify }) {
   const [items, setItems] = useState([])
@@ -51,6 +60,15 @@ export default function ServicesPanel({ notify }) {
       if (!payload[k]) payload[k] = null
     }
     payload.order = Number(payload.order) || 0
+
+    // The dollars field is form-only; the server stores cents.
+    payload.priceCents = toCents(draft.amount)
+    delete payload.amount
+    if (payload.priceCents && payload.priceCents < 50) {
+      notify('Stripe’s minimum charge is 50 cents.', 'error')
+      return
+    }
+    if (!payload.priceCents) payload.currency = null
 
     try {
       if (draft.id) await api.updateService(draft.id, payload)
@@ -120,6 +138,7 @@ export default function ServicesPanel({ notify }) {
                 <th>#</th>
                 <th>Title</th>
                 <th>Price</th>
+                <th>Checkout</th>
                 <th>Link</th>
                 <th>Visible</th>
                 <th />
@@ -135,6 +154,15 @@ export default function ServicesPanel({ notify }) {
                     <span className="adm-muted">{it.description?.slice(0, 60)}</span>
                   </td>
                   <td className="adm-nowrap">{it.price || '—'}</td>
+                  <td className="adm-nowrap">
+                    {it.priceCents ? (
+                      <span className="adm-pill adm-pill--confirmed">
+                        {toDollars(it.priceCents)} {(it.currency || 'cad').toUpperCase()}
+                      </span>
+                    ) : (
+                      <span className="adm-pill">link only</span>
+                    )}
+                  </td>
                   <td className="adm-note">{it.href}</td>
                   <td>
                     <button className="adm-mini" onClick={() => toggleVisible(it)}>
@@ -142,7 +170,10 @@ export default function ServicesPanel({ notify }) {
                     </button>
                   </td>
                   <td className="adm-actions">
-                    <button className="adm-mini" onClick={() => setDraft({ ...it })}>
+                    <button
+                      className="adm-mini"
+                      onClick={() => setDraft({ ...it, amount: toDollars(it.priceCents) })}
+                    >
                       Edit
                     </button>
                     <button className="adm-mini adm-mini--danger" onClick={() => remove(it)}>
@@ -205,6 +236,39 @@ export default function ServicesPanel({ notify }) {
                   onChange={(e) => setDraft({ ...draft, description: e.target.value })}
                 />
               </div>
+
+              {/* Fill this in to sell the service through Stripe. */}
+              <div className="adm-field">
+                <label htmlFor="svc-amount">Charge amount</label>
+                <input
+                  id="svc-amount"
+                  type="number"
+                  step="0.01"
+                  min="0.50"
+                  placeholder="150.00"
+                  value={draft.amount ?? ''}
+                  onChange={(e) => setDraft({ ...draft, amount: e.target.value })}
+                />
+              </div>
+
+              <div className="adm-field">
+                <label htmlFor="svc-currency">Currency</label>
+                <select
+                  id="svc-currency"
+                  value={draft.currency || 'cad'}
+                  onChange={(e) => setDraft({ ...draft, currency: e.target.value })}
+                >
+                  <option value="cad">CAD</option>
+                  <option value="usd">USD</option>
+                </select>
+              </div>
+
+              <p className="adm-sub adm-field--wide">
+                Set a <strong>charge amount</strong> and clicking the card opens
+                Stripe Checkout — the customer pays right there. Leave it blank
+                and the card just follows its link. The “Price” field above is
+                only the text shown on the card.
+              </p>
             </div>
 
             <div className="adm-modal__actions">

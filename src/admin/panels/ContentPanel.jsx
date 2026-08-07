@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
+import ImageDrop from '../ImageDrop.jsx'
 import { confirmDialog } from '../confirm.jsx'
 import * as defaults from '../../content.js'
 
@@ -22,14 +23,19 @@ import * as defaults from '../../content.js'
  */
 const SECTIONS_META = [
   { id: 'featuredVideo', label: 'Featured video' },
-  { id: 'featured', label: 'Featured offer', note: 'Off by default — switch it on in content.js.' },
+  { id: 'featured', label: 'Featured offer', note: 'A big spotlight card for one special offer. Not switched on yet.' },
   { id: 'offers', label: 'The catalog', note: 'Cards are managed in the Shop tab.' },
   { id: 'services', label: 'Services', note: 'Cards are managed in the Services tab.' },
   { id: 'booking', label: 'Coaching / calendar' },
-  { id: 'groupChat', label: 'Group chat', note: 'Managed in the Community tab.' },
+  /**
+   * Not shown in the tab (chat is parked along with the Community tab),
+   * but the id stays registered so a stored order or archive that
+   * contains it round-trips instead of being dropped on save.
+   */
+  { id: 'groupChat', label: 'Group chat', hidden: true },
   { id: 'about', label: 'About ("Hey, I’m Nate")' },
   { id: 'newsletter', label: 'Newsletter' },
-  { id: 'testimonials', label: 'Testimonials', note: 'Hidden until quotes are added in content.js.' },
+  { id: 'testimonials', label: 'Testimonials' },
   { id: 'faqs', label: 'FAQ' },
 ]
 
@@ -44,6 +50,12 @@ const FIELDS = [
       { key: 'blurb', label: 'Blurb', textarea: true },
       { key: 'location', label: 'Location' },
       { key: 'trust', label: 'Trust line' },
+      {
+        key: 'avatar',
+        label: 'Profile photo',
+        image: true,
+        hint: 'Tall portrait, shown in the left rail.',
+      },
     ],
   },
   {
@@ -55,6 +67,12 @@ const FIELDS = [
       { key: 'blurb', label: 'Blurb', textarea: true },
       { key: 'href', label: 'YouTube URL (blank = no video shown)' },
       { key: 'cta', label: 'Button text' },
+      {
+        key: 'thumbnail',
+        label: 'Thumbnail',
+        image: true,
+        hint: 'Shown on the video card — grab the YouTube thumbnail and drop it here.',
+      },
     ],
   },
   {
@@ -65,6 +83,12 @@ const FIELDS = [
       { key: 'heading', label: 'Heading' },
       { key: 'paragraphsText', label: 'Paragraphs (one per line)', textarea: true, rows: 8 },
       { key: 'signature', label: 'Signature' },
+      {
+        key: 'image',
+        label: 'Photo',
+        image: true,
+        hint: 'Optional — sits beside the text. Without one the card stays text-only.',
+      },
     ],
   },
   {
@@ -126,6 +150,7 @@ function toForm(stored) {
         id: f.id || `${c.id}-f${i}`,
         label: f.label || '',
         value: f.value || '',
+        type: f.type === 'image' ? 'image' : 'text',
       })),
     }))
 
@@ -169,7 +194,7 @@ function toPayload(form) {
     title: c.title.trim(),
     accent: c.accent,
     fields: c.fields
-      .map((f) => ({ id: f.id, label: f.label.trim(), value: f.value }))
+      .map((f) => ({ id: f.id, label: f.label.trim(), value: f.value, type: f.type }))
       .filter((f) => f.label || f.value.trim()),
   }))
   return out
@@ -319,11 +344,16 @@ export default function ContentPanel({ notify }) {
     }))
   }
 
-  function addField(container) {
+  function addField(container, type = 'text') {
     setCustom(container.id, {
       fields: [
         ...container.fields,
-        { id: `${container.id}-f${Date.now().toString(36)}`, label: '', value: '' },
+        {
+          id: `${container.id}-f${Date.now().toString(36)}`,
+          label: '',
+          value: '',
+          type,
+        },
       ],
     })
   }
@@ -366,7 +396,7 @@ export default function ContentPanel({ notify }) {
     <div className="adm-grid">
       {FIELDS_BY_GROUP[group].fields.map((f) => (
         <div
-          className={`adm-field${f.textarea ? ' adm-field--wide' : ''}`}
+          className={`adm-field${f.textarea || f.image ? ' adm-field--wide' : ''}`}
           key={f.key}
         >
           <div className="adm-field-head">
@@ -375,7 +405,7 @@ export default function ContentPanel({ notify }) {
               <button
                 type="button"
                 className="adm-clear"
-                title="Delete this field"
+                title={f.image ? 'Delete this image' : 'Delete this field'}
                 aria-label={`Delete ${f.label}`}
                 onClick={() => setField(group, f.key, '')}
               >
@@ -383,7 +413,15 @@ export default function ContentPanel({ notify }) {
               </button>
             )}
           </div>
-          {f.textarea ? (
+          {f.image ? (
+            <ImageDrop
+              slot={`${group}-${f.key}`}
+              value={form[group][f.key] || ''}
+              notify={notify}
+              onUploaded={(url) => setField(group, f.key, url)}
+              hint={f.hint}
+            />
+          ) : f.textarea ? (
             <textarea
               id={`${group}-${f.key}`}
               rows={f.rows || 3}
@@ -496,7 +534,11 @@ export default function ContentPanel({ notify }) {
           <div className="adm-row-head">
             <input
               type="text"
-              placeholder="Field label (for your reference)"
+              placeholder={
+                f.type === 'image'
+                  ? 'Image description (used as alt text)'
+                  : 'Field label (for your reference)'
+              }
               value={f.label}
               onChange={(e) =>
                 setCustom(container.id, {
@@ -518,24 +560,47 @@ export default function ContentPanel({ notify }) {
               Remove
             </button>
           </div>
-          <textarea
-            rows={3}
-            placeholder="Text shown on the site (blank lines split paragraphs)"
-            value={f.value}
-            onChange={(e) =>
-              setCustom(container.id, {
-                fields: container.fields.map((x) =>
-                  x.id === f.id ? { ...x, value: e.target.value } : x,
-                ),
-              })
-            }
-          />
+          {f.type === 'image' ? (
+            <ImageDrop
+              slot="custom"
+              value={f.value || ''}
+              notify={notify}
+              onUploaded={(url) =>
+                setCustom(container.id, {
+                  fields: container.fields.map((x) =>
+                    x.id === f.id ? { ...x, value: url } : x,
+                  ),
+                })
+              }
+              hint="Shown full-width inside the container."
+            />
+          ) : (
+            <textarea
+              rows={3}
+              placeholder="Text shown on the site (blank lines split paragraphs)"
+              value={f.value}
+              onChange={(e) =>
+                setCustom(container.id, {
+                  fields: container.fields.map((x) =>
+                    x.id === f.id ? { ...x, value: e.target.value } : x,
+                  ),
+                })
+              }
+            />
+          )}
         </div>
       ))}
 
-      <div>
+      <div className="adm-inline">
         <button type="button" className="adm-mini" onClick={() => addField(container)}>
           Add field
+        </button>
+        <button
+          type="button"
+          className="adm-mini"
+          onClick={() => addField(container, 'image')}
+        >
+          Add image
         </button>
       </div>
     </div>
@@ -594,7 +659,7 @@ export default function ContentPanel({ notify }) {
             id,
             label: customContainer.title || 'Untitled container',
           })
-        if (!meta) return null
+        if (!meta || meta.hidden) return null
         const editable = Boolean(FIELDS_BY_GROUP[id])
         const isFaqs = id === 'faqs'
         const slim = !editable && !isFaqs && !customContainer
@@ -670,14 +735,18 @@ export default function ContentPanel({ notify }) {
           <div className="adm-archived-head">
             <h3 className="adm-h3">Archived</h3>
             <p className="adm-muted">
-              Off the public site, content kept. Restore a container and it
-              reappears at the bottom of the page, ready to drag into place.
-              Remember to save.
+              Everything here is hidden from your site, but nothing is
+              deleted. It’s all kept safe. Press Restore and the container
+              comes back at the bottom of the page, ready to drag into place
+              (don’t forget to Save). Some rows have no Delete button: their
+              cards live in another tab, like Shop or Services. Archiving
+              just hides the section. To delete those cards, do it from
+              their own tab.
             </p>
           </div>
           {form.archived.map((id) => {
             const meta = metaFor(id)
-            if (!meta) return null
+            if (!meta || meta.hidden) return null
             return (
               <section className="adm-group adm-group--slim adm-group--archived" key={id}>
                 <div className="adm-group-head">
