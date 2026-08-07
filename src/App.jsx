@@ -3,7 +3,6 @@ import ProfileRail from './components/ProfileRail.jsx'
 import FeaturedVideo from './components/FeaturedVideo.jsx'
 import OfferCard from './components/OfferCard.jsx'
 import BookingCalendar from './components/BookingCalendar.jsx'
-import GroupChat from './components/GroupChat.jsx'
 import Newsletter from './components/Newsletter.jsx'
 import About from './components/About.jsx'
 import Testimonials from './components/Testimonials.jsx'
@@ -38,7 +37,6 @@ const SECTIONS = {
   offers: Offers,
   services: Services,
   booking: BookingCalendar,
-  groupChat: GroupChat,
   about: About,
   newsletter: Newsletter,
   testimonials: Testimonials,

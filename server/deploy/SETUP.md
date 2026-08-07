@@ -88,7 +88,10 @@ sudo chown deploy:deploy /var/www/nategaffneyshop
 sudo -u deploy git clone https://github.com/RG-GitUser/nategaffneyshop.git /var/www/nategaffneyshop
 cd /var/www/nategaffneyshop/server
 sudo -u deploy npm ci --omit=dev
-sudo -u deploy mkdir -p /var/www/nategaffneyshop/uploads
+# uploads is public (served at /uploads); pdfs holds paid downloads and is
+# deliberately never web-served. Both must exist before the service starts —
+# they're in the unit's ReadWritePaths.
+sudo -u deploy mkdir -p /var/www/nategaffneyshop/uploads /var/www/nategaffneyshop/pdfs
 ```
 
 Create `.env` from `.env.example` and fill it in. Generate the session secret:
@@ -107,7 +110,7 @@ sudo chown deploy:deploy /var/www/nategaffneyshop/server/.env
 Create the admin account:
 
 ```bash
-sudo -u deploy npm run create-admin -- nate@nategaffney.com "a long passphrase"
+sudo -u deploy npm run create-admin -- nate@nategaffney.store "a long passphrase"
 ```
 
 ## 4. Run it
@@ -138,7 +141,7 @@ sudo ln -s /etc/nginx/sites-available/nategaffneyshop-api /etc/nginx/sites-enabl
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
 sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d nategaffney.com -d www.nategaffney.com -d api.nategaffney.com
+sudo certbot --nginx -d nategaffney.store -d www.nategaffney.store -d api.nategaffney.store
 ```
 
 **HTTPS is required**, not a nicety — the admin session cookie is `secure`
@@ -158,7 +161,7 @@ sudo ufw status          # 27017 must NOT be listed
 Build locally and copy the static files up:
 
 ```bash
-# on your machine, with VITE_API_URL=https://api.nategaffney.com in .env
+# on your machine, with VITE_API_URL=https://api.nategaffney.store in .env
 npm run build
 rsync -avz --delete dist/ deploy@YOUR_DROPLET_IP:/var/www/nategaffneyshop/site/
 ```
@@ -171,7 +174,7 @@ Google Cloud Console:
 2. OAuth consent screen → External → add yourself as a test user
 3. Credentials → OAuth client ID → **Web application**
 4. Authorised redirect URI, exactly:
-   `https://api.nategaffney.com/api/google/callback`
+   `https://api.nategaffney.store/api/google/callback`
 5. Put the client id and secret in `.env`, restart the service
 6. Admin dashboard → Account → **Connect Google Calendar**
 

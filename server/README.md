@@ -81,7 +81,7 @@ node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 Create the admin account:
 
 ```bash
-npm run create-admin -- nate@nategaffney.com "a long passphrase you remember"
+npm run create-admin -- nate@nategaffney.store "a long passphrase you remember"
 ```
 
 Run it:

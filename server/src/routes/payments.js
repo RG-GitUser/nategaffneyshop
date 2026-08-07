@@ -3,6 +3,7 @@ import Stripe from 'stripe'
 import { z } from 'zod'
 import { config } from '../config.js'
 import { audit, collections } from '../db.js'
+import { markOrderRefunded } from '../orders.js'
 import { requireAdmin } from '../middleware/auth.js'
 
 export const paymentsRouter = Router()
@@ -177,6 +178,25 @@ paymentsRouter.post('/:id/refund', async (req, res, next) => {
       },
       ...onBehalf,
     )
+
+    /**
+     * Mark the order here rather than waiting for the charge.refunded
+     * webhook: a refunded PDF order must stop downloading immediately,
+     * and the webhook may be unconfigured or delayed.
+     *
+     * The totals come from the charge itself, never from adding this
+     * refund to what we had stored. Both writers therefore set the same
+     * absolute value, so whichever lands second is a no-op instead of
+     * double-counting a partial refund into a full one.
+     */
+    try {
+      const charge = await stripe.charges.retrieve(refund.charge, ...onBehalf)
+      await markOrderRefunded(charge)
+    } catch (err) {
+      // The refund itself succeeded; a failed bookkeeping read must not
+      // turn that into an error for the admin. The webhook will correct it.
+      console.error('[payments] could not update order after refund:', err.message)
+    }
 
     await audit(req.admin.email, 'payment.refund', {
       paymentIntent: req.params.id,

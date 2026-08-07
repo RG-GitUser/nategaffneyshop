@@ -1,12 +1,12 @@
 import { Router } from 'express'
 import { ObjectId } from 'mongodb'
-import jwt from 'jsonwebtoken'
 import Stripe from 'stripe'
 import rateLimit from 'express-rate-limit'
 import { z } from 'zod'
 import { config } from '../config.js'
 import { collections, audit } from '../db.js'
-import { requireAdmin } from '../middleware/auth.js'
+import { markOrderRefunded } from '../orders.js'
+import { requireAdmin, signDownloadToken } from '../middleware/auth.js'
 
 export const checkoutRouter = Router()
 
@@ -285,26 +285,78 @@ checkoutRouter.post('/webhook', async (req, res) => {
           .findOne({ _id: new ObjectId(s.metadata.itemId) })
 
         if (item?.kind === 'pdf' && item.pdfFile) {
+          /**
+           * Claim first so a duplicate delivery of the same event can't
+           * send twice — but release the claim if the send fails, so the
+           * next delivery (or a manual resend) can still reach a
+           * customer who has already paid.
+           */
           const claimed = await collections.orders().updateOne(
             { sessionId: s.id, downloadEmailSent: { $ne: true } },
             { $set: { downloadEmailSent: true } },
           )
           if (claimed.modifiedCount === 1) {
-            const token = jwt.sign(
-              { purpose: 'pdf-download', sid: s.id },
-              config.jwtSecret,
-              { expiresIn: '7d', algorithm: 'HS256' },
-            )
-            const base = config.apiPublicUrl || `http://localhost:${config.port}`
-            const { sendPdfDownload } = await import('../mailer.js')
-            sendPdfDownload({
-              to: s.customer_details.email,
-              title: item.title,
-              url: `${base}/api/shop/download?token=${token}`,
-            })
+            const { sendPdfDownload, notifyPdfDeliveryFailed } = await import('../mailer.js')
+
+            /**
+             * Without a real public URL the link would point at
+             * localhost and be useless to the buyer. Better to send
+             * nothing and tell Nate than to send a dead link — this is
+             * the one-and-only fulfilment email.
+             */
+            let sent = false
+            if (!config.apiPublicUrl && config.isProd) {
+              console.error(
+                '[checkout] API_PUBLIC_URL is not set — cannot build a download link for order ' +
+                  s.id,
+              )
+            } else {
+              const base = config.apiPublicUrl || `http://localhost:${config.port}`
+              sent = await sendPdfDownload({
+                to: s.customer_details.email,
+                title: item.title,
+                url: `${base}/api/shop/download?token=${signDownloadToken(s.id)}`,
+              })
+            }
+
+            if (!sent) {
+              /**
+               * The alert below goes out over the same SMTP that just
+               * failed, so the log is the channel that actually
+               * survives — name everything needed to fulfil by hand.
+               */
+              console.error(
+                `[checkout] DOWNLOAD EMAIL FAILED — owed a file: "${item.title}" to ` +
+                  `${s.customer_details.email} (session ${s.id})`,
+              )
+              await collections
+                .orders()
+                .updateOne(
+                  { sessionId: s.id },
+                  { $set: { downloadEmailSent: false, downloadEmailFailed: true } },
+                )
+              notifyPdfDeliveryFailed({
+                title: item.title,
+                email: s.customer_details.email,
+                sessionId: s.id,
+              })
+            }
           }
         }
       }
+    }
+
+    /**
+     * A refund revokes the download. The order row is the only thing the
+     * download route trusts, so it has to reflect the refund — the token
+     * in the customer's email stays cryptographically valid until it
+     * expires, and this is what stops it working.
+     *
+     * Also the only route by which a refund issued straight from the
+     * Stripe dashboard reaches us.
+     */
+    if (event.type === 'charge.refunded') {
+      await markOrderRefunded(event.data.object)
     }
   } catch (err) {
     console.error('[webhook] handler failed:', err.message)

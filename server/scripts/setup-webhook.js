@@ -79,8 +79,14 @@ try {
 
   const endpoint = await stripe.webhookEndpoints.create({
     url,
-    enabled_events: ['checkout.session.completed'],
-    description: 'nategaffney.store — records paid orders',
+    /**
+     * charge.refunded matters as much as the sale: it's what revokes a
+     * refunded customer's PDF download and takes the money back out of
+     * the revenue figures. A refund issued straight from the Stripe
+     * dashboard reaches us no other way.
+     */
+    enabled_events: ['checkout.session.completed', 'charge.refunded'],
+    description: 'nategaffney.store — records paid orders and refunds',
     // Platform endpoint that receives events from connected accounts.
     ...(accountId ? { connect: true } : {}),
   })

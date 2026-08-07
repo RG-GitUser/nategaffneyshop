@@ -89,7 +89,10 @@ metricsRouter.get('/summary', requireAdmin, async (req, res, next) => {
             $group: {
               _id: { title: '$title', currency: '$currency' },
               count: { $sum: 1 },
-              amount: { $sum: '$amount' },
+              // Net of refunds: a fully refunded order leaves 'paid'
+              // entirely, and a partial refund shouldn't be counted as
+              // money Nate kept.
+              amount: { $sum: { $subtract: ['$amount', { $ifNull: ['$amountRefunded', 0] }] } },
             },
           },
           { $sort: { amount: -1 } },
@@ -125,7 +128,13 @@ metricsRouter.get('/summary', requireAdmin, async (req, res, next) => {
         .orders()
         .aggregate([
           { $match: { createdAt: { $gte: since }, status: 'paid' } },
-          { $group: { _id: dayOf, orders: { $sum: 1 }, revenue: { $sum: '$amount' } } },
+          {
+            $group: {
+              _id: dayOf,
+              orders: { $sum: 1 },
+              revenue: { $sum: { $subtract: ['$amount', { $ifNull: ['$amountRefunded', 0] }] } },
+            },
+          },
         ])
         .toArray(),
       collections

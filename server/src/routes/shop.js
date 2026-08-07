@@ -1,11 +1,10 @@
 import { Router } from 'express'
 import { join, basename } from 'node:path'
 import { ObjectId } from 'mongodb'
-import jwt from 'jsonwebtoken'
 import { z } from 'zod'
 import { config } from '../config.js'
 import { collections, audit } from '../db.js'
-import { requireAdmin } from '../middleware/auth.js'
+import { requireAdmin, verifyDownloadToken } from '../middleware/auth.js'
 
 export const shopRouter = Router()
 
@@ -76,7 +75,12 @@ shopRouter.get('/', async (_req, res, next) => {
  * Paywalled PDF download. The token is a short-lived JWT minted by the
  * Stripe webhook after payment and emailed to the buyer — possession of
  * a valid token IS the proof of purchase, and the order it points at is
- * re-checked so a refunded/unpaid session can't fetch the file.
+ * re-checked on every request, so a refunded order stops downloading
+ * even though the token itself is still unexpired.
+ *
+ * The token is signed with a key derived from JWT_SECRET rather than the
+ * secret itself (see middleware/auth.js): a customer's link must never
+ * be usable as an admin session.
  */
 shopRouter.get('/download', async (req, res) => {
   const denied = () =>
@@ -86,13 +90,11 @@ shopRouter.get('/download', async (req, res) => {
     })
 
   try {
-    const payload = jwt.verify(String(req.query.token || ''), config.jwtSecret, {
-      algorithms: ['HS256'],
-    })
-    if (payload.purpose !== 'pdf-download' || !payload.sid) return denied()
+    const sessionId = verifyDownloadToken(req.query.token)
+    if (!sessionId) return denied()
 
-    const order = await collections.orders().findOne({ sessionId: payload.sid })
-    if (!order || order.status !== 'paid') return denied()
+    const order = await collections.orders().findOne({ sessionId })
+    if (!order || order.status !== 'paid' || order.refunded) return denied()
     if (!order.itemId || !ObjectId.isValid(order.itemId)) return denied()
 
     const item = await collections

@@ -33,7 +33,10 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/www/nategaffneyshop/uploads /var/www/nategaffneyshop/pdfs
+# The leading "-" means "skip if missing" — without it, a path that does
+# not exist yet fails the mount namespace and the whole API refuses to
+# start (226/NAMESPACE) rather than just losing PDF uploads.
+ReadWritePaths=-/var/www/nategaffneyshop/uploads -/var/www/nategaffneyshop/pdfs
 ProtectKernelTunables=true
 ProtectControlGroups=true
 RestrictSUIDSGID=true

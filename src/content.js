@@ -17,7 +17,6 @@ export const sections = [
   'offers',
   'services',
   'booking',
-  'groupChat',
   'about',
   'newsletter',
   'testimonials',
@@ -202,46 +201,6 @@ export const newsletter = {
   // signup form takes the full width. Add rows as { no, title } to bring
   // it back once there are real issues to show.
   recentIssues: [],
-}
-
-/**
- * Circle.so group chat. Set to null to remove the section.
- *
- * The section also hides itself automatically if the server has no Circle
- * tokens configured, so it never renders as a broken box.
- */
-/**
- * The group chat. Set to null to remove the section.
- *
- * mode:
- *   'native' — chat runs on our own server and database. Free, no third
- *              party, moderation built into the admin dashboard.
- *   'circle' — proxies Circle.so's API instead. Needs their Business plan,
- *              so it's off by default; the code is written and switches on
- *              once the server has CIRCLE_HEADLESS_TOKEN set.
- *   'link'   — no chat, just a button out to an external community.
- *
- * Both 'native' and 'circle' hit identical endpoint shapes, so switching
- * is a one-word change here.
- */
-export const groupChat = {
-  mode: 'native',
-
-  eyebrow: 'The group chat',
-  title: 'Join the conversation',
-  description:
-    'A running conversation with other people making things — what they’re working on, what’s stuck, what actually worked. Drop in whenever.',
-  cta: 'Get my code',
-
-  // Optional standing Google Meet room for live group sessions. Create a
-  // link once in Google Meet and paste it here; shown above the chat.
-  meetUrl: null,
-  meetLabel: 'Live session',
-  meetNote: 'We hop on here for group calls. Same link every time.',
-
-  // Used only when mode is 'link'.
-  joinUrl: 'https://circle.so',
-  joinCta: 'Open the community',
 }
 
 export const about = {

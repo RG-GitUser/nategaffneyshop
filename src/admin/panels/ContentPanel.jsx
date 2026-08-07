@@ -26,12 +26,6 @@ const SECTIONS_META = [
   { id: 'offers', label: 'The catalog', note: 'Cards are managed in the Shop tab.' },
   { id: 'services', label: 'Services', note: 'Cards are managed in the Services tab.' },
   { id: 'booking', label: 'Coaching / calendar' },
-  /**
-   * Not shown in the tab (chat is parked along with the Community tab),
-   * but the id stays registered so a stored order or archive that
-   * contains it round-trips instead of being dropped on save.
-   */
-  { id: 'groupChat', label: 'Group chat', hidden: true },
   { id: 'about', label: 'About ("Hey, I’m Nate")' },
   { id: 'newsletter', label: 'Newsletter' },
   { id: 'testimonials', label: 'Testimonials' },
@@ -203,15 +197,37 @@ export default function ContentPanel({ notify }) {
   const [form, setForm] = useState(null)
   const [saving, setSaving] = useState(false)
   const [dragIndex, setDragIndex] = useState(null)
+  const [loadError, setLoadError] = useState('')
 
-  useEffect(() => {
+  /**
+   * A failed load must NOT fall back to an editable form seeded with the
+   * built-in defaults. Saving that form would overwrite the real stored
+   * content — custom containers, FAQ edits, image URLs, the section
+   * order — with defaults, and none of it is recoverable. So a failure
+   * shows an error with a Retry instead of anything editable.
+   */
+  function load() {
+    setLoadError('')
     api
       .getContent()
-      .then((stored) => setForm(toForm(stored || {})))
-      .catch((err) => {
-        notify(`Could not load content: ${err.message}`, 'error')
-        setForm(toForm({}))
+      .then((stored) => {
+        // A 2xx with a body we can't read (a proxy or maintenance page)
+        // arrives as null, which would seed the form from defaults and
+        // let a Save overwrite the real content. Only a real object is
+        // safe to edit; the server sends {} on a genuine first run.
+        if (!stored || typeof stored !== 'object' || Array.isArray(stored)) {
+          throw new Error('The server sent an unreadable response.')
+        }
+        setForm(toForm(stored))
       })
+      .catch((err) => {
+        setForm(null)
+        setLoadError(err.message)
+      })
+  }
+
+  useEffect(() => {
+    load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -389,6 +405,24 @@ export default function ContentPanel({ notify }) {
     return SECTIONS_META.find((s) => s.id === id)
   }
 
+  if (loadError) {
+    return (
+      <div>
+        <h2 className="adm-h2">Content</h2>
+        <p className="adm-sub">
+          Your content could not be loaded, so it isn’t safe to edit right now —
+          saving would overwrite what’s stored. Nothing has changed.
+        </p>
+        <p className="adm-muted">({loadError})</p>
+        <div className="adm-actions" style={{ marginTop: 16 }}>
+          <button className="btn btn--primary adm-save" onClick={load}>
+            Try again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (!form) return <p className="adm-muted">Loading…</p>
 
   const renderFields = (group) => (
@@ -564,12 +598,23 @@ export default function ContentPanel({ notify }) {
               slot="custom"
               value={f.value || ''}
               notify={notify}
+              /* Patch through the updater rather than the render-time
+                 `container` — an upload takes seconds, and anything typed
+                 meanwhile would be reverted by a stale snapshot. */
               onUploaded={(url) =>
-                setCustom(container.id, {
-                  fields: container.fields.map((x) =>
-                    x.id === f.id ? { ...x, value: url } : x,
+                setForm((prev) => ({
+                  ...prev,
+                  custom: prev.custom.map((c) =>
+                    c.id === container.id
+                      ? {
+                          ...c,
+                          fields: c.fields.map((x) =>
+                            x.id === f.id ? { ...x, value: url } : x,
+                          ),
+                        }
+                      : c,
                   ),
-                })
+                }))
               }
               hint="Shown full-width inside the container."
             />

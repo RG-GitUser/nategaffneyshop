@@ -33,14 +33,20 @@ if (!enabled) {
 }
 
 /** Always sends both parts — some people read in plain text by choice,
- *  and HTML-only mail scores worse with spam filters. */
+ *  and HTML-only mail scores worse with spam filters.
+ *
+ *  Resolves true only when the mail actually went out, so a caller whose
+ *  message IS the product (the PDF download link) can react to failure
+ *  rather than assume delivery. */
 async function send({ to, subject, text, html }) {
-  if (!transport || !to) return
+  if (!transport || !to) return false
   try {
     await transport.sendMail({ from: config.smtp.from, to, subject, text, html })
+    return true
   } catch (err) {
     // Never let a mail failure break the request that triggered it.
     console.error('[mail] send failed:', err.message)
+    return false
   }
 }
 
@@ -83,9 +89,11 @@ export function sendChatCode(email, code) {
   })
 }
 
-/** To a shop buyer — their paid PDF is ready to download. */
+/** To a shop buyer — their paid PDF is ready to download. Awaited by the
+ *  webhook: this email IS the thing they paid for, so delivery has to be
+ *  known rather than assumed. */
 export function sendPdfDownload({ to, title, url }) {
-  send({
+  return send({
     to,
     subject: `Your download — ${title}`,
     text: [
@@ -105,6 +113,34 @@ export function sendPdfDownload({ to, title, url }) {
         muted(
           'The link works for 7 days. If it expires, reply to this email and we’ll send a fresh one.',
         ),
+    }),
+  })
+}
+
+/** To Nate — a customer paid for a PDF but the download email did not
+ *  go out. Someone is owed a file, so this must not fail silently. */
+export function notifyPdfDeliveryFailed({ title, email, sessionId }) {
+  send({
+    to: config.smtp.notify,
+    subject: `Action needed — download email failed for "${title}"`,
+    text: [
+      `${email} paid for "${title}" but the download email could not be sent.`,
+      ``,
+      `They are owed the file. Send it to them directly, or fix the mail`,
+      `settings and re-send from the dashboard.`,
+      ``,
+      `Stripe session: ${sessionId}`,
+    ].join('\n'),
+    html: wrap({
+      eyebrow: 'Action needed',
+      title: 'A download email failed',
+      preheader: `${email} paid for "${title}" and has not received it.`,
+      body:
+        paragraph(
+          `<strong>${email}</strong> paid for “${title}”, but the download email could not be sent. They are owed the file.`,
+        ) +
+        details([row('Item', title), row('Customer', email), row('Stripe session', sessionId)]) +
+        muted('Send the file directly, or fix the mail settings and re-send.'),
     }),
   })
 }

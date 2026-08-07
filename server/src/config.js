@@ -184,3 +184,16 @@ if (config.isProd && config.allowedOrigins.length === 0) {
     'Refusing to start with open CORS. List your site origins, comma separated.',
   )
 }
+
+/**
+ * A warning rather than a hard fail: these two only matter for selling
+ * PDFs, and refusing to boot would take the whole site down over a
+ * feature that might be unused. The webhook refuses to email a
+ * localhost link, so the worst case is a sale that needs manual
+ * fulfilment — announced here and by email, never silent.
+ */
+if (config.isProd && !config.apiPublicUrl) {
+  console.warn(
+    '[config] API_PUBLIC_URL is not set — paid-PDF download emails cannot be sent.',
+  )
+}

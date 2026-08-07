@@ -28,6 +28,23 @@ echo "── server deps ──────────────────�
 cd server
 npm ci --omit=dev
 
+echo "── storage dirs ─────────────────────────"
+# Both must exist before the service starts: they're in the unit's
+# ReadWritePaths. uploads is public (served at /uploads); pdfs holds paid
+# downloads and is deliberately NOT web-served.
+mkdir -p "$ROOT/uploads" "$ROOT/pdfs"
+
+echo "── systemd unit ─────────────────────────"
+# Keep the installed unit in step with the repo, otherwise a hardening
+# change (like granting write access to pdfs) silently never lands.
+if ! cmp -s deploy/nategaffneyshop-api.service /etc/systemd/system/nategaffneyshop-api.service; then
+  cp deploy/nategaffneyshop-api.service /etc/systemd/system/
+  systemctl daemon-reload
+  echo "unit updated"
+else
+  echo "unit unchanged"
+fi
+
 echo "── permissions + restart ────────────────"
 chown -R deploy:deploy "$ROOT"
 chmod 600 "$ROOT/server/.env"
