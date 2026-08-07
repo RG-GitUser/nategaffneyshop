@@ -14,7 +14,6 @@
  */
 export const sections = [
   'featuredVideo',
-  'featured',
   'offers',
   'services',
   'booking',
@@ -67,16 +66,6 @@ export const socials = [
   { label: 'TikTok', href: 'https://www.tiktok.com/@nategaffney', icon: 'tiktok' },
   { label: 'Email', href: 'mailto:support@nategaffney.store', icon: 'mail' },
 ]
-
-/**
- * The big highlighted offer at the top of the page. Currently off.
- *
- * To bring it back, replace null with an object shaped like:
- *   { badge, title, subtitle, description, price, oldPrice, spotsLeft,
- *     cta, href, note, bullets: [] }
- * Everything except title, description, price, cta and href is optional.
- */
-export const featured = null
 
 /**
  * Featured video at the top of the page. Set to null to remove it.

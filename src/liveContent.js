@@ -46,8 +46,8 @@ export async function loadContent() {
 
     if (content) {
       for (const [key, value] of Object.entries(content)) {
-        // `featured` is null by default, so there is no object to mutate —
-        // it stays off until it's given a shape in content.js.
+        // Only keys with a matching object default can merge — anything
+        // else (unknown or retired sections) is ignored.
         if (defaults[key] && typeof defaults[key] === 'object') {
           mergeInPlace(defaults[key], value)
         }

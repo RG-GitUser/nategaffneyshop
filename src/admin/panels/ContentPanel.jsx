@@ -23,7 +23,6 @@ import * as defaults from '../../content.js'
  */
 const SECTIONS_META = [
   { id: 'featuredVideo', label: 'Featured video' },
-  { id: 'featured', label: 'Featured offer', note: 'A big spotlight card for one special offer. Not switched on yet.' },
   { id: 'offers', label: 'The catalog', note: 'Cards are managed in the Shop tab.' },
   { id: 'services', label: 'Services', note: 'Cards are managed in the Services tab.' },
   { id: 'booking', label: 'Coaching / calendar' },

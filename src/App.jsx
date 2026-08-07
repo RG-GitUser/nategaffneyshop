@@ -1,6 +1,5 @@
 import ThemeToggle from './components/ThemeToggle.jsx'
 import ProfileRail from './components/ProfileRail.jsx'
-import FeaturedCard from './components/FeaturedCard.jsx'
 import FeaturedVideo from './components/FeaturedVideo.jsx'
 import OfferCard from './components/OfferCard.jsx'
 import BookingCalendar from './components/BookingCalendar.jsx'
@@ -36,7 +35,6 @@ function Offers() {
 /** Every section the admin can reorder. Footer always stays last. */
 const SECTIONS = {
   featuredVideo: FeaturedVideo,
-  featured: FeaturedCard,
   offers: Offers,
   services: Services,
   booking: BookingCalendar,
