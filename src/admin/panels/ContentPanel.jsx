@@ -231,22 +231,52 @@ export default function ContentPanel({ notify }) {
     setDragIndex(index)
   }
 
-  async function deleteGroupContent(group, label) {
-    const ok = await confirmDialog({
-      title: `Delete all "${label}" content?`,
-      message:
-        'Every field in this container is cleared. Once saved, the section is removed from the public site.',
-      confirmLabel: 'Delete',
-      danger: true,
-    })
-    if (!ok) return
-    if (group === 'faqs') {
+  function removeCustom(id) {
+    setForm((f) => ({
+      ...f,
+      custom: f.custom.filter((c) => c.id !== id),
+      sections: f.sections.filter((s) => s !== id),
+      archived: f.archived.filter((s) => s !== id),
+    }))
+  }
+
+  function clearGroupFields(id) {
+    if (id === 'faqs') {
       setForm((f) => ({ ...f, faqs: [] }))
       return
     }
     const cleared = {}
-    for (const f of FIELDS_BY_GROUP[group].fields) cleared[f.key] = ''
-    setForm((f) => ({ ...f, [group]: { ...f[group], ...cleared } }))
+    for (const fld of FIELDS_BY_GROUP[id].fields) cleared[fld.key] = ''
+    setForm((f) => ({ ...f, [id]: { ...f[id], ...cleared } }))
+  }
+
+  /**
+   * Every container carries the same Delete button; what it does depends
+   * on what the container is. Custom ones are removed outright, ones with
+   * fields here are cleared, and ones whose cards live in another tab are
+   * archived instead — their data isn't ours to delete from this page.
+   * Always name-verified: this is the destructive path.
+   */
+  async function deleteSection(id) {
+    const meta = id === 'profile' ? { label: 'Profile' } : metaFor(id)
+    if (!meta) return
+    const isCustom = Boolean(meta.customContainer)
+    const hasFields = Boolean(FIELDS_BY_GROUP[id]) || id === 'faqs'
+    const ok = await confirmDialog({
+      title: `Delete "${meta.label}"?`,
+      message: isCustom
+        ? 'The container and everything in it are removed for good once you save.'
+        : hasFields
+          ? 'Everything written in this container is permanently cleared once you save.'
+          : 'The cards in this section are managed in another tab, so nothing is deleted here — the section moves to Archived and comes off the public page once you save.',
+      confirmLabel: 'Delete',
+      danger: true,
+      verifyText: meta.label,
+    })
+    if (!ok) return
+    if (isCustom) removeCustom(id)
+    else if (hasFields) clearGroupFields(id)
+    else archiveSection(id)
   }
 
   function archiveSection(id) {
@@ -298,31 +328,10 @@ export default function ContentPanel({ notify }) {
     })
   }
 
-  async function deleteContainer(container) {
-    const name = container.title || 'Untitled container'
-    const ok = await confirmDialog({
-      title: `Delete "${name}"?`,
-      message:
-        'The container and everything in it are removed from the page. This cannot be undone after saving.',
-      confirmLabel: 'Delete',
-      danger: true,
-      verifyText: name,
-    })
-    if (!ok) return
-    setForm((f) => ({
-      ...f,
-      custom: f.custom.filter((c) => c.id !== container.id),
-      sections: f.sections.filter((id) => id !== container.id),
-      archived: f.archived.filter((id) => id !== container.id),
-    }))
-  }
-
   /**
-   * Deleting from the archive is the point of no return, so it demands
-   * the container's name typed back. Custom containers are removed
-   * entirely; built-in sections have their content cleared but stay
-   * archived (the section itself is part of the site and can always be
-   * restored empty).
+   * Deleting from the archive: custom containers are removed entirely;
+   * built-in sections have their content cleared but stay archived (the
+   * section itself is part of the site and can always be restored empty).
    */
   async function deleteArchived(id) {
     const meta = metaFor(id)
@@ -338,20 +347,8 @@ export default function ContentPanel({ notify }) {
       verifyText: meta.label,
     })
     if (!ok) return
-    if (isCustom) {
-      setForm((f) => ({
-        ...f,
-        custom: f.custom.filter((c) => c.id !== id),
-        archived: f.archived.filter((s) => s !== id),
-        sections: f.sections.filter((s) => s !== id),
-      }))
-    } else if (id === 'faqs') {
-      setForm((f) => ({ ...f, faqs: [] }))
-    } else if (FIELDS_BY_GROUP[id]) {
-      const cleared = {}
-      for (const fld of FIELDS_BY_GROUP[id].fields) cleared[fld.key] = ''
-      setForm((f) => ({ ...f, [id]: { ...f[id], ...cleared } }))
-    }
+    if (isCustom) removeCustom(id)
+    else clearGroupFields(id)
   }
 
   /** Label + note for any section id, built-in or custom. */
@@ -577,9 +574,9 @@ export default function ContentPanel({ notify }) {
           <div className="adm-group-tools">
             <button
               className="adm-mini adm-mini--danger"
-              onClick={() => deleteGroupContent('profile', 'Profile')}
+              onClick={() => deleteSection('profile')}
             >
-              Delete content
+              Delete
             </button>
             <button className="adm-mini adm-mini--save" onClick={save} disabled={saving}>
               {saving ? 'Saving…' : 'Save'}
@@ -650,22 +647,12 @@ export default function ContentPanel({ notify }) {
                 >
                   Archive
                 </button>
-                {(editable || isFaqs) && (
-                  <button
-                    className="adm-mini adm-mini--danger"
-                    onClick={() => deleteGroupContent(id, meta.label)}
-                  >
-                    Delete content
-                  </button>
-                )}
-                {customContainer && (
-                  <button
-                    className="adm-mini adm-mini--danger"
-                    onClick={() => deleteContainer(customContainer)}
-                  >
-                    Delete container
-                  </button>
-                )}
+                <button
+                  className="adm-mini adm-mini--danger"
+                  onClick={() => deleteSection(id)}
+                >
+                  Delete
+                </button>
                 <button className="adm-mini adm-mini--save" onClick={save} disabled={saving}>
                   {saving ? 'Saving…' : 'Save'}
                 </button>
