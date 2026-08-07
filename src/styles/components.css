@@ -2057,6 +2057,13 @@
 .custom-copy__item {
   display: grid;
   gap: 12px;
+  /* Grid cells refuse to shrink below content by default — without this a
+     long unbroken word paints over the neighbouring column. */
+  min-width: 0;
+}
+
+.custom-copy__item p {
+  overflow-wrap: anywhere;
 }
 
 .custom-copy p {
@@ -2086,4 +2093,7 @@
   display: block;
   width: 100%;
   border-radius: var(--r-md);
+  /* Images keep their documented full-width behaviour: span every column
+     while the text fields beside them columnise. */
+  grid-column: 1 / -1;
 }

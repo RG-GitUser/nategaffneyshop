@@ -77,6 +77,14 @@ googleRouter.get('/connect', requireAdmin, (req, res) => {
       .json({ error: 'Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET first.' })
   }
 
+  // Without this, the consent URL goes out with an empty redirect_uri and
+  // Google shows an "invalid_request" page — fail here, readably, instead.
+  if (!config.google.redirectUri) {
+    return res
+      .status(503)
+      .json({ error: 'Set GOOGLE_REDIRECT_URI in server/.env first.' })
+  }
+
   const state = randomBytes(16).toString('hex')
   res.cookie(STATE_COOKIE, state, {
     httpOnly: true,
