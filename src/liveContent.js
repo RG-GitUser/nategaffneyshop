@@ -45,6 +45,26 @@ export async function loadContent() {
     ])
 
     if (content) {
+      /**
+       * Scheduling config is code-owned. The admin Content tab edits the
+       * booking COPY (title, description, fine print) but has no editor
+       * for slots or availability — yet old saves baked those fields into
+       * the stored document, where they would forever override any change
+       * made in content.js. Dropping them here keeps the bundled values
+       * authoritative while the admin-editable text still merges.
+       */
+      if (content.booking && typeof content.booking === 'object') {
+        for (const k of [
+          'slots',
+          'availableDays',
+          'leadTimeDays',
+          'horizonDays',
+          'blackouts',
+          'timezoneName',
+        ]) {
+          delete content.booking[k]
+        }
+      }
       for (const [key, value] of Object.entries(content)) {
         // Only keys with a matching object default can merge — anything
         // else (unknown or retired sections) is ignored.

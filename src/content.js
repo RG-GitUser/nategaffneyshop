@@ -159,12 +159,15 @@ export const booking = {
     'Forty-five minutes on whatever’s actually in your way — a rough cut, pricing, burnout, the work you keep not making. Pick a time that works and tell me what you want to get out of it.',
   duration: '45 min',
   price: '$150',
-  // Shown to the visitor so nobody books 3am their time by accident.
+  // Fallback label, shown only when a browser can't convert timezones.
   timezone: 'Atlantic Time (AT)',
+  // The IANA zone the slot times below are written in. Visitors see every
+  // time converted from this zone to their own clock.
+  timezoneName: 'America/Halifax',
   // Weekdays open for booking. 0 = Sunday … 6 = Saturday.
   availableDays: [1, 2, 3, 4],
-  // Slots offered on any available day.
-  slots: ['9:00 AM', '10:30 AM', '1:00 PM', '2:30 PM', '4:00 PM'],
+  // Slots offered on any available day, on Nate's clock (timezoneName).
+  slots: ['8:00 AM', '9:00 AM', '10:30 AM', '1:00 PM', '2:30 PM', '4:00 PM'],
   // No same-day bookings — needs this many days of notice.
   leadTimeDays: 2,
   // How far ahead the calendar opens up.

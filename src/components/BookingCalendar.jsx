@@ -39,6 +39,43 @@ function monthCells(year, month) {
   return cells
 }
 
+/** '9:00 AM' → hours/minutes on a 24-hour clock. */
+function parseSlot(slot) {
+  const m = String(slot).trim().match(/^(\d{1,2})(?::(\d{2}))?\s*([AP])\.?M\.?$/i)
+  if (!m) return null
+  let hour = Number(m[1]) % 12
+  if (m[3].toUpperCase() === 'P') hour += 12
+  return { hour, minute: Number(m[2] || 0) }
+}
+
+/** What tz's wall clock reads at instant t, re-encoded as a UTC epoch. */
+function wallClockAt(t, tz) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).formatToParts(new Date(t))
+  const get = (type) => Number(parts.find((p) => p.type === type)?.value)
+  return Date.UTC(get('year'), get('month') - 1, get('day'), get('hour') % 24, get('minute'))
+}
+
+/**
+ * The real moment at which `date` reads hour:minute on tz's wall clock.
+ * Guess the instant as if the wall time were UTC, measure how far tz's
+ * clock actually is from the target, and shift; a second pass absorbs a
+ * DST boundary the first shift may have crossed.
+ */
+function zonedInstant(date, hour, minute, tz) {
+  const target = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute)
+  let t = target - (wallClockAt(target, tz) - target)
+  t -= wallClockAt(t, tz) - target
+  return new Date(t)
+}
+
 export default function BookingCalendar() {
   const today = useMemo(() => startOfDay(new Date()), [])
   const earliest = useMemo(
@@ -69,6 +106,54 @@ export default function BookingCalendar() {
       .then(setPrice)
       .catch(() => setPrice(null))
   }, [])
+
+  /**
+   * Slot times are written on Nate's clock (booking.timezoneName); the
+   * visitor sees them on their own. What's SUBMITTED is always the
+   * original slot string — the server, the dashboard, and every email
+   * speak Nate's time — so the confirmation spells out both. A browser
+   * that can't convert just sees the original times with the fallback
+   * timezone label, exactly as before.
+   */
+  const viewerZone = useMemo(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || null
+    } catch {
+      return null
+    }
+  }, [])
+  const localized = Boolean(
+    booking?.timezoneName && viewerZone && viewerZone !== booking.timezoneName,
+  )
+  const viewerZoneLabel = useMemo(() => {
+    if (!localized) return null
+    try {
+      const part = new Intl.DateTimeFormat(undefined, { timeZoneName: 'short' })
+        .formatToParts(new Date())
+        .find((p) => p.type === 'timeZoneName')
+      return part?.value || viewerZone
+    } catch {
+      return viewerZone
+    }
+  }, [localized, viewerZone])
+
+  function slotLabel(slot, date) {
+    if (!localized || !date) return slot
+    const hm = parseSlot(slot)
+    if (!hm) return slot
+    try {
+      const instant = zonedInstant(date, hm.hour, hm.minute, booking.timezoneName)
+      const label = instant.toLocaleTimeString(undefined, {
+        hour: 'numeric',
+        minute: '2-digit',
+      })
+      // 4:00 PM Atlantic is already tomorrow in Auckland — say so.
+      const sameDay = instant.toLocaleDateString('en-CA') === dateKey(date)
+      return sameDay ? label : `${label} +1 day`
+    } catch {
+      return slot
+    }
+  }
 
   // Content deleted in the admin dashboard also hides the section.
   if (!booking || (!booking.title && !booking.description)) return null
@@ -177,7 +262,7 @@ export default function BookingCalendar() {
             <li>
               {price?.priceCents ? `$${(price.priceCents / 100).toFixed(0)}` : booking.price}
             </li>
-            <li>{booking.timezone}</li>
+            <li>{localized ? `Your time (${viewerZoneLabel})` : booking.timezone}</li>
           </ul>
         </div>
 
@@ -185,8 +270,15 @@ export default function BookingCalendar() {
           <div className="booking__done" role="status">
             <p className="booking__done-title">Request sent</p>
             <p className="booking__done-when">
-              {prettyDate} at {selectedSlot}
+              {prettyDate} at {slotLabel(selectedSlot, selectedDate)}
             </p>
+            {/* Emails speak Nate's time, so leave both on the receipt. */}
+            {localized && (
+              <p className="booking__fine mono">
+                {selectedSlot} {booking.timezone} on Nate’s calendar — emails
+                will use that time.
+              </p>
+            )}
             <p className="booking__done-note">
               {price?.enabled
                 ? "When Nate confirms, you'll get an email with a secure payment link — the spot is locked in once it's paid."
@@ -276,7 +368,7 @@ export default function BookingCalendar() {
                       aria-pressed={selectedSlot === slot}
                       onClick={() => setSelectedSlot(slot)}
                     >
-                      {slot}
+                      {slotLabel(slot, selectedDate)}
                     </button>
                   ))}
                 </div>
@@ -341,7 +433,8 @@ export default function BookingCalendar() {
                     'Sending…'
                   ) : (
                     <>
-                      Request {prettyDate?.replace(/,.*/, '')} at {selectedSlot}
+                      Request {prettyDate?.replace(/,.*/, '')} at{' '}
+                      {slotLabel(selectedSlot, selectedDate)}
                       <ArrowRight width={17} height={17} />
                     </>
                   )}
