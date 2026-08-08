@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit'
 import { z } from 'zod'
 import { collections } from '../db.js'
 import { requireAdmin } from '../middleware/auth.js'
+import { isHiddenTestTitle, notHiddenTestOrder } from '../hiddenTestData.js'
 
 export const metricsRouter = Router()
 
@@ -84,7 +85,8 @@ metricsRouter.get('/summary', requireAdmin, async (req, res, next) => {
       collections
         .orders()
         .aggregate([
-          { $match: { createdAt: { $gte: since }, status: 'paid' } },
+          // Pre-launch test purchases stay out of sales (hiddenTestData.js).
+          { $match: { createdAt: { $gte: since }, status: 'paid', ...notHiddenTestOrder } },
           {
             $group: {
               _id: { title: '$title', currency: '$currency' },
@@ -102,7 +104,8 @@ metricsRouter.get('/summary', requireAdmin, async (req, res, next) => {
         .orders()
         .find({}, { projection: { sessionId: 0, paymentIntent: 0 } })
         .sort({ createdAt: -1 })
-        .limit(10)
+        // A few extra so hiding the test rows still leaves ten to show.
+        .limit(14)
         .toArray(),
       Promise.all([
         collections.chatMembers().countDocuments(),
@@ -127,7 +130,7 @@ metricsRouter.get('/summary', requireAdmin, async (req, res, next) => {
       collections
         .orders()
         .aggregate([
-          { $match: { createdAt: { $gte: since }, status: 'paid' } },
+          { $match: { createdAt: { $gte: since }, status: 'paid', ...notHiddenTestOrder } },
           {
             $group: {
               _id: dayOf,
@@ -203,15 +206,18 @@ metricsRouter.get('/summary', requireAdmin, async (req, res, next) => {
           amount: o.amount,
           currency: o._id.currency,
         })),
-        recent: recentOrders.map((o) => ({
-          id: o._id.toString(),
-          title: o.title,
-          name: o.name,
-          email: o.email,
-          amount: o.amount,
-          currency: o.currency,
-          createdAt: o.createdAt,
-        })),
+        recent: recentOrders
+          .filter((o) => !isHiddenTestTitle(o.title))
+          .slice(0, 10)
+          .map((o) => ({
+            id: o._id.toString(),
+            title: o.title,
+            name: o.name,
+            email: o.email,
+            amount: o.amount,
+            currency: o.currency,
+            createdAt: o.createdAt,
+          })),
       },
       chat: {
         members: chat[0],

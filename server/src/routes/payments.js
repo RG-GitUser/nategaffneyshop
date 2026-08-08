@@ -5,6 +5,7 @@ import { config } from '../config.js'
 import { audit, collections } from '../db.js'
 import { markOrderRefunded } from '../orders.js'
 import { requireAdmin } from '../middleware/auth.js'
+import { isHiddenTestTitle } from '../hiddenTestData.js'
 
 export const paymentsRouter = Router()
 
@@ -107,12 +108,25 @@ paymentsRouter.get('/', async (req, res, next) => {
       .toArray()
     const titles = new Map(orders.map((o) => [o.paymentIntent, o.title]))
 
+    /**
+     * Two kinds of rows stay off the list: abandoned checkouts
+     * (requires_payment_method — someone opened the payment form and
+     * left; Stripe's own dashboard hides these by default too), and the
+     * pre-launch test purchases (see hiddenTestData.js).
+     */
+    const visible = list.data.filter(
+      (pi) =>
+        pi.status !== 'requires_payment_method' &&
+        !isHiddenTestTitle(titles.get(pi.id)),
+    )
+
     res.json({
-      data: list.data.map((pi) => ({
+      data: visible.map((pi) => ({
         ...summarise(pi),
         label: titles.get(pi.id) || pi.description || null,
       })),
       hasMore: list.has_more,
+      // Cursor from the UNfiltered page, so pagination never skips.
       lastId: list.data.at(-1)?.id ?? null,
       account: config.stripeAccountId || null,
     })
@@ -223,11 +237,24 @@ paymentsRouter.get('/stats/summary', async (_req, res, next) => {
       ...onBehalf,
     )
     const succeeded = list.data.filter((p) => p.status === 'succeeded')
+
+    // The test purchases are real Stripe charges, so without this they
+    // inflate the headline numbers too — same list as hiddenTestData.js.
+    const orders = await collections
+      .orders()
+      .find(
+        { paymentIntent: { $in: succeeded.map((p) => p.id) } },
+        { projection: { paymentIntent: 1, title: 1 } },
+      )
+      .toArray()
+    const titles = new Map(orders.map((o) => [o.paymentIntent, o.title]))
+    const counted = succeeded.filter((p) => !isHiddenTestTitle(titles.get(p.id)))
+
     res.json({
       windowDays: 30,
-      count: succeeded.length,
-      grossAmount: succeeded.reduce((sum, p) => sum + p.amount, 0),
-      currency: succeeded[0]?.currency ?? 'cad',
+      count: counted.length,
+      grossAmount: counted.reduce((sum, p) => sum + p.amount, 0),
+      currency: counted[0]?.currency ?? 'cad',
       account: config.stripeAccountId || null,
     })
   } catch (err) {
