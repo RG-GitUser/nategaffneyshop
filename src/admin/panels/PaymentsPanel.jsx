@@ -8,7 +8,19 @@ const money = (cents, currency = 'cad') =>
     currency: currency.toUpperCase(),
   }).format((cents ?? 0) / 100)
 
-const when = (unix) => new Date(unix * 1000).toLocaleString('en-CA')
+/** Date over time on two lines, so the column stays narrow. */
+const whenParts = (unix) => {
+  const d = new Date(unix * 1000)
+  return [
+    d.toLocaleDateString('en-CA'),
+    d.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' }),
+  ]
+}
+
+/** Stripe's raw status ids read like shouting constants in a pill.
+ *  'requires_payment_method' just means the payment never went through. */
+const prettyStatus = (s) =>
+  s === 'requires_payment_method' ? 'incomplete' : String(s || '').replace(/_/g, ' ')
 
 export default function PaymentsPanel({ notify }) {
   const [rows, setRows] = useState([])
@@ -127,9 +139,14 @@ export default function PaymentsPanel({ notify }) {
             <tbody>
               {rows.map((p) => {
                 const remaining = p.amount - (p.amountRefunded || 0)
+                const [onDate, atTime] = whenParts(p.created)
                 return (
                   <tr key={p.id}>
-                    <td className="adm-nowrap">{when(p.created)}</td>
+                    <td className="adm-nowrap">
+                      {onDate}
+                      <br />
+                      <span className="adm-muted">{atTime}</span>
+                    </td>
                     <td>
                       <strong>{p.customerName || '—'}</strong>
                       <br />
@@ -151,7 +168,9 @@ export default function PaymentsPanel({ notify }) {
                       )}
                     </td>
                     <td>
-                      <span className={`adm-pill adm-pill--${p.status}`}>{p.status}</span>
+                      <span className={`adm-pill adm-pill--${p.status}`}>
+                        {prettyStatus(p.status)}
+                      </span>
                     </td>
                     <td className="adm-actions">
                       {p.receiptUrl && (

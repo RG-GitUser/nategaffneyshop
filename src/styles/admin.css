@@ -118,7 +118,9 @@
 }
 
 .adm {
-  max-width: 1180px;
+  /* Wide enough that the Payments table shows every column without a
+     sideways scroll on a normal laptop. */
+  max-width: 1360px;
   margin-inline: auto;
   padding: clamp(18px, 3vw, 34px) var(--pad-x) 80px;
 }
