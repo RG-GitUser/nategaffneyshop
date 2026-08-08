@@ -26,8 +26,9 @@ const toDollars = (cents) => (cents ? (cents / 100).toFixed(2) : '')
 /**
  * The service cards on the landing page ("Services" section). A service
  * with a charge amount opens Stripe Checkout when clicked, exactly like a
- * paid shop item; without one the card just follows its link (usually
- * #book, the coaching calendar, or a contact address).
+ * paid shop item; without one the card just follows its link (a URL or a
+ * contact address; '#book' only jumps anywhere while the coaching
+ * calendar section is on the landing page).
  */
 export default function ServicesPanel({ notify }) {
   const [items, setItems] = useState([])
@@ -198,7 +199,7 @@ export default function ServicesPanel({ notify }) {
                 ['price', 'Price (e.g. $150 / session)'],
                 ['tag', 'Tag (e.g. Most popular)'],
                 ['cta', 'Button text'],
-                ['href', 'Link URL (#book opens the coaching calendar)'],
+                ['href', 'Link URL (ignored when a charge amount is set)'],
                 ['order', 'Order'],
               ].map(([key, label]) => (
                 <div className="adm-field" key={key}>

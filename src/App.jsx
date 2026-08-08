@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import ThemeToggle from './components/ThemeToggle.jsx'
 import ProfileRail from './components/ProfileRail.jsx'
 import FeaturedVideo from './components/FeaturedVideo.jsx'
@@ -59,25 +58,10 @@ function sectionOrder() {
 }
 
 export default function App() {
-  const order = sectionOrder()
-
-  // Product and service cards link to '#book'. While the coaching calendar
-  // is off the landing page (archived — it lives at /coaching/), that
-  // anchor points at nothing, so send those clicks to the coaching page
-  // instead of silently doing nothing. Once the section is restored the
-  // same links jump to it right here again.
-  const hasBooking = order.includes('booking')
-  useEffect(() => {
-    if (hasBooking) return
-    function onClick(e) {
-      if (!e.target.closest?.('a[href="#book"]')) return
-      e.preventDefault()
-      window.location.assign('/coaching/')
-    }
-    document.addEventListener('click', onClick)
-    return () => document.removeEventListener('click', onClick)
-  }, [hasBooking])
-
+  // NOTE: '#book' links on cards only jump somewhere while the coaching
+  // calendar section is on the landing page. While it's archived they do
+  // nothing — deliberately. The /coaching/ page is a private, link-only
+  // URL, so nothing public may route people to it.
   return (
     <>
       <ThemeToggle />
@@ -87,7 +71,7 @@ export default function App() {
           <ProfileRail />
 
           <main className="stack">
-            {order.map((id) => {
+            {sectionOrder().map((id) => {
               const Section = SECTIONS[id]
               if (Section) return <Section key={id} />
               return (
