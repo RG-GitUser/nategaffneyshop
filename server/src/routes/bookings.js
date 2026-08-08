@@ -376,6 +376,17 @@ bookingsRouter.patch('/:id', requireAdmin, async (req, res, next) => {
      * downgrades to a plain confirmation rather than losing the admin's
      * action entirely — the booking update still goes through.
      */
+    /**
+     * Pay-before-you-join: while the session still owes payment, the
+     * customer must not receive the Meet link — not in our emails and
+     * not via Google's own invite. The event and its Meet room are
+     * created on Nate's calendar without the customer as attendee; the
+     * Stripe webhook invites them (and emails the link) once payment
+     * lands. Free bookings — no price set — are untouched by this.
+     */
+    const owesPayment =
+      !before.paid && Boolean('payUrl' in changes ? changes.payUrl : before.payUrl)
+
     if (await googleConnected().catch(() => false)) {
       const merged = { ...before, ...parsed.data }
       const nowConfirmed =
@@ -392,12 +403,14 @@ bookingsRouter.patch('/:id', requireAdmin, async (req, res, next) => {
           changes.googleEventId = null
           changes.meetUrl = ''
         } else if (nowConfirmed && !before.googleEventId) {
-          const ev = await createBookingEvent(merged)
+          const ev = await createBookingEvent(merged, { inviteCustomer: !owesPayment })
           changes.googleEventId = ev.eventId
           // Only overwrite the link if the admin hasn't set one by hand.
           if (ev.meetUrl && !parsed.data.meetUrl) changes.meetUrl = ev.meetUrl
         } else if (timeChanged && before.googleEventId) {
-          const ev = await updateBookingEvent(before.googleEventId, merged)
+          const ev = await updateBookingEvent(before.googleEventId, merged, {
+            inviteCustomer: !owesPayment,
+          })
           if (ev.meetUrl && !parsed.data.meetUrl) changes.meetUrl = ev.meetUrl
         }
       } catch (gErr) {

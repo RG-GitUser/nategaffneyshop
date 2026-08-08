@@ -428,6 +428,12 @@ export default function BookingsPanel({ notify }) {
                   </td>
                   <td>
                     <strong>{b.name}</strong>
+                    {b.paid && (
+                      <>
+                        {' '}
+                        <span className="adm-pill adm-pill--confirmed">paid</span>
+                      </>
+                    )}
                     <br />
                     <a href={`mailto:${b.email}`}>{b.email}</a>
                   </td>
@@ -454,12 +460,8 @@ export default function BookingsPanel({ notify }) {
                   </td>
                   <td>
                     <span className={`adm-pill adm-pill--${b.status}`}>{b.status}</span>
-                    {b.paid && (
-                      <>
-                        {' '}
-                        <span className="adm-pill adm-pill--confirmed">paid</span>
-                      </>
-                    )}
+                    {/* "paid" lives beside the customer's name; here only
+                        the still-owing state needs calling out. */}
                     {!b.paid && b.payUrl && b.status === 'confirmed' && (
                       <>
                         {' '}

@@ -220,15 +220,30 @@ checkoutRouter.post('/webhook', async (req, res) => {
   }
 
   try {
-    if (event.type === 'checkout.session.completed') {
+    if (
+      event.type === 'checkout.session.completed' ||
+      // Delayed payment methods (bank debits) complete the session first
+      // and confirm the money later; this second event carries the same
+      // session object, now with payment_status 'paid'.
+      event.type === 'checkout.session.async_payment_succeeded'
+    ) {
       const s = event.data.object
 
       // A coaching-session payment: mark the booking paid and only now
-      // tell Nate — an unpaid request isn't news yet.
-      if (s.metadata?.bookingId && ObjectId.isValid(s.metadata.bookingId)) {
+      // tell Nate — an unpaid request isn't news yet. payment_status is
+      // the gate: for async methods 'completed' fires before the money
+      // is real, and the Meet link must not travel on a promise.
+      if (
+        s.metadata?.bookingId &&
+        ObjectId.isValid(s.metadata.bookingId) &&
+        s.payment_status === 'paid'
+      ) {
         const _id = new ObjectId(s.metadata.bookingId)
+        // paid:{$ne:true} makes the transition one-shot: Stripe can
+        // deliver the same event twice, and the customer must not be
+        // emailed or calendar-invited twice for it.
         const booking = await collections.bookings().findOneAndUpdate(
-          { _id },
+          { _id, paid: { $ne: true } },
           {
             $set: {
               paid: true,
@@ -242,8 +257,54 @@ checkoutRouter.post('/webhook', async (req, res) => {
           { returnDocument: 'after' },
         )
         if (booking) {
-          const { notifyBookingPaid } = await import('../mailer.js')
+          // A Payment Link is reusable until deactivated — the pay
+          // button in the confirmation email must die with the payment,
+          // or a second click would quietly charge twice.
+          if (booking.payLinkId) {
+            try {
+              await stripe.paymentLinks.update(
+                booking.payLinkId,
+                { active: false },
+                ...onBehalf,
+              )
+            } catch (sErr) {
+              console.error('[booking] could not deactivate paid link:', sErr.message)
+            }
+          }
+
+          const { notifyBookingPaid, notifyBookingPaymentReceived } = await import(
+            '../mailer.js'
+          )
           notifyBookingPaid(booking)
+
+          if (booking.status === 'confirmed') {
+            // The customer's copy carries the Meet link that was held
+            // back from the confirmation email until payment landed.
+            notifyBookingPaymentReceived(booking)
+            // And Google's own invite — with the Meet link — goes out
+            // now. One attempt: if Google is down the customer still has
+            // the link from the email above, so this is best-effort.
+            if (booking.googleEventId) {
+              try {
+                const { inviteCustomerToEvent } = await import('../google.js')
+                await inviteCustomerToEvent(booking.googleEventId, booking)
+              } catch (gErr) {
+                console.error('[google] post-payment invite failed:', gErr.message)
+              }
+            }
+          } else {
+            /**
+             * Money landed on a booking that is no longer (or not yet)
+             * confirmed — cancelled in a race with the webhook, or paid
+             * after being marked done. Nate decides what happens
+             * (usually a refund); the customer must NOT be told they're
+             * locked in for a session that isn't happening.
+             */
+            console.warn(
+              `[booking] payment landed on a ${booking.status} booking ` +
+                `${booking._id} (${booking.email}) — needs a manual look`,
+            )
+          }
         }
       }
 

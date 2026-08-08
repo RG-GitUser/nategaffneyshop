@@ -203,7 +203,7 @@ function endOf(startIso, minutes) {
   return `${datePart}T${pad(Math.floor(total / 60) % 24)}:${pad(total % 60)}:00`
 }
 
-function eventBody(booking, settings, { withConference } = {}) {
+function eventBody(booking, settings, { withConference, inviteCustomer = true } = {}) {
   const start = toRfc3339(booking.date, booking.time)
   if (!start) return null
   const end = endOf(start, settings.durationMinutes)
@@ -221,7 +221,12 @@ function eventBody(booking, settings, { withConference } = {}) {
     ].join('\n'),
     start: { dateTime: start, timeZone: settings.timeZone },
     end: { dateTime: end, timeZone: settings.timeZone },
-    attendees: [{ email: booking.email, displayName: booking.name }],
+    // An attendee gets Google's own invite email — with the Meet link in
+    // it — so a booking that still owes payment must not have one yet.
+    // On a PATCH, leaving `attendees` out keeps the list as it is.
+    ...(inviteCustomer
+      ? { attendees: [{ email: booking.email, displayName: booking.name }] }
+      : {}),
     reminders: { useDefault: true },
   }
 
@@ -238,9 +243,18 @@ function eventBody(booking, settings, { withConference } = {}) {
   return body
 }
 
-/** Creates the event with a Meet room and invites the customer. */
-export async function createBookingEvent(booking) {
-  const body = eventBody(booking, await calendarSettings(), { withConference: true })
+/**
+ * Creates the event with a Meet room. With `inviteCustomer` (the default)
+ * the customer is added as an attendee and Google emails them the invite;
+ * pass false while payment is still owed — the event and Meet room exist
+ * on Nate's calendar only, and inviteCustomerToEvent() adds the customer
+ * once they've paid.
+ */
+export async function createBookingEvent(booking, { inviteCustomer = true } = {}) {
+  const body = eventBody(booking, await calendarSettings(), {
+    withConference: true,
+    inviteCustomer,
+  })
   if (!body) throw new Error(`Could not read the time "${booking.time}"`)
 
   const event = await calendarFetch('/events', {
@@ -248,7 +262,7 @@ export async function createBookingEvent(booking) {
     body,
     query: {
       conferenceDataVersion: '1', // required or conferenceData is ignored
-      sendUpdates: 'all', // Google emails the invite
+      sendUpdates: inviteCustomer ? 'all' : 'none', // Google emails the invite
     },
   })
 
@@ -262,13 +276,24 @@ export async function createBookingEvent(booking) {
   }
 }
 
-export async function updateBookingEvent(eventId, booking) {
-  const body = eventBody(booking, await calendarSettings())
+export async function updateBookingEvent(eventId, booking, { inviteCustomer = true } = {}) {
+  const body = eventBody(booking, await calendarSettings(), { inviteCustomer })
   if (!body) throw new Error(`Could not read the time "${booking.time}"`)
 
   const event = await calendarFetch(`/events/${encodeURIComponent(eventId)}`, {
     method: 'PATCH',
     body,
+    query: { sendUpdates: 'all' },
+  })
+  return { eventId: event.id, meetUrl: event.hangoutLink || null }
+}
+
+/** Adds the customer to an existing event once their payment has landed —
+ *  Google then sends them the invite with the Meet link in it. */
+export async function inviteCustomerToEvent(eventId, booking) {
+  const event = await calendarFetch(`/events/${encodeURIComponent(eventId)}`, {
+    method: 'PATCH',
+    body: { attendees: [{ email: booking.email, displayName: booking.name }] },
     query: { sendUpdates: 'all' },
   })
   return { eventId: event.id, meetUrl: event.hangoutLink || null }

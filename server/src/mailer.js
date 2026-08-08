@@ -273,12 +273,19 @@ export function notifyNewBooking(booking) {
 }
 
 export function notifyBookingConfirmed(booking) {
-  // If a call link has been set, send it now rather than promising it later.
-  const callLines = booking.meetUrl
-    ? [`Join here at that time:`, booking.meetUrl, ``]
-    : [`I'll send the call link before we start.`, ``]
-
   const owes = booking.payUrl && !booking.paid
+
+  /**
+   * The Meet link is the door to the session, so it travels only once
+   * the session is paid for — notifyBookingPaymentReceived delivers it.
+   * A free booking (no price set) gets its link right here as always.
+   */
+  const callLines = owes
+    ? [`Once your payment is in, I'll send over the call link.`, ``]
+    : booking.meetUrl
+      ? [`Join here at that time:`, booking.meetUrl, ``]
+      : [`I'll send the call link before we start.`, ``]
+
   const payLines = owes
     ? [`Lock in your spot — pay for the session here:`, booking.payUrl, ``]
     : []
@@ -302,19 +309,21 @@ export function notifyBookingConfirmed(booking) {
     html: wrap({
       eyebrow: 'Confirmed',
       title: 'You’re booked in',
-      preheader: `${when(booking)}${booking.meetUrl ? ' — call link inside.' : ''}`,
+      preheader: `${when(booking)}${booking.meetUrl && !owes ? ' — call link inside.' : ''}`,
       body:
         paragraph(`Hi ${booking.name},`) +
         details([row('When', when(booking))]) +
-        (booking.payUrl && !booking.paid
+        (owes
           ? button(
               booking.payUrl,
               `Pay ${booking.priceCents ? `$${(booking.priceCents / 100).toFixed(0)}` : 'now'} & lock it in`,
             )
           : '') +
-        (booking.meetUrl
-          ? button(booking.meetUrl, 'Join the call')
-          : paragraph('I’ll send the call link before we start.')) +
+        (owes
+          ? paragraph('Once your payment is in, I’ll send over the call link.')
+          : booking.meetUrl
+            ? button(booking.meetUrl, 'Join the call')
+            : paragraph('I’ll send the call link before we start.')) +
         muted(
           booking.paid || booking.payUrl
             ? 'Cancel a day or more ahead for a full refund. With less notice, half the fee is kept. — Nate'
@@ -325,6 +334,8 @@ export function notifyBookingConfirmed(booking) {
 }
 
 export function notifyBookingRescheduled(booking, previous) {
+  // Same gate as the confirmation: no Meet link while payment is owed.
+  const hasLink = booking.meetUrl && !(booking.payUrl && !booking.paid)
   send({
     to: booking.email,
     subject: `Moved — now ${when(booking)}`,
@@ -333,7 +344,7 @@ export function notifyBookingRescheduled(booking, previous) {
       ``,
       `Your session has moved from ${previous} to ${when(booking)}.`,
       ``,
-      ...(booking.meetUrl ? [`Same link as before:`, booking.meetUrl, ``] : []),
+      ...(hasLink ? [`Same link as before:`, booking.meetUrl, ``] : []),
       `If that doesn't work, just reply and we'll find another time.`,
       ``,
       `— Nate`,
@@ -345,8 +356,49 @@ export function notifyBookingRescheduled(booking, previous) {
       body:
         paragraph(`Hi ${booking.name},`) +
         details([row('Was', previous), row('Now', when(booking))]) +
-        (booking.meetUrl ? button(booking.meetUrl, 'Join the call') : '') +
+        (hasLink ? button(booking.meetUrl, 'Join the call') : '') +
         muted('If that doesn’t work, just reply and we’ll find another time. — Nate'),
+    }),
+  })
+}
+
+/** To the customer — their payment landed, so the call link (held back
+ *  from the confirmation email) travels now. */
+export function notifyBookingPaymentReceived(booking) {
+  const amount = booking.paidAmount
+    ? `$${(booking.paidAmount / 100).toFixed(2)}`
+    : null
+  send({
+    to: booking.email,
+    subject: `Payment received — you're locked in for ${when(booking)}`,
+    text: [
+      `Hi ${booking.name},`,
+      ``,
+      `${amount ? `Your ${amount} payment` : 'Your payment'} came through — you're locked in for ${when(booking)}.`,
+      ``,
+      ...(booking.meetUrl
+        ? [`Join here at that time:`, booking.meetUrl, ``]
+        : [`I'll send the call link before we start.`, ``]),
+      `Cancel a day or more ahead for a full refund. With less notice, half the fee is kept.`,
+      ``,
+      `— Nate`,
+    ].join('\n'),
+    html: wrap({
+      eyebrow: 'Paid',
+      title: 'You’re locked in',
+      preheader: `${when(booking)}${booking.meetUrl ? ' — call link inside.' : ''}`,
+      body:
+        paragraph(`Hi ${booking.name},`) +
+        paragraph(
+          `${amount ? `Your ${amount} payment` : 'Your payment'} came through.`,
+        ) +
+        details([row('When', when(booking))]) +
+        (booking.meetUrl
+          ? button(booking.meetUrl, 'Join the call')
+          : paragraph('I’ll send the call link before we start.')) +
+        muted(
+          'Cancel a day or more ahead for a full refund. With less notice, half the fee is kept. — Nate',
+        ),
     }),
   })
 }
