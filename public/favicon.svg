@@ -1,5 +1,11 @@
+<!-- The tab mark. Built from the site's own pieces — bone paper, navy
+     ink, and the burnt-orange dash that sits above every section title —
+     rather than the rounded-square-with-a-letter look of a default app
+     icon. Italic serif to match the editorial type on the page. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="16" fill="#22392F"/>
-  <text x="32" y="43" font-family="Georgia, serif" font-size="32" font-weight="600"
-        fill="#FCF8F2" text-anchor="middle">N</text>
+  <circle cx="32" cy="32" r="30" fill="#f1ede4"/>
+  <circle cx="32" cy="32" r="29" fill="none" stroke="#05192b" stroke-opacity="0.25" stroke-width="1.5"/>
+  <text x="31" y="42" font-family="Georgia, 'Times New Roman', serif" font-size="34"
+        font-style="italic" font-weight="600" fill="#05192b" text-anchor="middle">N</text>
+  <rect x="22" y="48" width="21" height="4" rx="1" fill="#7d2800"/>
 </svg>
