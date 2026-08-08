@@ -135,7 +135,7 @@ export default function PaymentsPanel({ notify }) {
                       <br />
                       <span className="adm-muted">{p.customerEmail || '—'}</span>
                     </td>
-                    <td className="adm-note">{p.label || '—'}</td>
+                    <td className="adm-note adm-for">{p.label || '—'}</td>
                     <td className="adm-nowrap">
                       {p.cardBrand ? `${p.cardBrand} ···· ${p.cardLast4}` : '—'}
                     </td>

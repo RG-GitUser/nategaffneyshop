@@ -726,6 +726,16 @@
   overflow-wrap: anywhere;
 }
 
+/* The "For" column on Payments. Item titles were being crushed into a
+   one-word-per-line sliver: every neighbouring column is nowrap, so the
+   table gave this one whatever was left, and `anywhere` let it shrink
+   indefinitely. A floor width plus word-boundary wrapping keeps titles
+   readable; the wrapper already scrolls if the table runs out of room. */
+.adm-for {
+  min-width: 170px;
+  overflow-wrap: break-word;
+}
+
 .adm-actions {
   display: flex;
   gap: 6px;
