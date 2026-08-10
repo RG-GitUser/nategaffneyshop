@@ -1,4 +1,5 @@
 import { footer, profile } from '../content.js'
+import { safeHref } from '../safeUrl.js'
 
 export default function Footer() {
   return (
@@ -7,7 +8,7 @@ export default function Footer() {
       <ul className="footer__links">
         {footer.links.map((l) => (
           <li key={l.label}>
-            <a href={l.href}>{l.label}</a>
+            <a href={safeHref(l.href)}>{l.label}</a>
           </li>
         ))}
       </ul>

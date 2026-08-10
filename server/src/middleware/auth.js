@@ -27,6 +27,7 @@ function purposeKey(purpose) {
 }
 
 const DOWNLOAD_PURPOSE = 'pdf-download'
+const INVOICE_PURPOSE = 'invoice'
 
 export function signDownloadToken(sessionId, expiresIn = '7d') {
   return jwt.sign({ purpose: DOWNLOAD_PURPOSE, sid: sessionId }, purposeKey(DOWNLOAD_PURPOSE), {
@@ -42,6 +43,31 @@ export function verifyDownloadToken(token) {
       algorithms: ['HS256'],
     })
     return payload.purpose === DOWNLOAD_PURPOSE && payload.sid ? payload.sid : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Invoice links live in the receipt email, which people keep — an expense
+ * claim can surface months after the purchase, so this outlives the 7-day
+ * download link by a wide margin. It grants nothing but the right to read
+ * one order's totals and attach billing details to it.
+ */
+export function signInvoiceToken(sessionId, expiresIn = '730d') {
+  return jwt.sign({ purpose: INVOICE_PURPOSE, sid: sessionId }, purposeKey(INVOICE_PURPOSE), {
+    expiresIn,
+    algorithm: 'HS256',
+  })
+}
+
+/** Returns the Stripe checkout session id, or null if the token is bad. */
+export function verifyInvoiceToken(token) {
+  try {
+    const payload = jwt.verify(String(token || ''), purposeKey(INVOICE_PURPOSE), {
+      algorithms: ['HS256'],
+    })
+    return payload.purpose === INVOICE_PURPOSE && payload.sid ? payload.sid : null
   } catch {
     return null
   }

@@ -4,20 +4,38 @@ import { z } from 'zod'
 import { config } from '../config.js'
 import { audit, collections } from '../db.js'
 import { markOrderRefunded } from '../orders.js'
-import { requireAdmin } from '../middleware/auth.js'
-import { isHiddenTestTitle } from '../hiddenTestData.js'
+import { requireAdmin, signInvoiceToken } from '../middleware/auth.js'
+import { isHiddenTestTitle, notHiddenTestOrder } from '../hiddenTestData.js'
+import { devStripe, devStripeEnabled, devSalesCount } from '../devStripe.js'
 
 export const paymentsRouter = Router()
 
 // Placeholder values from .env.example count as "not configured" — they'd
 // otherwise produce confusing auth errors from Stripe rather than an
 // honest "you haven't set this up yet".
-const stripeReady =
+const realKey =
   Boolean(config.stripeSecretKey) &&
   !config.stripeSecretKey.includes('placeholder') &&
   !config.stripeSecretKey.includes('xxx')
 
-const stripe = stripeReady ? new Stripe(config.stripeSecretKey) : null
+/**
+ * `npm run dev:demo` swaps in invented sales so this dashboard can be
+ * looked at on a laptop — see devStripe.js. It cannot engage in
+ * production, and it never touches checkout, which keeps using the real
+ * client so nothing can accidentally take a payment against a fake.
+ */
+const stripeReady = devStripeEnabled || realKey
+const stripe = devStripeEnabled
+  ? devStripe
+  : realKey
+    ? new Stripe(config.stripeSecretKey)
+    : null
+
+if (devStripeEnabled) {
+  console.warn(
+    `[payments] DEMO DATA — serving ${devSalesCount()} invented payments, not Stripe`,
+  )
+}
 
 /**
  * Stripe Connect: act on behalf of the connected account.
@@ -87,49 +105,323 @@ const summarise = (pi) => ({
     typeof pi.latest_charge === 'object' ? pi.latest_charge?.receipt_url : null,
 })
 
-/** Recent payments. */
+/**
+ * What a payment was for, in the three buckets the dashboard filters on.
+ *
+ * A coaching session is paid through a Stripe Payment Link, which carries
+ * a bookingId and no itemType — that's what separates it from a service
+ * card bought straight off the site. Orders written before bookingId was
+ * stored are recognised by the title the link has always used.
+ */
+export const orderKind = (order) => {
+  if (!order) return null
+  if (order.bookingId) return 'booking'
+  if (order.itemType === 'service') return 'service'
+  if (order.itemType === 'shop') return 'product'
+  if (String(order.title || '').trim().toLowerCase() === 'coaching session') return 'booking'
+  return null
+}
+
+const KINDS = ['product', 'service', 'booking']
+
+const normTitle = (t) => String(t || '').trim().toLowerCase()
+
+/**
+ * Stripe pages by cursor and never says how many payments exist, so
+ * "page 3 of 12" is not a number it can give us. The only way to know is
+ * to walk the history and count it — which is also what searching by
+ * name or email already required, since Stripe's list API cannot filter
+ * on either.
+ *
+ * So one scan does both jobs: walk back through history, decorate and
+ * filter every payment, then slice the requested page out of the result.
+ * Bounded, so a shop that grows into thousands of payments cannot turn
+ * one page click into an unbounded pile of API calls — past the cap the
+ * dashboard says what it could not reach rather than quietly lying about
+ * the page count.
+ */
+const PAGE = 100
+const MAX_SCAN = 1000
+
+/** One Stripe page, joined to the order rows that say what was bought. */
+async function fetchPage(params) {
+  const list = await stripe.paymentIntents.list(
+    { ...params, expand: ['data.latest_charge'] },
+    ...onBehalf,
+  )
+  const ids = list.data.map((pi) => pi.id)
+  const orders = ids.length
+    ? await collections
+        .orders()
+        .find(
+          { paymentIntent: { $in: ids } },
+          {
+            projection: {
+              paymentIntent: 1,
+              title: 1,
+              itemId: 1,
+              itemType: 1,
+              bookingId: 1,
+              digital: 1,
+              sessionId: 1,
+              invoice: 1,
+            },
+          },
+        )
+        .toArray()
+    : []
+  return { list, byIntent: new Map(orders.map((o) => [o.paymentIntent, o])) }
+}
+
+/**
+ * The last scan, kept briefly so clicking through pages doesn't re-walk
+ * Stripe every time. Keyed by the filter, because a different filter is
+ * a different result set.
+ *
+ * Short-lived on purpose: this is live money, and a stale page after a
+ * refund would be worse than a slow one. Refunding clears it outright.
+ */
+const scanCache = new Map()
+const SCAN_TTL_MS = 30_000
+
+export const clearPaymentScanCache = () => scanCache.clear()
+
+/** Walk history, decorating and filtering everything the scan reaches. */
+async function scanPayments({ q, kind, item }) {
+  const key = `${q}|${kind || ''}|${item}`
+  const hit = scanCache.get(key)
+  if (hit && Date.now() - hit.at < SCAN_TTL_MS) return hit.value
+
+  /**
+   * Every decorated row, before filtering. Kept because each row needs to
+   * know the customer's OTHER purchases — and those have to come from the
+   * whole scan, not the filtered slice, or filtering to "Bookings" would
+   * hide the very purchases the invoice dropdown is meant to offer.
+   */
+  const all = []
+  const matched = []
+  let scanned = 0
+  let cursor = null
+  let hasMore = false
+
+  do {
+    const { list, byIntent } = await fetchPage({
+      limit: PAGE,
+      ...(cursor ? { starting_after: cursor } : {}),
+    })
+    scanned += list.data.length
+    hasMore = list.has_more
+    cursor = list.data.at(-1)?.id ?? null
+
+    for (const pi of list.data) {
+      const order = byIntent.get(pi.id)
+
+      /**
+       * Two kinds of rows stay off the list: abandoned checkouts
+       * (requires_payment_method — someone opened the payment form and
+       * left; Stripe's own dashboard hides these by default too), and
+       * the pre-launch test purchases (see hiddenTestData.js).
+       */
+      if (pi.status === 'requires_payment_method') continue
+      if (isHiddenTestTitle(order?.title)) continue
+
+      const row = {
+        ...summarise(pi),
+        label: order?.title || pi.description || null,
+        kind: orderKind(order),
+        // Sold final-sale, so the refund dialog can say what refunding
+        // it actually does — and doesn't — reach.
+        digital: Boolean(order?.digital),
+        // Who the customer had the invoice made out to, if they asked
+        // for one. Null means they never did.
+        invoicedTo: order?.invoice?.billTo?.name || null,
+        // Whether an invoice link can be minted for this row at all —
+        // it needs the checkout session the order was written from.
+        invoiceable: Boolean(order?.sessionId),
+      }
+
+      all.push(row)
+
+      if (kind && row.kind !== kind) continue
+      if (item && normTitle(row.label) !== item) continue
+      if (q) {
+        // Everything the admin might have to hand: the name or email
+        // off the receipt, what was bought, or a Stripe id pasted in
+        // from an email or the Stripe dashboard.
+        const haystack = [row.customerName, row.customerEmail, row.label, row.id]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+        if (!haystack.includes(q)) continue
+      }
+
+      matched.push(row)
+    }
+  } while (hasMore && scanned < MAX_SCAN)
+
+  /**
+   * Everything each customer has bought, so a row can offer the choice of
+   * which purchase to invoice. Grouped by email — the only identifier
+   * that survives across separate checkouts, since Stripe mints a new
+   * customer per session here.
+   *
+   * Only invoiceable purchases are offered: without the checkout session
+   * behind it there is nothing to sign a link against.
+   */
+  const byCustomer = new Map()
+  for (const row of all) {
+    const email = row.customerEmail?.trim().toLowerCase()
+    if (!email || !row.invoiceable) continue
+    if (!byCustomer.has(email)) byCustomer.set(email, [])
+    byCustomer.get(email).push({
+      id: row.id,
+      label: row.label,
+      amount: row.amount,
+      currency: row.currency,
+      created: row.created,
+    })
+  }
+
+  /**
+   * The row's own purchase leads, so invoicing the payment you are
+   * looking at is one click. The rest follow newest-first, capped —
+   * a long-standing customer should not produce a hundred-option menu.
+   */
+  const MAX_CHOICES = 12
+  for (const row of matched) {
+    const email = row.customerEmail?.trim().toLowerCase()
+    const mine = (email && byCustomer.get(email)) || []
+    const own = mine.filter((b) => b.id === row.id)
+    const others = mine.filter((b) => b.id !== row.id)
+    row.purchases = [...own, ...others].slice(0, MAX_CHOICES)
+  }
+
+  // `truncated` means history ran on past where the scan stopped, so the
+  // count — and therefore the page count — is a floor, not a total.
+  const value = { rows: matched, scanned, truncated: hasMore }
+  scanCache.set(key, { at: Date.now(), value })
+  return value
+}
+
+/** One page of payments, optionally filtered by what was bought or who bought it. */
 paymentsRouter.get('/', async (req, res, next) => {
   try {
-    const limit = Math.min(Number(req.query.limit) || 25, 100)
-    const params = { limit, expand: ['data.latest_charge'] }
-    if (req.query.starting_after) params.starting_after = req.query.starting_after
+    const limit = Math.min(Math.max(Number(req.query.limit) || 25, 1), 100)
+    const q = String(req.query.q || '').trim().toLowerCase()
+    const kind = KINDS.includes(req.query.kind) ? req.query.kind : null
+    const item = normTitle(req.query.item)
 
-    const list = await stripe.paymentIntents.list(params, ...onBehalf)
+    const { rows, scanned, truncated } = await scanPayments({ q, kind, item })
 
-    // Stripe's intents don't say WHAT was bought — the webhook's order
-    // records do (shop item titles and "Coaching session" alike), so
-    // label each payment from them where a match exists.
-    const orders = await collections
-      .orders()
-      .find(
-        { paymentIntent: { $in: list.data.map((pi) => pi.id) } },
-        { projection: { paymentIntent: 1, title: 1 } },
-      )
-      .toArray()
-    const titles = new Map(orders.map((o) => [o.paymentIntent, o.title]))
-
-    /**
-     * Two kinds of rows stay off the list: abandoned checkouts
-     * (requires_payment_method — someone opened the payment form and
-     * left; Stripe's own dashboard hides these by default too), and the
-     * pre-launch test purchases (see hiddenTestData.js).
-     */
-    const visible = list.data.filter(
-      (pi) =>
-        pi.status !== 'requires_payment_method' &&
-        !isHiddenTestTitle(titles.get(pi.id)),
-    )
+    const total = rows.length
+    const pages = Math.max(1, Math.ceil(total / limit))
+    // Clamp rather than 404: deleting or refunding rows can shrink the
+    // list under someone sitting on the last page, and an empty table
+    // with a stuck page number is a worse answer than the last page.
+    const page = Math.min(Math.max(Number(req.query.page) || 1, 1), pages)
+    const start = (page - 1) * limit
 
     res.json({
-      data: visible.map((pi) => ({
-        ...summarise(pi),
-        label: titles.get(pi.id) || pi.description || null,
-      })),
-      hasMore: list.has_more,
-      // Cursor from the UNfiltered page, so pagination never skips.
-      lastId: list.data.at(-1)?.id ?? null,
+      data: rows.slice(start, start + limit),
+      page,
+      pages,
+      total,
+      limit,
+      // How far back the scan actually reached, so the panel can say so
+      // rather than implying it looked at everything.
+      scanned,
+      truncated,
       account: config.stripeAccountId || null,
     })
+  } catch (err) {
+    next(err)
+  }
+})
+
+/**
+ * The distinct things people have actually bought, newest first — the
+ * options behind the "specific item" filter.
+ *
+ * Grouped by title rather than item id: the title is what the admin
+ * recognises, it is stored on the order at purchase time, and it survives
+ * the catalog item being edited or deleted.
+ *
+ * MUST stay above '/:id' — that route would otherwise swallow '/filters'.
+ */
+paymentsRouter.get('/filters', async (_req, res, next) => {
+  try {
+    const rows = await collections
+      .orders()
+      .aggregate([
+        { $match: { ...notHiddenTestOrder, title: { $type: 'string', $ne: '' } } },
+        {
+          $group: {
+            _id: { $trim: { input: '$title' } },
+            count: { $sum: 1 },
+            itemTypes: { $addToSet: '$itemType' },
+            booking: { $max: { $cond: [{ $ifNull: ['$bookingId', false] }, 1, 0] } },
+            last: { $max: '$createdAt' },
+          },
+        },
+        { $sort: { last: -1 } },
+        { $limit: 100 },
+      ])
+      .toArray()
+
+    res.json({
+      items: rows.map((r) => ({
+        title: r._id,
+        count: r.count,
+        kind: orderKind({
+          title: r._id,
+          bookingId: r.booking ? 'y' : null,
+          itemType: r.itemTypes.includes('service')
+            ? 'service'
+            : r.itemTypes.includes('shop')
+              ? 'shop'
+              : null,
+        }),
+      })),
+    })
+  } catch (err) {
+    next(err)
+  }
+})
+
+/**
+ * A fresh invoice link for one payment, on demand.
+ *
+ * Every receipt already carries one, but a customer who bought before
+ * this existed — or who deleted the email — has no way to reach the
+ * invoice page. This gives Nate a link to paste back to them.
+ *
+ * Minted per request rather than returned with the payments list: the
+ * token is a bearer credential for that order, and there is no reason to
+ * spray one across every row of a list nobody asked to invoice.
+ */
+paymentsRouter.get('/:id/invoice-link', async (req, res, next) => {
+  try {
+    const order = await collections
+      .orders()
+      .findOne({ paymentIntent: req.params.id }, { projection: { sessionId: 1 } })
+
+    if (!order?.sessionId) {
+      return res.status(404).json({
+        error:
+          'No order record for this payment, so there is nothing to invoice. ' +
+          'Only payments the webhook recorded can produce a link.',
+      })
+    }
+
+    const site = (config.allowedOrigins[0] || '').replace(/\/$/, '')
+    if (!site) {
+      return res.status(503).json({
+        error: 'ALLOWED_ORIGINS is not set on the server, so the link would have no site to point at.',
+      })
+    }
+
+    await audit(req.admin.email, 'invoice.link', { paymentIntent: req.params.id })
+    res.json({ url: `${site}/invoice/?token=${signInvoiceToken(order.sessionId)}` })
   } catch (err) {
     next(err)
   }
@@ -218,6 +510,10 @@ paymentsRouter.post('/:id/refund', async (req, res, next) => {
       refundId: refund.id,
     })
 
+    // The list reloads straight after this; it must not be served the
+    // pre-refund scan.
+    clearPaymentScanCache()
+
     res.json({ id: refund.id, amount: refund.amount, status: refund.status })
   } catch (err) {
     // Stripe's own messages are safe and useful to surface here.
@@ -261,6 +557,7 @@ paymentsRouter.get('/stats/summary', async (_req, res, next) => {
     next(err)
   }
 })
+
 
 
 /**

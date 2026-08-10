@@ -85,7 +85,16 @@ try {
      * the revenue figures. A refund issued straight from the Stripe
      * dashboard reaches us no other way.
      */
-    enabled_events: ['checkout.session.completed', 'charge.refunded'],
+    /**
+     * async_payment_succeeded is how delayed methods (bank debits)
+     * confirm — the handler gates fulfilment on it, so an endpoint
+     * without it would take the money and never deliver.
+     */
+    enabled_events: [
+      'checkout.session.completed',
+      'checkout.session.async_payment_succeeded',
+      'charge.refunded',
+    ],
     description: 'nategaffney.store — records paid orders and refunds',
     // Platform endpoint that receives events from connected accounts.
     ...(accountId ? { connect: true } : {}),

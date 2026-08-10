@@ -394,6 +394,32 @@
   min-width: 150px;
 }
 
+/**
+ * A <select> sizes itself to whatever option is chosen, so picking a
+ * filter resizes the control, shoves everything after it sideways, and
+ * can rewrap the toolbar onto a second line. These keep one width
+ * regardless, and clip a long title rather than growing to fit it.
+ */
+.adm-select--steady {
+  flex: none;
+  width: 150px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.adm-select--wide {
+  width: 220px;
+}
+
+/* In a table cell, so it stays small — the options carry the detail. */
+.adm-invoice-pick {
+  width: 108px;
+  font-size: 0.78rem;
+  padding: 6px 8px;
+}
+
 .adm-search {
   width: min(280px, 100%);
   padding: 8px 12px;
@@ -691,6 +717,14 @@
   background: var(--surface);
 }
 
+/* Fetching the next page: the rows stay put and fade rather than being
+   swapped for a loading message, so the pager underneath holds still. */
+.adm-table-wrap.is-busy {
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity 0.12s var(--ease);
+}
+
 .adm-table {
   width: 100%;
   border-collapse: collapse;
@@ -840,6 +874,33 @@
   font-weight: 600;
   letter-spacing: -0.015em;
   font-variant-numeric: tabular-nums;
+}
+
+/* ---------- table pager ---------- */
+.adm-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.adm-pager__at {
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  /* Wide enough for three-digit page numbers, so stepping 9 → 10 never
+     shuffles the buttons sideways under the cursor. */
+  min-width: 9ch;
+  text-align: center;
+}
+
+.adm-pager .adm-mini:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 /* styled confirm dialog */
@@ -1185,14 +1246,16 @@
 .adm-donut__total {
   fill: var(--ink);
   font-family: var(--ui-font);
-  font-size: 17px;
+  font-size: 20px;
   font-weight: 600;
+  /* Even columns, so a ticking total doesn't jitter in the hole */
+  font-variant-numeric: tabular-nums;
 }
 
 .adm-donut__label {
   fill: var(--ink-faint);
   font-family: var(--ui-font);
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }

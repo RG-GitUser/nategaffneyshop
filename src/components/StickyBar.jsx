@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { stickyCta } from '../content.js'
+import { safeHref } from '../safeUrl.js'
 
 /**
  * Mobile-only bar that slides up once you've scrolled past the hero.
@@ -25,7 +26,7 @@ export default function StickyBar() {
         <strong>{stickyCta.label}</strong>
         <span>{stickyCta.sublabel}</span>
       </div>
-      <a className="btn btn--primary stickybar__btn" href={stickyCta.href}>
+      <a className="btn btn--primary stickybar__btn" href={safeHref(stickyCta.href)}>
         {stickyCta.cta}
       </a>
     </div>

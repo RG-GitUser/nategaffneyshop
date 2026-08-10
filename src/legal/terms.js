@@ -9,7 +9,7 @@
 
 export const terms = {
   title: 'Terms & Conditions',
-  updated: '7 August 2026',
+  updated: '9 August 2026',
   intro: [
     'These terms are the agreement between you and Wabanaki Software Solutions Inc. ("we", "us") for everything sold or offered through this website. Please read them before you buy anything or book a session.',
     'By buying a product, booking a session, subscribing to the newsletter, or otherwise using this site, you agree to these terms. If you do not agree with them, please do not use the site or buy anything from it.',
@@ -47,6 +47,8 @@ export const terms = {
       paragraphs: [
         'All prices are shown in Canadian dollars (CAD) unless clearly stated otherwise. Applicable sales taxes (GST/HST) are added where required by law and shown before you confirm payment.',
         'If your card or bank account is in another currency, your bank sets the exchange rate and may add its own conversion or foreign transaction fee. We have no control over and do not receive any part of those fees.',
+        'Every purchase gets a receipt by email — a reference number, the date, what you bought, and the total paid. If one has not reached you within a few hours, check your spam folder and then email <a href="mailto:support@nategaffney.store">support@nategaffney.store</a> and we will re-send it.',
+        'Need a proper invoice for your business or an expense claim? Every receipt carries a link to request one. Add the name and address to bill, plus a PO or reference if your finance team needs it, and the invoice is issued immediately and emailed to you. You can correct the details and re-issue it at any time — the invoice number and date stay the same, so nobody ends up holding what looks like two different invoices for one payment.',
       ],
     },
     {
@@ -81,11 +83,23 @@ export const terms = {
       ],
     },
     {
-      heading: '7. Refunds on digital products',
+      heading: '7. Digital products are final sale — no refunds',
       paragraphs: [
-        'Because digital products are delivered instantly and cannot be returned, we offer a goodwill refund window rather than a legal right of return.',
-        'If a digital product is not right for you, email support@nategaffney.store within <strong>14 days</strong> of purchase and we will refund you in full. You do not need to give a reason. Your licence ends when the refund is issued, and you must delete the files.',
-        'We may decline a refund where there is clear evidence of abuse — for example repeated buy-and-refund behaviour, or redistribution of the files.',
+        '<strong>Digital products are non-refundable.</strong> Once we have sent your download link, the sale is final and cannot be refunded, exchanged, or cancelled.',
+        'The reason is simple and worth stating plainly: a file cannot be given back. We can switch off a download link, and we do — but we have no way to remove a file you have already downloaded, opened, or copied. Refunding it would mean giving the product away.',
+        'This is why we ask you to confirm, at checkout, that you understand the sale is final. That confirmation is the point at which you agree to receive the file straight away and give up any right to cancel that you would otherwise have had. Please read the description, and ask us anything you are unsure about, <em>before</em> you buy — we would much rather answer a question than take money for something that was never the right fit.',
+      ],
+      listTitle: 'You will always get your money back if:',
+      list: [
+        'The file never arrived, and we cannot get it to you.',
+        'The file is corrupt, unreadable, or materially not what the page described.',
+        'You were charged twice, or charged the wrong amount.',
+        'We withdrew or changed the product before you could download it.',
+      ],
+      after: [
+        'Those are your rights under Canadian consumer protection law and we are not trying to sign them away — nothing in this section takes away a right your province gives you. If something is wrong with what you bought, or you have any other concern at all, email <a href="mailto:support@nategaffney.store">support@nategaffney.store</a>. A real person reads it, and we would always rather hear from you than have you stuck.',
+        'Changing your mind, buying the wrong item, or not getting the result you hoped for are not grounds for a refund on a download.',
+        'Coaching sessions and group programs work differently — they can be cancelled and refunded on the terms in sections 9 and 10, because a session that has not happened yet can genuinely be given back.',
       ],
     },
     {

@@ -10,6 +10,7 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "dev:local": "node scripts/dev.js",
+    "dev:demo": "node scripts/dev.js --demo",
     "check-db": "node scripts/check-db.js",
     "check-mail": "node scripts/check-mail.js",
     "setup-webhook": "node scripts/setup-webhook.js",

@@ -1,0 +1,378 @@
+/**
+ * Self-serve invoice page.
+ *
+ * The document half deliberately stays on white with dark ink in both
+ * themes: it exists to be printed or saved as a PDF and handed to someone
+ * else's finance team, and a dark-mode invoice prints as a black slab or
+ * (worse) as ink-free nothing depending on the browser's background
+ * setting. The page around it is a fixed dark grey — see the tokens below.
+ */
+
+/**
+ * The page is a flat, very dark grey — the same trick admin.css uses:
+ * override the shared tokens for this page only, so every rule below
+ * keeps reading from var() and nothing needs hardcoding.
+ *
+ * Deliberately the same in both themes. This is a one-off transactional
+ * page reached from a link in a receipt, not part of browsing the site,
+ * and the visitor's saved light/dark choice was made in a different
+ * context entirely. The document itself stays white regardless.
+ *
+ * --field-bg is defined here because it lives in admin.css otherwise, so
+ * the form inputs on this page had no background colour at all.
+ */
+:root:has(.inv),
+:root[data-theme='dark']:has(.inv) {
+  --bg: #0b1a2b;
+  --bg-2: #0f2135;
+  --surface: #13273d;
+  --surface-2: #1a3047;
+  --line: #22405c;
+  --line-2: #33587a;
+
+  /* Cool inks. The site's own are warm — --ink is bone (#ebe5d8) and
+     --accent-fill is rust (#7d2800) — and warm text on navy reads muddy,
+     so every one of them is replaced here. */
+  --ink: #eef3f9;
+  --ink-2: #b3c4d6;
+  --ink-soft: #93a7bd;
+  --ink-faint: #7089a3;
+  --field-bg: #0e2033;
+
+  /* Buttons and focus rings: pale, not rust. */
+  --accent: #8fb6dd;
+  --accent-fill: #e8eef6;
+  --accent-hi: #ffffff;
+  --on-accent: #0b1a2b;
+
+  /* The site's glow carries a sienna ember off the top-right, which is
+     where the brown came from. Replaced with a cool one so the navy has
+     some depth instead of sitting flat. */
+  --page-glow: radial-gradient(
+      120% 60% at 85% 0%,
+      rgba(94, 156, 214, 0.13) 0%,
+      rgba(94, 156, 214, 0.06) 34%,
+      transparent 78%
+    ),
+    radial-gradient(110% 55% at 6% 100%, rgba(3, 14, 26, 0.5) 0%, transparent 72%);
+}
+
+/**
+ * Also set on the elements themselves. The tokens alone were not enough:
+ * body kept painting the site's warm near-black even with --bg replaced,
+ * so the colour is pinned here where nothing can fall back to it.
+ */
+:root:has(.inv),
+:root:has(.inv) body {
+  background-color: #0b1a2b;
+}
+
+:root:has(.inv) body {
+  background-image: var(--page-glow);
+}
+
+.inv {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 40px 20px 80px;
+  font-family: var(--body);
+  color: var(--ink);
+}
+
+.inv__back {
+  display: inline-block;
+  margin-bottom: 28px;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.inv__back:hover {
+  color: var(--accent);
+}
+
+.inv__title {
+  font-family: var(--display);
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.inv__sub {
+  margin-top: 10px;
+  max-width: 52ch;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.inv__status {
+  padding: 60px 0;
+  text-align: center;
+  color: var(--ink-2);
+}
+
+/* Literal colours, not var(--red): that token is near-black (#500d0d)
+   with no dark-theme variant, so on this page it would be unreadable. */
+.inv__error {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid #7a2a22;
+  background: rgba(122, 42, 34, 0.22);
+  color: #f0a396;
+  font-size: 0.95rem;
+}
+
+/* ---------- the form ---------- */
+.inv__form {
+  display: grid;
+  gap: 18px;
+  margin-top: 30px;
+}
+
+.inv__row {
+  display: grid;
+  gap: 18px;
+}
+
+.inv__field {
+  display: grid;
+  gap: 6px;
+}
+
+.inv__field label {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.inv__field input,
+.inv__field textarea {
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line-2);
+  background: var(--field-bg);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.98rem;
+}
+
+.inv__field textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.inv__field input:focus,
+.inv__field textarea:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.inv__hint {
+  font-size: 0.82rem;
+  color: var(--ink-2);
+}
+
+.inv__form .btn {
+  justify-self: start;
+}
+
+/* ---------- issued ---------- */
+.inv__done {
+  margin-bottom: 26px;
+}
+
+.inv__done-title {
+  font-family: var(--display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.inv__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.inv__foot {
+  margin-top: 26px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+/* ---------- the document ---------- */
+.doc {
+  padding: clamp(20px, 5vw, 34px);
+  border-radius: var(--r-lg);
+  border: 1px solid #dededf;
+  background: #ffffff;
+  color: #17171a;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.doc__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #17171a;
+}
+
+.doc__eyebrow {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #6b6b70;
+}
+
+.doc__number {
+  font-family: var(--mono);
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.doc__paid {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #1f6b3a;
+  color: #1f6b3a;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.doc__parties {
+  display: grid;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.doc__label {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6b6b70;
+  margin-bottom: 5px;
+}
+
+.doc__strong {
+  font-weight: 700;
+}
+
+.doc__lines {
+  white-space: pre-line;
+  color: #44444a;
+}
+
+.doc__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 26px;
+  margin-top: 24px;
+  padding: 14px 0;
+  border-top: 1px solid #dededf;
+  border-bottom: 1px solid #dededf;
+  font-size: 0.88rem;
+  color: #44444a;
+}
+
+.doc__meta strong {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6b6b70;
+  margin-right: 6px;
+}
+
+.doc__table {
+  width: 100%;
+  margin-top: 24px;
+  border-collapse: collapse;
+}
+
+.doc__table th {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #dededf;
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6b6b70;
+}
+
+.doc__table td {
+  padding: 14px 0;
+  vertical-align: top;
+}
+
+.doc__num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.doc__table tfoot td {
+  border-top: 2px solid #17171a;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.doc__note {
+  margin-top: 14px;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #6b6b70;
+}
+
+@media (min-width: 620px) {
+  .inv__row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .doc__parties {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Printing: the document, nothing else. Borders and rounding go too —
+   the paper is the card. */
+@media print {
+  /* If the visitor has "background graphics" switched on, the dark page
+     would otherwise print as a grey slab around the invoice. */
+  :root:has(.inv),
+  :root[data-theme='dark']:has(.inv) {
+    --bg: #ffffff;
+    --ink: #17171a;
+  }
+  .no-print {
+    display: none;
+  }
+  .inv {
+    padding: 0;
+    max-width: none;
+  }
+  .doc {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+  }
+}

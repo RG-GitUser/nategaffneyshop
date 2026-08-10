@@ -10,7 +10,7 @@
 
 export const privacy = {
   title: 'Privacy Policy',
-  updated: '7 August 2026',
+  updated: '9 August 2026',
   intro: [
     'This policy explains what personal information Wabanaki Software Solutions Inc. ("we", "us") collects through this website, why we collect it, who we share it with, and what control you have over it.',
     'The short version: we collect as little as we can get away with, we do not sell your information to anyone, and we never see your card details.',
@@ -32,7 +32,7 @@ export const privacy = {
         '<strong>Emailing us</strong> — whatever you choose to include in your message.',
       ],
       after: [
-        '<strong>Payment information.</strong> Card numbers, expiry dates and security codes go directly to Stripe and are never collected, seen, or stored by us. We receive only limited confirmation data back from Stripe, such as your name, email, billing country, the last four digits of the card, and whether the payment succeeded.',
+        '<strong>Payment information.</strong> Card numbers, expiry dates and security codes go directly to our payment provider and are never collected, seen, or stored by us. We receive only limited confirmation data back, such as your name, email, billing country, the last four digits of the card, and whether the payment succeeded.',
         '<strong>Information collected automatically.</strong> Our hosting provider keeps standard server logs, which can include your IP address, browser type, device, referring page and the time of your visit. These are used for security and to keep the site working. We also count page views ourselves, first-party: when a page loads, it tells our own server which page was opened and whether it is the first page of that browser session. No cookies are used for this, no IP address or device identifier is stored with it, and nothing about it is shared with any analytics company.',
         '<strong>Stored on your own device.</strong> This site saves your light/dark theme choice in your browser\'s local storage. It never leaves your device, is not personal information, and you can clear it any time by clearing your browser data. We do not use advertising or tracking cookies.',
       ],
@@ -61,15 +61,8 @@ export const privacy = {
     {
       heading: '5. Who we share it with',
       paragraphs: [
-        'We do not sell, rent, or trade your personal information. We share it only with service providers who help us run the business, and only as much as they need:',
-      ],
-      list: [
-        '<strong>Stripe</strong> — payment processing. See <a href="https://stripe.com/privacy" target="_blank" rel="noreferrer noopener">stripe.com/privacy</a>.',
-        '<strong>Namecrane</strong> — storing your subscription and sending the newsletter.',
-        '<strong>DigitalOcean</strong> — serving the website and keeping server logs.',
-        '<strong>MongoDB Atlas</strong> — the database holding bookings, chat messages and site content.',
-        '<strong>Google Meet</strong> — running coaching sessions, where used.',
-        '<strong>Professional advisers</strong> — our accountant or a lawyer, where genuinely needed.',
+        'We do not sell, rent, or trade your personal information.',
+        'We share it only with the service providers we rely on to run the business, and only as much as each of them needs to do its job. We also share it with our accountant or a lawyer where that is genuinely needed. If you want to know which providers handle your information, email <a href="mailto:support@nategaffney.store">support@nategaffney.store</a> and we will tell you.',
       ],
       after: [
         'We may also disclose information where the law requires it, to enforce our terms, or to protect someone’s rights or safety. If the business is ever sold or restructured, information may transfer to the new owner, who would remain bound by this policy.',
@@ -95,7 +88,7 @@ export const privacy = {
     {
       heading: '8. How we protect it',
       paragraphs: [
-        'The site is served over HTTPS. Payment data is handled entirely by Stripe, a PCI-DSS Level 1 certified provider, so card details never touch our systems. We limit who can access personal information and use reputable providers with their own security programs.',
+        'The site is served over HTTPS. Payment data is handled entirely by our payment provider, which is PCI-DSS Level 1 certified, so card details never touch our systems. We limit who can access personal information and use reputable providers with their own security programs.',
         'No system is perfectly secure, and we cannot guarantee absolute security. If a breach ever occurs that creates a real risk of significant harm, we will notify affected people and the Office of the Privacy Commissioner of Canada as required by law.',
       ],
     },
@@ -123,7 +116,7 @@ export const privacy = {
     {
       heading: '11. Links to other sites',
       paragraphs: [
-        'This site links out to places like Instagram, YouTube, TikTok and Stripe. Once you follow a link, that service’s own privacy policy applies. We are not responsible for how they handle your information — worth reading their policies if it matters to you.',
+        'This site links out to other places — social profiles, and the payment page where you check out. Once you follow a link, that service’s own privacy policy applies. We are not responsible for how they handle your information — worth reading their policies if it matters to you.',
       ],
     },
     {

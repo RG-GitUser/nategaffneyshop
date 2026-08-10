@@ -14,6 +14,19 @@
 // consumed at module top, long before the server's own config import
 // would have loaded dotenv.
 import 'dotenv/config'
+
+/**
+ * `npm run dev:demo` fills the dashboard with invented sales so the
+ * Payments screens can actually be looked at locally — the real Stripe
+ * account is unreachable from a laptop without STRIPE_ACCOUNT_ID, and a
+ * throwaway database has no orders in it either.
+ *
+ * Set before anything imports config or devStripe, both of which read
+ * this at module load.
+ */
+const DEMO = process.argv.includes('--demo')
+if (DEMO) process.env.DEV_FAKE_STRIPE = '1'
+
 import { mkdir } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { MongoMemoryServer } from 'mongodb-memory-server'
@@ -71,9 +84,33 @@ await client
     },
     { upsert: true },
   )
+
+/**
+ * Demo mode: order rows matching the invented Stripe payments, so each
+ * one gets its item title, its kind, its digital flag and a working
+ * invoice link. Dynamic import — devStripe reads DEV_FAKE_STRIPE when it
+ * loads, and static imports would have run before we set it.
+ */
+let demoCount = 0
+if (DEMO) {
+  const { devOrderRows } = await import('../src/devStripe.js')
+  const rows = devOrderRows()
+  const orders = client.db(process.env.MONGODB_DB).collection('orders')
+  await orders.bulkWrite(
+    rows.map((row) => ({
+      updateOne: { filter: { sessionId: row.sessionId }, update: { $set: row }, upsert: true },
+    })),
+  )
+  demoCount = rows.length
+}
+
 await client.close()
 
 console.log('')
+if (DEMO) {
+  console.log(`  DEMO     ${demoCount} invented sales seeded — Payments shows fake data`)
+  console.log('')
+}
 console.log('  API      http://localhost:8080')
 console.log(`  Sign in  ${DEV_EMAIL} / ${DEV_PASSWORD}`)
 console.log('  Admin UI http://localhost:5173/admin/  (run `npm run dev` in the project root)')

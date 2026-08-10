@@ -14,7 +14,7 @@ const root = dirname(fileURLToPath(import.meta.url))
  * `vite` (dev) and `vite preview`.
  */
 function pageTrailingSlash() {
-  const pages = ['/privacy', '/terms', '/coaching', '/admin']
+  const pages = ['/privacy', '/terms', '/coaching', '/admin', '/invoice']
   const redirect = (req, res, next) => {
     const [path, query] = req.url.split('?')
     if (!pages.includes(path)) return next()
@@ -79,6 +79,7 @@ export default defineConfig({
         terms: resolve(root, 'terms/index.html'),
         coaching: resolve(root, 'coaching/index.html'),
         admin: resolve(root, 'admin/index.html'),
+        invoice: resolve(root, 'invoice/index.html'),
       },
     },
   },

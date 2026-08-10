@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { api } from '../api.js'
 import { confirmDialog } from '../confirm.jsx'
 
@@ -22,38 +22,172 @@ const whenParts = (unix) => {
 const prettyStatus = (s) =>
   s === 'requires_payment_method' ? 'incomplete' : String(s || '').replace(/_/g, ' ')
 
+const KIND_LABELS = { product: 'Product', service: 'Service', booking: 'Booking' }
+
 export default function PaymentsPanel({ notify }) {
   const [rows, setRows] = useState([])
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
   const [refunding, setRefunding] = useState(null) // { id, amount, max, currency }
+  const [invoiceUrl, setInvoiceUrl] = useState(null) // link handed back to a customer
 
   const [unconfigured, setUnconfigured] = useState(false)
 
+  // Filters. `search` is what's typed; `q` is the debounced value that
+  // actually goes to the server, so every keystroke isn't a Stripe scan.
+  const [search, setSearch] = useState('')
+  const [q, setQ] = useState('')
+  const [kind, setKind] = useState('')
+  const [item, setItem] = useState('')
+  const [items, setItems] = useState([])
+  const [truncated, setTruncated] = useState(false)
+  const [scanned, setScanned] = useState(0)
+
+  // Paging. `pager` is what the server actually returned, so the footer
+  // never claims a page count the data doesn't back up.
+  const [page, setPage] = useState(1)
+  const [pager, setPager] = useState({ page: 1, pages: 1 })
+
+  /**
+   * Clicking Next means sitting at the bottom of the page with the cursor
+   * on the button. Pages are not all the same height — a refunded row
+   * carries an extra line — so a shorter page shrinks the document below
+   * the current scroll offset, the browser clamps it, and the whole view
+   * (button included) jumps upward.
+   *
+   * So the table keeps the tallest height it has reached for this result
+   * set. Pages can grow it, never shrink it, and the button stays put.
+   */
+  const wrapRef = useRef(null)
+  const [floor, setFloor] = useState(0)
+  const filtered = Boolean(q || kind || item)
+
+  /**
+   * Requests can land out of order — three quick Next clicks are three
+   * in flight at once, and the slowest reply would otherwise be the one
+   * left on screen, showing rows from a page nobody is on any more.
+   * Only the newest request is allowed to write anything.
+   */
+  const reqRef = useRef(0)
+
   async function load() {
+    const seq = ++reqRef.current
     setLoading(true)
     try {
-      const [list, stats] = await Promise.all([
-        api.listPayments(25),
-        api.paymentSummary().catch(() => null),
-      ])
+      const list = await api.listPayments({ limit: 25, page, q, kind, item })
+      if (seq !== reqRef.current) return
       setRows(list.data)
-      setSummary(stats)
+      setTruncated(Boolean(list.truncated))
+      setScanned(list.scanned || 0)
+      // The server clamps the page it was asked for, so mirror what came
+      // back rather than what was requested.
+      setPager({ page: list.page || 1, pages: list.pages || 1 })
+      if (list.page && list.page !== page) setPage(list.page)
       setUnconfigured(false)
     } catch (err) {
+      if (seq !== reqRef.current) return
       // 503 means no Stripe key on the server — that's a setup state, not
       // an error worth shouting about.
       if (err.status === 503) setUnconfigured(true)
       else notify(err.message, 'error')
     } finally {
-      setLoading(false)
+      // A superseded request must not clear the spinner the newest one is
+      // still relying on.
+      if (seq === reqRef.current) setLoading(false)
     }
   }
+
+  /**
+   * The 30-day headline is the same whatever is filtered or paged, so it
+   * loads once rather than riding along with every list request. It also
+   * keeps its last good value on failure: blanking it would unmount the
+   * stats row and drop everything below it up the page.
+   */
+  async function loadSummary() {
+    const stats = await api.paymentSummary().catch(() => null)
+    if (stats) setSummary(stats)
+  }
+
+  useEffect(() => {
+    loadSummary()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, kind, item, page])
+
+  // Before paint, so the reserved height is already in place and the page
+  // never flickers shorter on its way to the new rows.
+  useLayoutEffect(() => {
+    const h = wrapRef.current?.offsetHeight
+    if (h) setFloor((f) => (h > f ? h : f))
+  }, [rows])
+
+  // The item dropdown comes from the orders on record, not from the page
+  // of payments on screen — otherwise you could only filter to things
+  // already visible, which defeats the point.
+  useEffect(() => {
+    api
+      .paymentFilters()
+      .then((r) => setItems(r.items || []))
+      .catch(() => setItems([]))
   }, [])
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setQ(search.trim())
+      resetView()
+    }, 350)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search])
+
+  /**
+   * A new filter is a different result set, so page 3 of the old one is
+   * meaningless and the height reserved for it is the wrong shape.
+   *
+   * Done here rather than in an effect on [q, kind, item] so the reset
+   * batches with the filter change into ONE render — as a separate effect
+   * it fired after the first fetch had already gone out for the old page,
+   * costing a wasted round trip on every keystroke.
+   */
+  const resetView = () => {
+    setPage(1)
+    setFloor(0)
+  }
+
+  // A kind and a specific item can contradict each other ("Bookings" +
+  // a PDF title = always empty). Picking one clears the other.
+  const chooseKind = (v) => {
+    setKind(v)
+    if (v) setItem('')
+    resetView()
+  }
+  const chooseItem = (v) => {
+    setItem(v)
+    if (v) setKind('')
+    resetView()
+  }
+  const clearFilters = () => {
+    setSearch('')
+    setQ('')
+    setKind('')
+    setItem('')
+    resetView()
+  }
+
+  /** Every receipt already carries this link — this is for the customer
+   *  who deleted the email, or who bought before the feature existed. */
+  async function getInvoiceLink(id) {
+    try {
+      const { url } = await api.invoiceLink(id)
+      setInvoiceUrl(url)
+    } catch (err) {
+      notify(err.message, 'error')
+    }
+  }
 
   async function submitRefund() {
     const cents = Math.round(Number(refunding.amount) * 100)
@@ -65,7 +199,14 @@ export default function PaymentsPanel({ notify }) {
       title: `Refund ${money(cents, refunding.currency)}?`,
       message:
         `Payment ${refunding.id}.\n` +
-        'This moves real money and cannot be undone from here.',
+        'This moves real money and cannot be undone from here.' +
+        // Downloads are sold final-sale, so refunding one is a deliberate
+        // exception — and it only kills the link, never the file itself.
+        (refunding.digital
+          ? '\n\nThis was a download, which the terms sell as final sale. ' +
+            'Refunding kills the download link, but not any copy they have ' +
+            'already saved.'
+          : ''),
       confirmLabel: 'Refund',
       danger: true,
     })
@@ -91,9 +232,66 @@ export default function PaymentsPanel({ notify }) {
             brand and last four.
           </p>
         </div>
-        <button className="adm-mini" onClick={load}>
-          Refresh
-        </button>
+        <div className="adm-toolbar">
+          <input
+            className="adm-search"
+            type="search"
+            placeholder="Search name, email or item"
+            aria-label="Search payments by customer name, email or item"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {/* Both selects are a fixed width: left to size themselves,
+              they grow to fit whatever is chosen, which shoves the
+              buttons sideways — and can rewrap the whole row — every time
+              a filter changes. */}
+          <select
+            className="adm-select adm-select--steady"
+            aria-label="Filter by what was bought"
+            value={kind}
+            onChange={(e) => chooseKind(e.target.value)}
+          >
+            <option value="">All</option>
+            <option value="product">Products</option>
+            <option value="service">Services</option>
+            <option value="booking">Bookings</option>
+          </select>
+          <select
+            className="adm-select adm-select--steady adm-select--wide"
+            aria-label="Filter by a specific item"
+            value={item}
+            onChange={(e) => chooseItem(e.target.value)}
+          >
+            <option value="">All items</option>
+            {items.map((it) => (
+              <option key={it.title} value={it.title}>
+                {it.title}
+                {it.count > 1 ? ` (${it.count})` : ''}
+              </option>
+            ))}
+          </select>
+          {/* Stays mounted and keeps its space when there is nothing to
+              clear — appearing and disappearing would move Refresh out
+              from under the cursor. */}
+          <button
+            className="adm-mini"
+            style={filtered ? undefined : { visibility: 'hidden' }}
+            aria-hidden={!filtered}
+            tabIndex={filtered ? undefined : -1}
+            onClick={clearFilters}
+          >
+            Clear
+          </button>
+          <button
+            className="adm-mini"
+            onClick={() => {
+              load()
+              loadSummary()
+            }}
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       {summary && (
@@ -118,13 +316,26 @@ export default function PaymentsPanel({ notify }) {
           <code>server/.env</code> and restart the service. Everything else on
           this dashboard works without it.
         </p>
-      ) : loading ? (
+      ) : /* Only the very first load blanks the panel. Paging keeps the
+             table on screen and dims it, so the pager doesn't vanish out
+             from under the cursor between clicks. */
+      loading && rows.length === 0 ? (
         <p className="adm-muted">Loading…</p>
       ) : rows.length === 0 ? (
-        <p className="adm-muted">No payments yet.</p>
+        <p className="adm-muted">
+          {filtered
+            ? `Nothing matches${scanned ? ` in the last ${scanned} payments` : ''}.`
+            : 'No payments yet.'}
+        </p>
       ) : (
-        <div className="adm-table-wrap">
-          <table className="adm-table">
+        <>
+          <div
+            ref={wrapRef}
+            className={`adm-table-wrap${loading ? ' is-busy' : ''}`}
+            style={floor ? { minHeight: floor } : undefined}
+            aria-busy={loading}
+          >
+            <table className="adm-table">
             <thead>
               <tr>
                 <th>When</th>
@@ -152,7 +363,21 @@ export default function PaymentsPanel({ notify }) {
                       <br />
                       <span className="adm-muted">{p.customerEmail || '—'}</span>
                     </td>
-                    <td className="adm-note adm-for">{p.label || '—'}</td>
+                    <td className="adm-note adm-for">
+                      {p.label || '—'}
+                      {p.kind && (
+                        <>
+                          <br />
+                          <span className="adm-muted">{KIND_LABELS[p.kind]}</span>
+                        </>
+                      )}
+                      {p.invoicedTo && (
+                        <>
+                          <br />
+                          <span className="adm-muted">Invoiced to {p.invoicedTo}</span>
+                        </>
+                      )}
+                    </td>
                     <td className="adm-nowrap">
                       {p.cardBrand ? `${p.cardBrand} ···· ${p.cardLast4}` : '—'}
                     </td>
@@ -183,6 +408,30 @@ export default function PaymentsPanel({ notify }) {
                           Receipt
                         </a>
                       )}
+                      {/* Which of this customer's purchases to invoice.
+                          Usually just the one, but a repeat buyer can be
+                          invoiced for any of them from whichever row is
+                          in front of you. Resets to the placeholder after
+                          each pick so it never reads as a saved setting. */}
+                      {p.purchases?.length > 0 && (
+                        <select
+                          className="adm-select adm-select--steady adm-invoice-pick"
+                          value=""
+                          aria-label={`Issue an invoice for ${p.customerName || 'this customer'}`}
+                          title="Get a link the customer uses to fill in their billing details and issue an invoice"
+                          onChange={(e) => {
+                            if (e.target.value) getInvoiceLink(e.target.value)
+                            e.target.value = ''
+                          }}
+                        >
+                          <option value="">Invoice…</option>
+                          {p.purchases.map((buy) => (
+                            <option key={buy.id} value={buy.id}>
+                              {buy.label || 'Purchase'} · {money(buy.amount, buy.currency)}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                       {p.status === 'succeeded' && remaining > 0 && (
                         <button
                           className="adm-mini adm-mini--danger"
@@ -192,6 +441,7 @@ export default function PaymentsPanel({ notify }) {
                               amount: (remaining / 100).toFixed(2),
                               max: remaining,
                               currency: p.currency,
+                              digital: p.digital,
                             })
                           }
                         >
@@ -203,7 +453,85 @@ export default function PaymentsPanel({ notify }) {
                 )
               })}
             </tbody>
-          </table>
+            </table>
+          </div>
+
+          {/* Outside the table wrapper on purpose — that scrolls
+              horizontally on a narrow screen, and the pager must not
+              slide out of reach with it. */}
+          <div className="adm-pager">
+            <button
+              className="adm-mini"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={pager.page <= 1 || loading}
+            >
+              ← Previous
+            </button>
+
+            <span className="adm-pager__at">
+              {pager.page} / {pager.pages}
+            </span>
+
+            <button
+              className="adm-mini"
+              onClick={() => setPage((p) => Math.min(pager.pages, p + 1))}
+              disabled={pager.page >= pager.pages || loading}
+            >
+              Next →
+            </button>
+          </div>
+
+          {/* Say where the scan stopped rather than letting a full last
+              page imply there is nothing further back. */}
+          {truncated && (
+            <p className="adm-muted">
+              Counted the most recent {scanned} payments — anything older than
+              that isn’t included, so the page count is a floor.
+            </p>
+          )}
+        </>
+      )}
+
+      {invoiceUrl && (
+        <div className="adm-modal" role="dialog" aria-modal="true">
+          <div className="adm-modal__card">
+            <h3 className="adm-h3">Invoice link</h3>
+            <p className="adm-sub">
+              Send this to the customer. They fill in who to bill and the invoice
+              is issued and emailed to them straight away.
+            </p>
+            <div className="adm-field">
+              <label htmlFor="invoice-link">Link</label>
+              <input
+                id="invoice-link"
+                readOnly
+                value={invoiceUrl}
+                onFocus={(e) => e.target.select()}
+                // Focused on mount so it is one keystroke from copied even
+                // where the clipboard API is blocked.
+                ref={(el) => el?.select()}
+              />
+            </div>
+            <div className="adm-modal__actions">
+              <button className="adm-mini" onClick={() => setInvoiceUrl(null)}>
+                Close
+              </button>
+              <button
+                className="adm-mini"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(invoiceUrl)
+                    notify('Link copied.')
+                    setInvoiceUrl(null)
+                  } catch {
+                    notify('Copy blocked — select the link and copy it.', 'error')
+                  }
+                }}
+              >
+                Copy
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
