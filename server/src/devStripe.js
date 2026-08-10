@@ -119,9 +119,13 @@ function build() {
         sessionId: `cs_dev_${id}`,
         paymentIntent: `pi_dev_${id}`,
         chargeId: `ch_dev_${id}`,
-        // A couple of refunds, so the refunded display and the
-        // "remaining" maths both get exercised.
-        amountRefunded: n % 37 === 0 ? item.cents : 0,
+        /**
+         * A handful of refunds, half of them partial — the Returns view
+         * counts any money sent back, and a part-refunded payment is the
+         * case most likely to be got wrong.
+         */
+        amountRefunded:
+          n % 37 !== 0 ? 0 : n % 74 === 0 ? Math.round(item.cents / 2) : item.cents,
         /**
          * A few sales with no order row, mimicking a charge taken
          * straight from the Stripe dashboard or an old Payment Link —

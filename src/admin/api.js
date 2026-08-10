@@ -71,11 +71,12 @@ export const api = {
   deleteBooking: (id) => request(`/bookings/${id}`, { method: 'DELETE' }),
 
   // payments
-  listPayments: ({ limit = 25, page = 1, q = '', kind = '', item = '' } = {}) => {
+  listPayments: ({ limit = 25, page = 1, q = '', kind = '', item = '', returns = false } = {}) => {
     const params = new URLSearchParams({ limit, page })
     if (q) params.set('q', q)
     if (kind) params.set('kind', kind)
     if (item) params.set('item', item)
+    if (returns) params.set('returns', '1')
     return request(`/payments?${params}`)
   },
   paymentFilters: () => request('/payments/filters'),

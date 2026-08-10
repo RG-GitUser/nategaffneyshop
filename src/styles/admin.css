@@ -413,6 +413,12 @@
   width: 220px;
 }
 
+/* Returns are money going the other way, so the stat reads differently
+   from the takings it replaces. */
+.adm-stat--returns {
+  border-left-color: var(--st-cancelled-fill);
+}
+
 /* ---------- invoice purchase picker ---------- */
 .adm-picklist {
   list-style: none;

@@ -187,8 +187,8 @@ const SCAN_TTL_MS = 30_000
 export const clearPaymentScanCache = () => scanCache.clear()
 
 /** Walk history, decorating and filtering everything the scan reaches. */
-async function scanPayments({ q, kind, item }) {
-  const key = `${q}|${kind || ''}|${item}`
+async function scanPayments({ q, kind, item, returns }) {
+  const key = `${q}|${kind || ''}|${item}|${returns ? 'r' : ''}`
   const hit = scanCache.get(key)
   if (hit && Date.now() - hit.at < SCAN_TTL_MS) return hit.value
 
@@ -242,6 +242,13 @@ async function scanPayments({ q, kind, item }) {
 
       all.push(row)
 
+      /**
+       * Returns are money going back out, which is a different question
+       * from what was bought — so this is its own filter rather than
+       * another option in the category list. Partial refunds count: a
+       * customer given half their money back has still had a return.
+       */
+      if (returns && !(row.amountRefunded > 0)) continue
       if (kind && row.kind !== kind) continue
       if (item && normTitle(row.label) !== item) continue
       if (q) {
@@ -298,7 +305,14 @@ async function scanPayments({ q, kind, item }) {
 
   // `truncated` means history ran on past where the scan stopped, so the
   // count — and therefore the page count — is a floor, not a total.
-  const value = { rows: matched, scanned, truncated: hasMore }
+  const value = {
+    rows: matched,
+    scanned,
+    truncated: hasMore,
+    // What went back out across everything matched, not just this page —
+    // the headline the Returns view exists to show.
+    refunded: matched.reduce((sum, r) => sum + (r.amountRefunded || 0), 0),
+  }
   scanCache.set(key, { at: Date.now(), value })
   return value
 }
@@ -310,8 +324,14 @@ paymentsRouter.get('/', async (req, res, next) => {
     const q = String(req.query.q || '').trim().toLowerCase()
     const kind = KINDS.includes(req.query.kind) ? req.query.kind : null
     const item = normTitle(req.query.item)
+    const returns = req.query.returns === '1'
 
-    const { rows, scanned, truncated } = await scanPayments({ q, kind, item })
+    const { rows, scanned, truncated, refunded } = await scanPayments({
+      q,
+      kind,
+      item,
+      returns,
+    })
 
     const total = rows.length
     const pages = Math.max(1, Math.ceil(total / limit))
@@ -331,6 +351,9 @@ paymentsRouter.get('/', async (req, res, next) => {
       // rather than implying it looked at everything.
       scanned,
       truncated,
+      // Total sent back across every matching payment, so the Returns
+      // view can lead with it instead of making Nate add up a column.
+      refunded,
       account: config.stripeAccountId || null,
     })
   } catch (err) {

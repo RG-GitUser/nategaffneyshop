@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { api } from '../api.js'
 import { confirmDialog } from '../confirm.jsx'
+import { VizToggle } from './charts.jsx'
 
 const money = (cents, currency = 'cad') =>
   new Intl.NumberFormat('en-CA', {
@@ -40,6 +41,14 @@ export default function PaymentsPanel({ notify }) {
   const [q, setQ] = useState('')
   const [kind, setKind] = useState('')
   const [item, setItem] = useState('')
+  /**
+   * 'all' or 'returns'. A view rather than another option in the category
+   * dropdown: money going back out is a different question from what was
+   * bought, and the two are asked together — "which downloads got
+   * refunded" needs both at once.
+   */
+  const [view, setView] = useState('all')
+  const [refunded, setRefunded] = useState(0)
   const [items, setItems] = useState([])
   const [truncated, setTruncated] = useState(false)
   const [scanned, setScanned] = useState(0)
@@ -47,7 +56,7 @@ export default function PaymentsPanel({ notify }) {
   // Paging. `pager` is what the server actually returned, so the footer
   // never claims a page count the data doesn't back up.
   const [page, setPage] = useState(1)
-  const [pager, setPager] = useState({ page: 1, pages: 1 })
+  const [pager, setPager] = useState({ page: 1, pages: 1, total: 0 })
 
   /**
    * Clicking Next means sitting at the bottom of the page with the cursor
@@ -61,7 +70,7 @@ export default function PaymentsPanel({ notify }) {
    */
   const wrapRef = useRef(null)
   const [floor, setFloor] = useState(0)
-  const filtered = Boolean(q || kind || item)
+  const filtered = Boolean(q || kind || item || view === 'returns')
 
   /**
    * Requests can land out of order — three quick Next clicks are three
@@ -75,14 +84,22 @@ export default function PaymentsPanel({ notify }) {
     const seq = ++reqRef.current
     setLoading(true)
     try {
-      const list = await api.listPayments({ limit: 25, page, q, kind, item })
+      const list = await api.listPayments({
+        limit: 25,
+        page,
+        q,
+        kind,
+        item,
+        returns: view === 'returns',
+      })
       if (seq !== reqRef.current) return
       setRows(list.data)
       setTruncated(Boolean(list.truncated))
       setScanned(list.scanned || 0)
+      setRefunded(list.refunded || 0)
       // The server clamps the page it was asked for, so mirror what came
       // back rather than what was requested.
-      setPager({ page: list.page || 1, pages: list.pages || 1 })
+      setPager({ page: list.page || 1, pages: list.pages || 1, total: list.total || 0 })
       if (list.page && list.page !== page) setPage(list.page)
       setUnconfigured(false)
     } catch (err) {
@@ -117,7 +134,7 @@ export default function PaymentsPanel({ notify }) {
   useEffect(() => {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, kind, item, page])
+  }, [q, kind, item, view, page])
 
   // Before paint, so the reserved height is already in place and the page
   // never flickers shorter on its way to the new rows.
@@ -171,11 +188,16 @@ export default function PaymentsPanel({ notify }) {
     if (v) setKind('')
     resetView()
   }
+  const chooseView = (v) => {
+    setView(v)
+    resetView()
+  }
   const clearFilters = () => {
     setSearch('')
     setQ('')
     setKind('')
     setItem('')
+    setView('all')
     resetView()
   }
 
@@ -236,6 +258,17 @@ export default function PaymentsPanel({ notify }) {
           </p>
         </div>
         <div className="adm-toolbar">
+          {/* A view, not a category: it crosses the other filters rather
+              than competing with them, so "which downloads got refunded"
+              is one question you can actually ask. */}
+          <VizToggle
+            value={view}
+            onChange={chooseView}
+            options={[
+              { value: 'all', label: 'All' },
+              { value: 'returns', label: 'Returns' },
+            ]}
+          />
           <input
             className="adm-search"
             type="search"
@@ -297,19 +330,36 @@ export default function PaymentsPanel({ notify }) {
         </div>
       </div>
 
-      {summary && (
+      {/* In the Returns view the 30-day gross is beside the point, so the
+          stats row answers the question actually being asked instead. */}
+      {view === 'returns' ? (
         <div className="adm-stats">
-          <div className="adm-stat">
-            <span className="adm-stat__label">Last {summary.windowDays} days</span>
+          <div className="adm-stat adm-stat--returns">
+            <span className="adm-stat__label">Returned</span>
             <span className="adm-stat__value">
-              {money(summary.grossAmount, summary.currency)}
+              {money(refunded, rows[0]?.currency || summary?.currency)}
             </span>
           </div>
-          <div className="adm-stat">
-            <span className="adm-stat__label">Payments</span>
-            <span className="adm-stat__value">{summary.count}</span>
+          <div className="adm-stat adm-stat--returns">
+            <span className="adm-stat__label">Payments refunded</span>
+            <span className="adm-stat__value">{pager.total}</span>
           </div>
         </div>
+      ) : (
+        summary && (
+          <div className="adm-stats">
+            <div className="adm-stat">
+              <span className="adm-stat__label">Last {summary.windowDays} days</span>
+              <span className="adm-stat__value">
+                {money(summary.grossAmount, summary.currency)}
+              </span>
+            </div>
+            <div className="adm-stat">
+              <span className="adm-stat__label">Payments</span>
+              <span className="adm-stat__value">{summary.count}</span>
+            </div>
+          </div>
+        )
       )}
 
       {unconfigured ? (
@@ -326,9 +376,11 @@ export default function PaymentsPanel({ notify }) {
         <p className="adm-muted">Loading…</p>
       ) : rows.length === 0 ? (
         <p className="adm-muted">
-          {filtered
-            ? `Nothing matches${scanned ? ` in the last ${scanned} payments` : ''}.`
-            : 'No payments yet.'}
+          {view === 'returns' && !q && !kind && !item
+            ? `No returns${scanned ? ` in the last ${scanned} payments` : ''}. Nothing has been refunded.`
+            : filtered
+              ? `Nothing matches${scanned ? ` in the last ${scanned} payments` : ''}.`
+              : 'No payments yet.'}
         </p>
       ) : (
         <>
