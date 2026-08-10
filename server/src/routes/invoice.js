@@ -67,15 +67,16 @@ const invoiceNumber = (sessionId, issuedAt) =>
  * a tax component that was never charged would make the document wrong
  * for exactly the purpose it exists for.
  *
- * With no tax number set the invoice states the fact — no tax was
- * charged — without saying anything about why. Whether the business is
- * registered is not something this code can know, and an invoice is the
- * wrong place to guess: set BUSINESS_TAX_NUMBER once it is known.
+ * With no tax number set the invoice says nothing about tax at all. A
+ * total with no tax line already reads as a total with no tax in it, and
+ * whether the business is registered is not something this code can know
+ * — an invoice is the wrong place to guess. Set BUSINESS_TAX_NUMBER once
+ * there is one and the number appears here.
  */
 const taxLine = () =>
   config.business.taxNumber
     ? `GST/HST No. ${config.business.taxNumber}. No tax was calculated separately on this sale; the total shown is the full amount charged.`
-    : 'No GST/HST was charged on this sale. The total shown is the full amount charged.'
+    : null
 
 const seller = () => ({
   name: config.business.name,
@@ -84,50 +85,100 @@ const seller = () => ({
   taxNumber: config.business.taxNumber || null,
 })
 
-/** Everything the invoice page renders, built from an order. */
-function toInvoice(order) {
-  const issuedAt = order.invoice?.issuedAt || new Date()
+/**
+ * Everything the invoice page renders, built from one or more orders.
+ *
+ * The first order is the anchor: it carries the billing details and the
+ * invoice number, so adding a second purchase to an invoice does not
+ * renumber the one already sent. Every order contributes a line.
+ */
+function toInvoice(orders) {
+  const [head] = orders
+  const issuedAt = head.invoice?.issuedAt || new Date()
+  const amount = orders.reduce((sum, o) => sum + (o.amount || 0), 0)
+  const currency = head.currency || 'cad'
+
   return {
-    number: invoiceNumber(order.sessionId, issuedAt),
+    number: invoiceNumber(head.sessionId, issuedAt),
     issuedAt,
     // The purchase date, which is what the expense claim is actually
-    // about — not the day the invoice happened to be generated.
-    paidAt: order.createdAt || issuedAt,
+    // about — not the day the invoice happened to be generated. Across
+    // several purchases it is the most recent of them.
+    paidAt: orders.reduce(
+      (latest, o) => (o.createdAt && o.createdAt > latest ? o.createdAt : latest),
+      head.createdAt || issuedAt,
+    ),
     seller: seller(),
-    billTo: order.invoice?.billTo || null,
-    reference: order.invoice?.reference || null,
-    item: order.title || 'Purchase',
-    amount: order.amount,
-    currency: order.currency || 'cad',
-    total: money(order.amount, order.currency),
+    billTo: head.invoice?.billTo || null,
+    reference: head.invoice?.reference || null,
+    lines: orders.map((o) => ({
+      item: o.title || 'Purchase',
+      paidAt: o.createdAt || issuedAt,
+      amount: o.amount,
+      price: money(o.amount, o.currency || currency),
+    })),
+    amount,
+    currency,
+    total: money(amount, currency),
     taxNote: taxLine(),
     paidWith: 'Card (paid in full)',
   }
 }
 
-/** Look the order up from the token, or answer honestly why not. */
-async function orderFromToken(req, res) {
-  const sessionId = verifyInvoiceToken(req.query.token || req.body?.token)
-  if (!sessionId) {
+/**
+ * The orders behind the token, or an honest answer why not.
+ *
+ * Returned in the order the token lists them, so the anchor stays the
+ * anchor however Mongo feels like returning the documents.
+ */
+async function ordersFromToken(req, res) {
+  const sessionIds = verifyInvoiceToken(req.query.token || req.body?.token)
+  if (!sessionIds) {
     res.status(403).json({
       error:
         'This invoice link is invalid or has expired. Reply to your receipt email and we will send a fresh one.',
     })
     return null
   }
-  const order = await collections.orders().findOne({ sessionId })
-  if (!order || order.status !== 'paid') {
+
+  const found = await collections
+    .orders()
+    .find({ sessionId: { $in: sessionIds }, status: 'paid' })
+    .toArray()
+
+  const bySession = new Map(found.map((o) => [o.sessionId, o]))
+  const orders = sessionIds.map((id) => bySession.get(id)).filter(Boolean)
+
+  if (!orders.length) {
     res.status(404).json({ error: 'We could not find a completed payment for this link.' })
     return null
   }
-  return order
+
+  /**
+   * Every line has to belong to the same buyer. The token is signed, so
+   * this is not a tampering defence — it catches a dashboard mistake
+   * before someone's invoice lists a stranger's purchase.
+   */
+  const buyers = new Set(orders.map((o) => (o.email || '').trim().toLowerCase()).filter(Boolean))
+  if (buyers.size > 1) {
+    console.error(
+      `[invoice] refused a link spanning ${buyers.size} customers: ${sessionIds.join(', ')}`,
+    )
+    res.status(409).json({
+      error: 'This link mixes purchases from different customers. Email us and we will re-issue it.',
+    })
+    return null
+  }
+
+  return orders
 }
 
 /** The order behind the link, plus any invoice already issued for it. */
 invoiceRouter.get('/', async (req, res, next) => {
   try {
-    const order = await orderFromToken(req, res)
-    if (!order) return
+    const orders = await ordersFromToken(req, res)
+    if (!orders) return
+    const [order] = orders
 
     // Worth knowing before a customer emails to ask why the invoice has
     // no address on it — this is a configuration gap, not a code fault.
@@ -141,7 +192,7 @@ invoiceRouter.get('/', async (req, res, next) => {
       issued: Boolean(order.invoice?.billTo),
       customerEmail: order.email || null,
       customerName: order.name || null,
-      invoice: toInvoice(order),
+      invoice: toInvoice(orders),
     })
   } catch (err) {
     next(err)
@@ -171,8 +222,9 @@ invoiceRouter.post('/', async (req, res, next) => {
       return res.status(400).json({ error: 'Please fill in who the invoice is for.' })
     }
 
-    const order = await orderFromToken(req, res)
-    if (!order) return
+    const orders = await ordersFromToken(req, res)
+    if (!orders) return
+    const [order] = orders
 
     const billTo = {
       name: parsed.data.billToName,
@@ -187,22 +239,26 @@ invoiceRouter.post('/', async (req, res, next) => {
      * looking at what appears to be a second, different invoice.
      */
     const issuedAt = order.invoice?.issuedAt || new Date()
+    const record = {
+      billTo,
+      reference: parsed.data.reference || null,
+      issuedAt,
+      updatedAt: new Date(),
+    }
 
-    await collections.orders().updateOne(
-      { sessionId: order.sessionId },
-      {
-        $set: {
-          invoice: {
-            billTo,
-            reference: parsed.data.reference || null,
-            issuedAt,
-            updatedAt: new Date(),
-          },
-        },
-      },
-    )
+    /**
+     * Written to every order on the invoice, not just the anchor, so the
+     * Payments dashboard shows "invoiced" against each line rather than
+     * leaving the others looking un-invoiced.
+     */
+    await collections
+      .orders()
+      .updateMany(
+        { sessionId: { $in: orders.map((o) => o.sessionId) } },
+        { $set: { invoice: record } },
+      )
 
-    const invoice = toInvoice({ ...order, invoice: { billTo, reference: parsed.data.reference, issuedAt } })
+    const invoice = toInvoice([{ ...order, invoice: record }, ...orders.slice(1)])
 
     let emailed = false
     if (parsed.data.email && order.email) {

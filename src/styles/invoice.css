@@ -9,62 +9,65 @@
  */
 
 /**
- * The page is a flat, very dark grey — the same trick admin.css uses:
- * override the shared tokens for this page only, so every rule below
- * keeps reading from var() and nothing needs hardcoding.
+ * An off-white page with the navy containers kept on it — the same trick
+ * admin.css uses: override the shared tokens for this page only, so every
+ * rule below keeps reading from var() and nothing needs hardcoding.
  *
  * Deliberately the same in both themes. This is a one-off transactional
  * page reached from a link in a receipt, not part of browsing the site,
  * and the visitor's saved light/dark choice was made in a different
- * context entirely. The document itself stays white regardless.
+ * context entirely.
  *
- * --field-bg is defined here because it lives in admin.css otherwise, so
- * the form inputs on this page had no background colour at all.
+ * Page text is dark and container text is light, because the two sit on
+ * opposite grounds. --field-bg is defined here because it lives in
+ * admin.css otherwise, so the inputs had no background colour at all.
  */
 :root:has(.inv),
 :root[data-theme='dark']:has(.inv) {
-  --bg: #0b1a2b;
-  --bg-2: #0f2135;
-  --surface: #13273d;
-  --surface-2: #1a3047;
-  --line: #22405c;
-  --line-2: #33587a;
+  --bg: #f4f5f7;
+  --bg-2: #eceef1;
+  --surface: #ffffff;
+  --surface-2: #f8f9fb;
+  --line: #dde0e6;
+  --line-2: #cbd1da;
 
-  /* Cool inks. The site's own are warm — --ink is bone (#ebe5d8) and
-     --accent-fill is rust (#7d2800) — and warm text on navy reads muddy,
+  /* Dark, faintly cool inks for text on the off-white. The site's own are
+     warm — --ink is bone (#ebe5d8) and --accent-fill is rust (#7d2800) —
      so every one of them is replaced here. */
-  --ink: #eef3f9;
-  --ink-2: #b3c4d6;
-  --ink-soft: #93a7bd;
-  --ink-faint: #7089a3;
-  --field-bg: #0e2033;
+  --ink: #101c28;
+  --ink-2: #414e5b;
+  --ink-soft: #57646f;
+  --ink-faint: #6c7885;
 
-  /* Buttons and focus rings: pale, not rust. */
-  --accent: #8fb6dd;
-  --accent-fill: #e8eef6;
-  --accent-hi: #ffffff;
-  --on-accent: #0b1a2b;
+  /* One cool-neutral scale, all in the same hue family as the page:
+     the panel sits a step below it, the fields a step above. Nothing is
+     stark white, so the off-white stays the dominant tone. */
+  --field-bg: #fcfdfe;
+  --panel-bg: #eaedf2;
 
-  /* The site's glow carries a sienna ember off the top-right, which is
-     where the brown came from. Replaced with a cool one so the navy has
-     some depth instead of sitting flat. */
+  --accent: #1d3e60;
+  --accent-fill: #14283c;
+  --accent-hi: #1e3a58;
+  --on-accent: #f2f6fa;
+
+  /* The site's glow carries a sienna ember off the top-right, which read
+     as brown. A cool wash instead, barely there on a light ground. */
   --page-glow: radial-gradient(
-      120% 60% at 85% 0%,
-      rgba(94, 156, 214, 0.13) 0%,
-      rgba(94, 156, 214, 0.06) 34%,
-      transparent 78%
-    ),
-    radial-gradient(110% 55% at 6% 100%, rgba(3, 14, 26, 0.5) 0%, transparent 72%);
+    120% 60% at 85% 0%,
+    rgba(30, 80, 140, 0.07) 0%,
+    rgba(30, 80, 140, 0.03) 38%,
+    transparent 80%
+  );
 }
 
 /**
  * Also set on the elements themselves. The tokens alone were not enough:
- * body kept painting the site's warm near-black even with --bg replaced,
+ * body kept painting the site's own background even with --bg replaced,
  * so the colour is pinned here where nothing can fall back to it.
  */
 :root:has(.inv),
 :root:has(.inv) body {
-  background-color: #0b1a2b;
+  background-color: #f4f5f7;
 }
 
 :root:has(.inv) body {
@@ -116,27 +119,27 @@
 }
 
 /* Literal colours, not var(--red): that token is near-black (#500d0d)
-   with no dark-theme variant, so on this page it would be unreadable. */
+   with no light/dark variants, so it reads poorly either way. */
 .inv__error {
   margin: 14px 0;
   padding: 12px 14px;
   border-radius: var(--r-md);
-  border: 1px solid #7a2a22;
-  background: rgba(122, 42, 34, 0.22);
-  color: #f0a396;
+  border: 1px solid #d99b91;
+  background: #fdf0ee;
+  color: #8c2f22;
   font-size: 1.05rem;
 }
 
 /* ---------- what is being invoiced ---------- */
-/* Same white wash as the fields, so it reads as part of the form's
-   surface rather than a separate card floating on the navy. */
+/* Same lifted surface as the fields, with the accent rule marking it as
+   information rather than something to fill in. */
 .inv__for {
   margin-top: 26px;
   padding: 16px 18px;
   border-radius: var(--r-md);
   border: 1px solid var(--line-2);
   border-left: 3px solid var(--accent);
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--panel-bg);
 }
 
 .inv__for-label {
@@ -148,10 +151,18 @@
 }
 
 .inv__for-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
   margin-top: 5px;
   font-size: 1.2rem;
   font-weight: 600;
   line-height: 1.35;
+}
+
+.inv__for-price {
+  flex: none;
+  font-variant-numeric: tabular-nums;
 }
 
 .inv__for-meta {
@@ -186,15 +197,13 @@
   color: var(--ink-2);
 }
 
-/* A wash of white over the navy rather than a solid fill, so the fields
-   read as lifted out of the page instead of punched into it. */
 .inv__field input,
 .inv__field textarea {
   width: 100%;
   padding: 13px 15px;
   border-radius: var(--r-md);
   border: 1px solid var(--line-2);
-  background: rgba(255, 255, 255, 0.09);
+  background: var(--field-bg);
   color: var(--ink);
   font-family: inherit;
   font-size: 1.08rem;
@@ -202,12 +211,12 @@
 
 .inv__field input::placeholder,
 .inv__field textarea::placeholder {
-  color: rgba(255, 255, 255, 0.42);
+  color: #98a2ae;
 }
 
 .inv__field input:hover,
 .inv__field textarea:hover {
-  background: rgba(255, 255, 255, 0.12);
+  border-color: #9aa4b0;
 }
 
 .inv__field textarea {
@@ -218,7 +227,6 @@
 .inv__field input:focus,
 .inv__field textarea:focus {
   border-color: var(--accent);
-  background: rgba(255, 255, 255, 0.14);
   outline: none;
 }
 
@@ -376,6 +384,13 @@
 .doc__num {
   text-align: right;
   white-space: nowrap;
+}
+
+/* Only shown when an invoice covers more than one purchase, where the
+   dates differ and the reader needs to see which is which. */
+.doc__line-date {
+  font-size: 0.82rem;
+  color: #6b6b70;
 }
 
 .doc__table tfoot td {

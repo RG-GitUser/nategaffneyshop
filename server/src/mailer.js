@@ -195,9 +195,15 @@ export function sendInvoice({ to, invoice }) {
     day: 'numeric',
   })
 
+  /** Names the purchase, or counts them once there is more than one. */
+  const summary =
+    invoice.lines.length > 1
+      ? `${invoice.lines.length} purchases`
+      : invoice.lines[0]?.item || 'your purchase'
+
   return send({
     to,
-    subject: `Invoice ${invoice.number} — ${invoice.item}`,
+    subject: `Invoice ${invoice.number} — ${summary}`,
     text: [
       `Here is invoice ${invoice.number}.`,
       ``,
@@ -206,24 +212,25 @@ export function sendInvoice({ to, invoice }) {
       `Paid on    ${paid}`,
       `Billed to  ${invoice.billTo?.name || '—'}`,
       ...(invoice.reference ? [`Reference  ${invoice.reference}`] : []),
-      `Item       ${invoice.item}`,
+      ...invoice.lines.map((l) => `Item       ${l.item}  ${l.price}`),
       `Total      ${invoice.total}`,
       `Status     PAID IN FULL`,
       ``,
       `From ${invoice.seller.name}`,
       ...(invoice.seller.address ? [invoice.seller.address] : []),
       ``,
-      invoice.taxNote,
-      ``,
-      `Something wrong on this invoice, or any other concern? Email ${SUPPORT}`,
-      `and we'll correct it and re-issue.`,
+      // Null unless a GST/HST number is configured, and an unguarded null
+      // would print the word "null" in a customer's invoice.
+      ...(invoice.taxNote ? [invoice.taxNote, ''] : []),
+      `Something wrong on this invoice, or any other concern, including a`,
+      `refund? Email ${SUPPORT} and we'll correct it and re-issue.`,
     ].join('\n'),
     html: wrap({
       eyebrow: `Invoice ${invoice.number}`,
       title: `${invoice.total} — paid in full`,
-      preheader: `${invoice.number} — ${invoice.item}`,
+      preheader: `${invoice.number} — ${summary}`,
       body:
-        paragraph(`Here is your invoice for ${invoice.item}.`) +
+        paragraph(`Here is your invoice for ${summary}.`) +
         details([
           row('Invoice', invoice.number),
           row('Issued', issued),
@@ -232,14 +239,14 @@ export function sendInvoice({ to, invoice }) {
           ...(invoice.billTo?.address ? [row('Address', invoice.billTo.address)] : []),
           ...(invoice.billTo?.taxNumber ? [row('Their tax no.', invoice.billTo.taxNumber)] : []),
           ...(invoice.reference ? [row('Reference', invoice.reference)] : []),
-          row('Item', invoice.item),
+          ...invoice.lines.map((l) => row('Item', `${l.item}  ${l.price}`)),
           row('Total', invoice.total),
           row('Status', 'Paid in full'),
           row('From', invoice.seller.name),
           ...(invoice.seller.address ? [row('Address', invoice.seller.address)] : []),
         ]) +
         muted(
-          `${invoice.taxNote} Something wrong on this invoice, or any other concern? Email ${SUPPORT} and we’ll correct it and re-issue.`,
+          `${invoice.taxNote ? `${invoice.taxNote} ` : ''}Something wrong on this invoice, or any other concern, including a refund? Email ${SUPPORT} and we’ll correct it and re-issue.`,
         ),
     }),
   })

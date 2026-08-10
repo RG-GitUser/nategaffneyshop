@@ -79,7 +79,8 @@ export const api = {
     return request(`/payments?${params}`)
   },
   paymentFilters: () => request('/payments/filters'),
-  invoiceLink: (id) => request(`/payments/${id}/invoice-link`),
+  invoiceLink: (paymentIntents) =>
+    request('/payments/invoice-link', { method: 'POST', body: { paymentIntents } }),
   getPayment: (id) => request(`/payments/${id}`),
   refund: (id, body) => request(`/payments/${id}/refund`, { method: 'POST', body }),
   paymentSummary: () => request('/payments/stats/summary'),

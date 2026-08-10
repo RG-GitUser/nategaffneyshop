@@ -399,17 +399,41 @@ paymentsRouter.get('/filters', async (_req, res, next) => {
  * token is a bearer credential for that order, and there is no reason to
  * spray one across every row of a list nobody asked to invoice.
  */
-paymentsRouter.get('/:id/invoice-link', async (req, res, next) => {
+paymentsRouter.post('/invoice-link', async (req, res, next) => {
   try {
-    const order = await collections
-      .orders()
-      .findOne({ paymentIntent: req.params.id }, { projection: { sessionId: 1 } })
+    const ids = Array.isArray(req.body?.paymentIntents)
+      ? req.body.paymentIntents.filter((s) => typeof s === 'string' && s.length < 128).slice(0, 20)
+      : []
+    if (!ids.length) {
+      return res.status(400).json({ error: 'Pick at least one purchase to invoice.' })
+    }
 
-    if (!order?.sessionId) {
+    const orders = await collections
+      .orders()
+      .find(
+        { paymentIntent: { $in: ids }, status: 'paid' },
+        { projection: { sessionId: 1, paymentIntent: 1, email: 1, createdAt: 1 } },
+      )
+      .toArray()
+
+    if (!orders.length) {
       return res.status(404).json({
         error:
-          'No order record for this payment, so there is nothing to invoice. ' +
+          'No order records for those payments, so there is nothing to invoice. ' +
           'Only payments the webhook recorded can produce a link.',
+      })
+    }
+
+    /**
+     * One invoice, one buyer. The dashboard groups by email already, but
+     * this is the gate that decides — a link is a signed credential and
+     * must never be able to put a stranger's purchase on someone's
+     * invoice.
+     */
+    const buyers = new Set(orders.map((o) => (o.email || '').trim().toLowerCase()).filter(Boolean))
+    if (buyers.size > 1) {
+      return res.status(400).json({
+        error: 'Those purchases belong to different customers. An invoice can only cover one.',
       })
     }
 
@@ -420,8 +444,15 @@ paymentsRouter.get('/:id/invoice-link', async (req, res, next) => {
       })
     }
 
-    await audit(req.admin.email, 'invoice.link', { paymentIntent: req.params.id })
-    res.json({ url: `${site}/invoice/?token=${signInvoiceToken(order.sessionId)}` })
+    // Oldest first, so a multi-line invoice reads down the page in the
+    // order the purchases actually happened.
+    const sessionIds = orders
+      .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+      .map((o) => o.sessionId)
+      .filter(Boolean)
+
+    await audit(req.admin.email, 'invoice.link', { paymentIntents: ids, lines: sessionIds.length })
+    res.json({ url: `${site}/invoice/?token=${signInvoiceToken(sessionIds)}` })
   } catch (err) {
     next(err)
   }

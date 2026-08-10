@@ -141,10 +141,20 @@ export default function InvoicePage() {
               otherwise you are filling in billing details blind. */}
           {invoice && (
             <div className="inv__for no-print">
-              <p className="inv__for-label">Invoice for</p>
-              <p className="inv__for-item">{invoice.item}</p>
+              <p className="inv__for-label">
+                {invoice.lines.length > 1
+                  ? `Invoice for ${invoice.lines.length} purchases`
+                  : 'Invoice for'}
+              </p>
+              {invoice.lines.map((line, i) => (
+                <p className="inv__for-item" key={`${line.item}-${i}`}>
+                  {line.item}
+                  <span className="inv__for-price">{line.price}</span>
+                </p>
+              ))}
               <p className="inv__for-meta">
-                {invoice.total} · paid {longDate(invoice.paidAt)}
+                {invoice.lines.length > 1 ? `Total ${invoice.total}` : invoice.total} · paid{' '}
+                {longDate(invoice.paidAt)}
               </p>
             </div>
           )}
@@ -231,7 +241,7 @@ export default function InvoicePage() {
           <InvoiceDoc invoice={invoice} />
 
           <p className="inv__foot no-print">
-            Something wrong on this invoice, or any other concern — including a
+            Something wrong on this invoice, or any other concern, including a
             refund? Email <a href={`mailto:${SUPPORT}`}>{SUPPORT}</a> and we’ll
             put it right.
           </p>
@@ -295,10 +305,22 @@ function InvoiceDoc({ invoice }) {
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>{invoice.item}</td>
-            <td className="doc__num">{invoice.total}</td>
-          </tr>
+          {invoice.lines.map((line, i) => (
+            // Index in the key: the same item bought twice is two real
+            // lines, and nothing else here is unique per line.
+            <tr key={`${line.item}-${i}`}>
+              <td>
+                {line.item}
+                {invoice.lines.length > 1 && (
+                  <>
+                    <br />
+                    <span className="doc__line-date">paid {longDate(line.paidAt)}</span>
+                  </>
+                )}
+              </td>
+              <td className="doc__num">{line.price}</td>
+            </tr>
+          ))}
         </tbody>
         <tfoot>
           <tr>
@@ -308,7 +330,10 @@ function InvoiceDoc({ invoice }) {
         </tfoot>
       </table>
 
-      <p className="doc__note">{invoice.taxNote}</p>
+      {/* Only when there is a tax number to state. Without one the
+          invoice says nothing about tax at all — a total with no tax line
+          already reads as a total with no tax in it. */}
+      {invoice.taxNote && <p className="doc__note">{invoice.taxNote}</p>}
       <p className="doc__note">
         Paid by card in full — nothing is outstanding on this invoice. Questions:{' '}
         {SUPPORT}

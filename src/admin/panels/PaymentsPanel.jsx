@@ -30,6 +30,7 @@ export default function PaymentsPanel({ notify }) {
   const [loading, setLoading] = useState(true)
   const [refunding, setRefunding] = useState(null) // { id, amount, max, currency }
   const [invoiceUrl, setInvoiceUrl] = useState(null) // link handed back to a customer
+  const [picking, setPicking] = useState(null) // { customer, purchases, chosen:Set }
 
   const [unconfigured, setUnconfigured] = useState(false)
 
@@ -178,11 +179,13 @@ export default function PaymentsPanel({ notify }) {
     resetView()
   }
 
-  /** Every receipt already carries this link — this is for the customer
-   *  who deleted the email, or who bought before the feature existed. */
-  async function getInvoiceLink(id) {
+  /** Every receipt already carries a single-purchase link — this is for
+   *  the customer who deleted the email, bought before the feature
+   *  existed, or needs several purchases on one invoice. */
+  async function getInvoiceLink(paymentIntents) {
     try {
-      const { url } = await api.invoiceLink(id)
+      const { url } = await api.invoiceLink(paymentIntents)
+      setPicking(null)
       setInvoiceUrl(url)
     } catch (err) {
       notify(err.message, 'error')
@@ -408,29 +411,23 @@ export default function PaymentsPanel({ notify }) {
                           Receipt
                         </a>
                       )}
-                      {/* Which of this customer's purchases to invoice.
-                          Usually just the one, but a repeat buyer can be
-                          invoiced for any of them from whichever row is
-                          in front of you. Resets to the placeholder after
-                          each pick so it never reads as a saved setting. */}
+                      {/* Opens a picker of this customer's purchases. One
+                          invoice can cover several of them, so this is a
+                          checklist rather than a straight action. */}
                       {p.purchases?.length > 0 && (
-                        <select
-                          className="adm-select adm-select--steady adm-invoice-pick"
-                          value=""
-                          aria-label={`Issue an invoice for ${p.customerName || 'this customer'}`}
-                          title="Get a link the customer uses to fill in their billing details and issue an invoice"
-                          onChange={(e) => {
-                            if (e.target.value) getInvoiceLink(e.target.value)
-                            e.target.value = ''
-                          }}
+                        <button
+                          className="adm-mini"
+                          title="Build an invoice from this customer's purchases"
+                          onClick={() =>
+                            setPicking({
+                              customer: p.customerName || p.customerEmail || 'this customer',
+                              purchases: p.purchases,
+                              chosen: new Set([p.id]),
+                            })
+                          }
                         >
-                          <option value="">Invoice…</option>
-                          {p.purchases.map((buy) => (
-                            <option key={buy.id} value={buy.id}>
-                              {buy.label || 'Purchase'} · {money(buy.amount, buy.currency)}
-                            </option>
-                          ))}
-                        </select>
+                          Invoice…
+                        </button>
                       )}
                       {p.status === 'succeeded' && remaining > 0 && (
                         <button
@@ -490,6 +487,69 @@ export default function PaymentsPanel({ notify }) {
             </p>
           )}
         </>
+      )}
+
+      {picking && (
+        <div className="adm-modal" role="dialog" aria-modal="true">
+          <div className="adm-modal__card">
+            <h3 className="adm-h3">Invoice {picking.customer}</h3>
+            <p className="adm-sub">
+              Tick everything this invoice should cover. One invoice, one
+              customer — the total is the sum of what you pick.
+            </p>
+
+            <ul className="adm-picklist">
+              {picking.purchases.map((buy) => {
+                const on = picking.chosen.has(buy.id)
+                return (
+                  <li key={buy.id}>
+                    <label className="adm-check">
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={() =>
+                          setPicking((prev) => {
+                            const chosen = new Set(prev.chosen)
+                            if (on) chosen.delete(buy.id)
+                            else chosen.add(buy.id)
+                            return { ...prev, chosen }
+                          })
+                        }
+                      />
+                      <span className="adm-picklist__label">{buy.label || 'Purchase'}</span>
+                      <span className="adm-picklist__amount">
+                        {money(buy.amount, buy.currency)}
+                      </span>
+                    </label>
+                  </li>
+                )
+              })}
+            </ul>
+
+            <p className="adm-picklist__total">
+              {picking.chosen.size} selected ·{' '}
+              {money(
+                picking.purchases
+                  .filter((b) => picking.chosen.has(b.id))
+                  .reduce((sum, b) => sum + b.amount, 0),
+                picking.purchases[0]?.currency,
+              )}
+            </p>
+
+            <div className="adm-modal__actions">
+              <button className="adm-mini" onClick={() => setPicking(null)}>
+                Cancel
+              </button>
+              <button
+                className="adm-mini"
+                disabled={picking.chosen.size === 0}
+                onClick={() => getInvoiceLink([...picking.chosen])}
+              >
+                Get link
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {invoiceUrl && (
