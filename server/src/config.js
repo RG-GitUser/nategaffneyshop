@@ -75,6 +75,23 @@ export const config = {
    */
   apiPublicUrl: optional('API_PUBLIC_URL', '').replace(/\/$/, ''),
 
+  /**
+   * The seller, as it must appear on an invoice a customer hands to their
+   * employer or accountant. All optional so nothing breaks without it —
+   * but an invoice with no address is a weak expense document, so the
+   * invoice route warns in the logs when these are blank.
+   *
+   * BUSINESS_TAX_NUMBER is the GST/HST number. Leave it blank if the
+   * business is not registered; the invoice then says so plainly rather
+   * than implying tax was charged when it was not.
+   */
+  business: {
+    name: optional('BUSINESS_NAME', 'Wabanaki Software Solutions Inc.'),
+    address: optional('BUSINESS_ADDRESS'),
+    email: optional('BUSINESS_EMAIL', optional('ADMIN_NOTIFY_EMAIL')),
+    taxNumber: optional('BUSINESS_TAX_NUMBER'),
+  },
+
   smtp: {
     host: optional('SMTP_HOST'),
     port: Number(optional('SMTP_PORT', '465')),

@@ -4,6 +4,8 @@
  * full-width, with the field's label as alt text. Field labels on text
  * fields are for the admin's reference only.
  */
+import { safeImageSrc } from '../safeUrl.js'
+
 export default function CustomSection({ container }) {
   if (!container) return null
 
@@ -23,13 +25,15 @@ export default function CustomSection({ container }) {
       <div className={`custom-copy custom-copy--${container.accent || 'navy'}`}>
         {fields.map((f, i) =>
           f.type === 'image' ? (
-            <img
-              key={f.id || i}
-              className="custom-copy__img"
-              src={f.value.trim()}
-              alt={f.label || ''}
-              loading="lazy"
-            />
+            safeImageSrc(f.value) && (
+              <img
+                key={f.id || i}
+                className="custom-copy__img"
+                src={safeImageSrc(f.value)}
+                alt={f.label || ''}
+                loading="lazy"
+              />
+            )
           ) : (
             // One cell per field, so fields sit side by side on wide
             // screens instead of stacking into one long column.

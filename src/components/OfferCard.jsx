@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { ArrowRight, Star } from './Icons.jsx'
 import CheckoutModal, { checkoutMode } from './CheckoutModal.jsx'
+import { safeHref, safeImageSrc } from '../safeUrl.js'
 
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
 export default function OfferCard({ offer, index = 0 }) {
   const isProduct = offer.kind === 'product' || offer.kind === 'pdf'
+  /** A file can't be handed back, so it's sold final-sale — said on the
+   *  card as well as at checkout, before anyone has spent anything. */
+  const isDownload = offer.kind === 'pdf'
   const number = String(index + 1).padStart(2, '0')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -19,6 +23,7 @@ export default function OfferCard({ offer, index = 0 }) {
   /** Items stored with a priceCents go through Stripe Checkout. Anything
    *  else keeps its plain href, so link-out cards still work. */
   const buyable = Boolean(offer.id && offer.priceCents)
+  const image = safeImageSrc(offer.image)
 
   async function startCheckout(e) {
     e.preventDefault()
@@ -62,14 +67,14 @@ export default function OfferCard({ offer, index = 0 }) {
   return (
     <a
       className={`offer offer--${offer.accent || 'navy'} rise${expanded ? ' offer--expanded' : ''}`}
-      href={offer.href}
+      href={safeHref(offer.href)}
       onClick={buyable ? startCheckout : undefined}
       aria-busy={busy || undefined}
       style={{ animationDelay: `${120 + index * 60}ms` }}
     >
-      {offer.image && (
+      {image && (
         <div className="offer__media">
-          <img src={offer.image} alt="" loading="lazy" />
+          <img src={image} alt="" loading="lazy" />
         </div>
       )}
 
@@ -127,6 +132,10 @@ export default function OfferCard({ offer, index = 0 }) {
           </span>
         </div>
 
+        {isDownload && buyable && (
+          <p className="offer__note">Instant download · final sale, no refunds</p>
+        )}
+
         {error && <p className="offer__error">{error}</p>}
       </div>
 
@@ -135,10 +144,11 @@ export default function OfferCard({ offer, index = 0 }) {
           itemId={offer.id}
           itemType={offer.checkoutType || 'shop'}
           title={offer.title}
+          digital={isDownload}
           doneNote={
             offer.kind === 'pdf'
-              ? 'Payment received — your download link is on its way to your email.'
-              : undefined
+              ? 'Payment received — your download link and receipt are on their way to your email.'
+              : 'Payment received — your receipt is on its way to your email.'
           }
           onClose={() => setPaying(false)}
         />

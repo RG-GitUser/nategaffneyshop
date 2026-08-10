@@ -1,6 +1,7 @@
 import Avatar from './Avatar.jsx'
 import { socialIcons, Pin } from './Icons.jsx'
 import { profile, socials } from '../content.js'
+import { safeHref } from '../safeUrl.js'
 
 export default function ProfileRail() {
   return (
@@ -24,12 +25,13 @@ export default function ProfileRail() {
         <ul className="socials">
           {socials.map((s) => {
             const Icon = socialIcons[s.icon]
+            const href = safeHref(s.href)
             return (
               <li key={s.label}>
                 <a
                   className="socials__link"
-                  href={s.href}
-                  target={s.href.startsWith('http') ? '_blank' : undefined}
+                  href={href}
+                  target={href.startsWith('http') ? '_blank' : undefined}
                   rel="noreferrer"
                   aria-label={s.label}
                 >

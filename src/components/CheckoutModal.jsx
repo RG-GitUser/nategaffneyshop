@@ -3,6 +3,9 @@ import { createPortal } from 'react-dom'
 
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
+/** One address for refunds, problems and questions. */
+const SUPPORT = 'support@nategaffney.store'
+
 /**
  * In-page Stripe checkout.
  *
@@ -69,6 +72,7 @@ export default function CheckoutModal({
   clientSecret,
   title,
   doneNote,
+  digital = false,
   onPaid,
   onClose,
 }) {
@@ -76,6 +80,16 @@ export default function CheckoutModal({
   const [error, setError] = useState('')
   const mountRef = useRef(null)
   const checkoutRef = useRef(null)
+
+  /**
+   * A download cannot be handed back, so it is sold final-sale — and the
+   * buyer has to say they understand that before they can pay, not
+   * discover it in the terms afterwards. The payment form stays mounted
+   * but inert until the box is ticked: Stripe allows only one live
+   * embedded instance, so mounting it late (or remounting it) is the
+   * fragile way to do this.
+   */
+  const [acked, setAcked] = useState(!digital)
 
   useEffect(() => {
     let cancelled = false
@@ -169,9 +183,44 @@ export default function CheckoutModal({
             <p className="pay__done-note">
               {doneNote || 'A receipt is on its way to your email. Thank you!'}
             </p>
+            {/* The moment someone is most likely to need it: the receipt
+                carries the invoice link, and this carries the address for
+                everything the receipt does not cover. */}
+            <p className="pay__done-note">
+              Need an invoice for your business? There’s a link in your receipt
+              email. Anything else — a refund, a problem, a question — write to{' '}
+              <a className="pay__done-link" href={`mailto:${SUPPORT}`}>
+                {SUPPORT}
+              </a>
+              .
+            </p>
             <button className="btn btn--primary" onClick={onClose}>
               Done
             </button>
+          </div>
+        )}
+
+        {digital && state !== 'paid' && state !== 'error' && (
+          <div className="pay__terms">
+            <p className="pay__terms-title">This is a download — the sale is final</p>
+            <p className="pay__terms-copy">
+              Your file is sent as soon as you pay. Because a file can’t be given
+              back, <strong>this purchase can’t be refunded or cancelled</strong>.
+              If it never arrives, or it’s faulty or not as described — or you have
+              any other concern — email{' '}
+              <a href={`mailto:${SUPPORT}`}>{SUPPORT}</a> and we’ll put it right.
+            </p>
+            <label className="pay__ack">
+              <input
+                type="checkbox"
+                checked={acked}
+                onChange={(e) => setAcked(e.target.checked)}
+              />
+              <span>
+                I understand this purchase is final and non-refundable, and I want
+                the file straight away.
+              </span>
+            </label>
           </div>
         )}
 
@@ -179,7 +228,8 @@ export default function CheckoutModal({
             'loading' so the mount target exists when init resolves. */}
         <div
           ref={mountRef}
-          className="pay__frame"
+          className={`pay__frame${acked ? '' : ' pay__frame--locked'}`}
+          aria-hidden={acked ? undefined : true}
           style={{ display: state === 'paid' ? 'none' : undefined }}
         />
       </div>

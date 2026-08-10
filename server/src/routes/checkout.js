@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { config } from '../config.js'
 import { collections, audit } from '../db.js'
 import { markOrderRefunded } from '../orders.js'
-import { requireAdmin, signDownloadToken } from '../middleware/auth.js'
+import { requireAdmin, signDownloadToken, signInvoiceToken } from '../middleware/auth.js'
 
 export const checkoutRouter = Router()
 
@@ -199,7 +199,9 @@ checkoutRouter.post('/webhook', async (req, res) => {
     )
   } catch (err) {
     console.warn('[webhook] rejected:', err.message)
-    return res.status(400).send(`Webhook Error: ${err.message}`)
+    // JSON, not res.send(string) — that would default to text/html and
+    // reflect the message as a page.
+    return res.status(400).json({ error: `Webhook Error: ${err.message}` })
   }
 
   // Acknowledge immediately. Stripe retries on a slow or failed response,
@@ -308,6 +310,20 @@ checkoutRouter.post('/webhook', async (req, res) => {
         }
       }
 
+      /**
+       * The shop item behind the sale, where there is one. Read once, up
+       * front: the order record, the receipt and the PDF delivery below
+       * all need to know whether this was a download.
+       */
+      const item =
+        s.metadata?.itemId &&
+        s.metadata?.itemType !== 'service' &&
+        ObjectId.isValid(s.metadata.itemId)
+          ? await collections
+              .shopItems()
+              .findOne({ _id: new ObjectId(s.metadata.itemId) })
+          : null
+
       await collections.orders().updateOne(
         { sessionId: s.id },
         {
@@ -316,7 +332,15 @@ checkoutRouter.post('/webhook', async (req, res) => {
             paymentIntent: s.payment_intent,
             itemId: s.metadata?.itemId ?? null,
             itemType: s.metadata?.itemType ?? null,
+            // Booking payments arrive through a Payment Link, which
+            // carries a bookingId instead of an itemId. Stored so the
+            // Payments dashboard can tell a session apart from a sale.
+            bookingId: s.metadata?.bookingId ?? null,
             title: s.metadata?.title ?? null,
+            // Sold final-sale. Recorded on the order so the dashboard can
+            // say so at refund time without re-reading the catalog, and so
+            // it survives the item being edited or deleted later.
+            digital: item?.kind === 'pdf',
             amount: s.amount_total,
             currency: s.currency,
             email: s.customer_details?.email ?? null,
@@ -330,22 +354,58 @@ checkoutRouter.post('/webhook', async (req, res) => {
       await audit('stripe-webhook', 'order.paid', { sessionId: s.id, title: s.metadata?.title })
 
       /**
+       * Everyone who pays gets a receipt — products, downloads, service
+       * cards and coaching sessions alike. Claimed the same way as the
+       * download email: a duplicate delivery of the same event finds the
+       * flag already set and sends nothing.
+       */
+      if (s.payment_status === 'paid' && s.customer_details?.email) {
+        const claimed = await collections
+          .orders()
+          .updateOne(
+            { sessionId: s.id, receiptSent: { $ne: true } },
+            { $set: { receiptSent: true } },
+          )
+        if (claimed.modifiedCount === 1) {
+          const { sendReceipt } = await import('../mailer.js')
+          /**
+           * The "get an invoice" link is only worth including when it
+           * would actually resolve — without a site origin configured it
+           * would point at localhost and be dead in the customer's inbox.
+           */
+          const site = (config.allowedOrigins[0] || '').replace(/\/$/, '')
+          const sent = await sendReceipt({
+            to: s.customer_details.email,
+            name: s.customer_details.name,
+            title: s.metadata?.title,
+            amountCents: s.amount_total,
+            currency: s.currency,
+            sessionId: s.id,
+            paidAt: new Date(event.created * 1000),
+            digital: item?.kind === 'pdf',
+            invoiceUrl: site
+              ? `${site}/invoice/?token=${signInvoiceToken(s.id)}`
+              : null,
+          })
+          if (!sent) {
+            // Release the claim so a Stripe retry can try again. A missing
+            // receipt is a nuisance rather than an emergency, so unlike the
+            // download email this does not page anyone.
+            await collections
+              .orders()
+              .updateOne({ sessionId: s.id }, { $set: { receiptSent: false } })
+            console.error(`[checkout] receipt email failed for session ${s.id}`)
+          }
+        }
+      }
+
+      /**
        * A paid PDF gets its download link by email. The flag flip is a
        * conditional update on the order row, so when Stripe delivers the
        * same event twice only the first delivery sends the email.
        */
-      if (
-        s.payment_status === 'paid' &&
-        s.customer_details?.email &&
-        s.metadata?.itemId &&
-        s.metadata?.itemType !== 'service' &&
-        ObjectId.isValid(s.metadata.itemId)
-      ) {
-        const item = await collections
-          .shopItems()
-          .findOne({ _id: new ObjectId(s.metadata.itemId) })
-
-        if (item?.kind === 'pdf' && item.pdfFile) {
+      if (s.payment_status === 'paid' && s.customer_details?.email && item) {
+        if (item.kind === 'pdf' && item.pdfFile) {
           /**
            * Claim first so a duplicate delivery of the same event can't
            * send twice — but release the claim if the send fails, so the

@@ -105,7 +105,17 @@ googleRouter.get('/callback', async (req, res, next) => {
   // This page renders on the API origin, so it can't use the site's CSS —
   // it fakes the same look (bone paper, serif, navy/oxblood accents) inline.
   const site = config.allowedOrigins[0] || ''
-  const done = (msg, ok) => {
+  // The message can carry text from the query string (?error=…) or an
+  // upstream error — this route is unauthenticated, so anything not
+  // escaped here is reflected HTML injection on the API origin.
+  const esc = (s) =>
+    String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+  const done = (rawMsg, ok) => {
+    const msg = esc(rawMsg)
     const accent = ok ? '#05192b' : '#500d0d'
     res
       .status(ok ? 200 : 400)

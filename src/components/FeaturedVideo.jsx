@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ArrowRight } from './Icons.jsx'
 import { featuredVideo } from '../content.js'
+import { safeHref, safeImageSrc } from '../safeUrl.js'
 
 export default function FeaturedVideo() {
   const [failed, setFailed] = useState(!featuredVideo?.thumbnail)
@@ -13,7 +14,7 @@ export default function FeaturedVideo() {
     <section className="film rise">
       <a
         className="film__card"
-        href={featuredVideo.href}
+        href={safeHref(featuredVideo.href)}
         target="_blank"
         rel="noreferrer noopener"
       >
@@ -22,7 +23,7 @@ export default function FeaturedVideo() {
             <div className="film__fallback" aria-hidden="true" />
           ) : (
             <img
-              src={featuredVideo.thumbnail}
+              src={safeImageSrc(featuredVideo.thumbnail)}
               alt=""
               loading="eager"
               onError={() => setFailed(true)}

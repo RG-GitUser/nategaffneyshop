@@ -27,6 +27,7 @@ function purposeKey(purpose) {
 }
 
 const DOWNLOAD_PURPOSE = 'pdf-download'
+const INVOICE_PURPOSE = 'invoice'
 
 export function signDownloadToken(sessionId, expiresIn = '7d') {
   return jwt.sign({ purpose: DOWNLOAD_PURPOSE, sid: sessionId }, purposeKey(DOWNLOAD_PURPOSE), {
@@ -42,6 +43,43 @@ export function verifyDownloadToken(token) {
       algorithms: ['HS256'],
     })
     return payload.purpose === DOWNLOAD_PURPOSE && payload.sid ? payload.sid : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Invoice links live in the receipt email, which people keep — an expense
+ * claim can surface months after the purchase, so this outlives the 7-day
+ * download link by a wide margin. It grants nothing but the right to read
+ * those orders' totals and attach billing details to them.
+ *
+ * Takes one session id or several: a receipt links to its own purchase,
+ * while the dashboard can put a customer's several purchases on one
+ * invoice. The list rides inside the signature, so nobody can add another
+ * customer's order to their own invoice by editing the URL.
+ */
+export function signInvoiceToken(sessionIds, expiresIn = '730d') {
+  const sids = (Array.isArray(sessionIds) ? sessionIds : [sessionIds]).filter(Boolean)
+  return jwt.sign({ purpose: INVOICE_PURPOSE, sids }, purposeKey(INVOICE_PURPOSE), {
+    expiresIn,
+    algorithm: 'HS256',
+  })
+}
+
+/**
+ * Returns the Stripe checkout session ids as an array, or null if the
+ * token is bad. `sid` is still read for links already sitting in
+ * customers' inboxes from before invoices could carry more than one.
+ */
+export function verifyInvoiceToken(token) {
+  try {
+    const payload = jwt.verify(String(token || ''), purposeKey(INVOICE_PURPOSE), {
+      algorithms: ['HS256'],
+    })
+    if (payload.purpose !== INVOICE_PURPOSE) return null
+    const sids = Array.isArray(payload.sids) ? payload.sids : payload.sid ? [payload.sid] : []
+    return sids.length ? sids : null
   } catch {
     return null
   }

@@ -8,6 +8,14 @@ import { requireAdmin, verifyDownloadToken } from '../middleware/auth.js'
 
 export const shopRouter = Router()
 
+/**
+ * Mirrors src/safeUrl.js on the frontend: link fields are free text in
+ * the dashboard, and a stored javascript: URL would run in every
+ * visitor's browser. Allowed: http(s), mailto, tel, or site-relative.
+ */
+const safeHref = (s) => !/^[a-z][a-z0-9+.-]*:/i.test(s) || /^(https?|mailto|tel):/i.test(s)
+const safeImage = (s) => !/^[a-z][a-z0-9+.-]*:/i.test(s) || /^https?:/i.test(s)
+
 const itemSchema = z.object({
   /** 'pdf' sells a paywalled download: pay through checkout like a
    *  product, then the webhook emails a time-limited download link. */
@@ -25,12 +33,21 @@ const itemSchema = z.object({
   priceCents: z.number().int().min(50).max(99999999).optional().nullable(),
   currency: z.string().length(3).optional().nullable(),
   cta: z.string().min(1).max(60).default('Get it'),
-  href: z.string().max(500).default('#'),
+  href: z
+    .string()
+    .max(500)
+    .refine(safeHref, 'Links must be http(s), mailto, tel, or site-relative')
+    .default('#'),
   accent: z.enum(['navy', 'umber', 'olive', 'amber']).default('navy'),
   tag: z.string().max(40).optional().nullable(),
   rating: z.string().max(10).optional().nullable(),
   /** Uploaded card image URL (from /api/media). Optional. */
-  image: z.string().max(500).optional().nullable(),
+  image: z
+    .string()
+    .max(500)
+    .refine(safeImage, 'Image must be an http(s) or site-relative URL')
+    .optional()
+    .nullable(),
   order: z.number().int().default(0),
   visible: z.boolean().default(true),
   /** Filename in config.pdfDir (from /api/media/pdf) — never a public URL. */

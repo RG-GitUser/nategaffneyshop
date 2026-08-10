@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { safeImageSrc } from '../safeUrl.js'
 
 /**
  * Shows the photo if it exists, falls back to initials on a warm gradient.
@@ -9,7 +10,8 @@ import { useState } from 'react'
  * Pass `size` only if you need to override it for a one-off.
  */
 export default function Avatar({ src, name, size }) {
-  const [failed, setFailed] = useState(!src)
+  const safeSrc = safeImageSrc(src)
+  const [failed, setFailed] = useState(!safeSrc)
 
   const initials = name
     .split(' ')
@@ -29,7 +31,7 @@ export default function Avatar({ src, name, size }) {
       ) : (
         <img
           className="avatar__img"
-          src={src}
+          src={safeSrc}
           alt={name}
           onError={() => setFailed(true)}
         />

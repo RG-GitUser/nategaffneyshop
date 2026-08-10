@@ -12,6 +12,9 @@ export const servicesRouter = Router()
  * like a shop item; without one it links out (usually to #book, the
  * coaching calendar, or a contact address).
  */
+/** Same rule as shop items: no javascript:/data: links from the dashboard. */
+const safeHref = (s) => !/^[a-z][a-z0-9+.-]*:/i.test(s) || /^(https?|mailto|tel):/i.test(s)
+
 const serviceSchema = z.object({
   title: z.string().min(1).max(120),
   description: z.string().max(1000).default(''),
@@ -23,7 +26,11 @@ const serviceSchema = z.object({
   currency: z.string().length(3).optional().nullable(),
   tag: z.string().max(40).optional().nullable(),
   cta: z.string().min(1).max(60).default('Get in touch'),
-  href: z.string().max(500).default('#book'),
+  href: z
+    .string()
+    .max(500)
+    .refine(safeHref, 'Links must be http(s), mailto, tel, or site-relative')
+    .default('#book'),
   accent: z.enum(['navy', 'umber', 'olive', 'amber']).default('navy'),
   order: z.number().int().default(0),
   visible: z.boolean().default(true),

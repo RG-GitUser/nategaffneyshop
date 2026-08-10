@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { about } from '../content.js'
+import { safeImageSrc } from '../safeUrl.js'
 
 export default function About() {
   const [imgFailed, setImgFailed] = useState(false)
@@ -9,7 +10,8 @@ export default function About() {
 
   // No image configured (or it 404'd) — drop the media column entirely
   // rather than leaving an empty placeholder panel behind.
-  const showMedia = Boolean(about.image) && !imgFailed
+  const image = safeImageSrc(about.image)
+  const showMedia = Boolean(image) && !imgFailed
 
   return (
     <section className="section about rise">
@@ -17,7 +19,7 @@ export default function About() {
         {showMedia && (
           <div className="about__media">
             <img
-              src={about.image}
+              src={image}
               alt=""
               loading="lazy"
               onError={() => setImgFailed(true)}

@@ -71,7 +71,16 @@ export const api = {
   deleteBooking: (id) => request(`/bookings/${id}`, { method: 'DELETE' }),
 
   // payments
-  listPayments: (limit = 25) => request(`/payments?limit=${limit}`),
+  listPayments: ({ limit = 25, page = 1, q = '', kind = '', item = '' } = {}) => {
+    const params = new URLSearchParams({ limit, page })
+    if (q) params.set('q', q)
+    if (kind) params.set('kind', kind)
+    if (item) params.set('item', item)
+    return request(`/payments?${params}`)
+  },
+  paymentFilters: () => request('/payments/filters'),
+  invoiceLink: (paymentIntents) =>
+    request('/payments/invoice-link', { method: 'POST', body: { paymentIntents } }),
   getPayment: (id) => request(`/payments/${id}`),
   refund: (id, body) => request(`/payments/${id}/refund`, { method: 'POST', body }),
   paymentSummary: () => request('/payments/stats/summary'),

@@ -64,6 +64,194 @@ export async function verifyMail() {
 
 const when = (b) => `${b.date} at ${b.time}`
 
+/**
+ * The legal seller, which a receipt has to name — this is the company
+ * the customer's card was actually charged by, and the same name that
+ * appears throughout the terms and privacy policy.
+ */
+const SELLER = 'Wabanaki Software Solutions Inc.'
+
+/** One address for refunds, problems and questions — repeated in every
+ *  customer-facing message so nobody has to hunt for where to write. */
+const SUPPORT = 'support@nategaffney.store'
+
+const money = (cents, currency = 'cad') =>
+  new Intl.NumberFormat('en-CA', {
+    style: 'currency',
+    currency: String(currency || 'cad').toUpperCase(),
+  }).format((cents ?? 0) / 100)
+
+/**
+ * A stable, readable reference: NG-20260809-A1B2C3.
+ *
+ * Derived from the Stripe session rather than a counter, so replaying the
+ * same webhook event produces the same number instead of burning a new
+ * one — and there is no sequence to get out of step during an outage.
+ */
+export const receiptNumber = (sessionId, paidAt) =>
+  [
+    'NG',
+    paidAt.toISOString().slice(0, 10).replace(/-/g, ''),
+    String(sessionId || '').replace(/[^a-z0-9]/gi, '').slice(-6).toUpperCase() || 'XXXXXX',
+  ].join('-')
+
+/**
+ * To any buyer — proof of payment for whatever they just bought.
+ *
+ * A receipt, not an invoice: the money has already moved, so this records
+ * the payment rather than requesting it. Sent for every paid checkout —
+ * PDFs, products, service cards and coaching sessions alike — separately
+ * from whatever delivers the thing itself.
+ *
+ * The refund line is set by what was bought, because the policy really is
+ * different: a downloaded file cannot be handed back, a session can be
+ * called off.
+ */
+export function sendReceipt({
+  to,
+  name,
+  title,
+  amountCents,
+  currency,
+  sessionId,
+  paidAt = new Date(),
+  digital = false,
+  invoiceUrl = null,
+}) {
+  const total = money(amountCents, currency)
+  const ref = receiptNumber(sessionId, paidAt)
+  const date = paidAt.toLocaleDateString('en-CA', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+  const item = title || 'Your order'
+
+  const policy = digital
+    ? `Digital downloads are final sale — once the download link has been sent the file cannot be returned, so it cannot be refunded. That does not affect your rights if a file is faulty, not as described, or never arrives. For a refund, a problem, or any concern at all, email ${SUPPORT}.`
+    : `To change, cancel or ask for a refund — or with any concern at all — email ${SUPPORT}. The cancellation terms are on the site.`
+
+  return send({
+    to,
+    subject: `Your receipt — ${item}`,
+    text: [
+      `Thanks${name ? `, ${name}` : ''}! Here is your receipt.`,
+      ``,
+      `Receipt   ${ref}`,
+      `Date      ${date}`,
+      `Item      ${item}`,
+      `Total     ${total}`,
+      `Paid to   ${SELLER}`,
+      ``,
+      policy,
+      ``,
+      ...(invoiceUrl
+        ? [
+            `Need a proper invoice for your business or an expense claim?`,
+            `Add your billing details here and we'll issue one:`,
+            invoiceUrl,
+            ``,
+          ]
+        : []),
+      `Questions about this payment? Reply to this email, or write to ${SUPPORT}.`,
+    ].join('\n'),
+    html: wrap({
+      eyebrow: 'Receipt',
+      title: `${total} paid`,
+      preheader: `${ref} — ${item}`,
+      body:
+        paragraph(`Thanks${name ? `, ${name}` : ''}! Here is your receipt.`) +
+        details([
+          row('Receipt', ref),
+          row('Date', date),
+          row('Item', item),
+          row('Total paid', total),
+          row('Paid to', SELLER),
+        ]) +
+        (invoiceUrl
+          ? paragraph(
+              'Need a proper invoice for your business or an expense claim? Add your billing details and we’ll issue one:',
+            ) + button(invoiceUrl, 'Get an invoice')
+          : '') +
+        muted(`${policy} Questions about this payment? Reply to this email.`),
+    }),
+  })
+}
+
+/**
+ * To a buyer — the invoice they just asked for, made out to whoever they
+ * told us to bill. Sent as well as being shown on screen, because an
+ * expense claim usually has to be forwarded to someone else.
+ */
+export function sendInvoice({ to, invoice }) {
+  const issued = new Date(invoice.issuedAt).toLocaleDateString('en-CA', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+  const paid = new Date(invoice.paidAt).toLocaleDateString('en-CA', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+
+  /** Names the purchase, or counts them once there is more than one. */
+  const summary =
+    invoice.lines.length > 1
+      ? `${invoice.lines.length} purchases`
+      : invoice.lines[0]?.item || 'your purchase'
+
+  return send({
+    to,
+    subject: `Invoice ${invoice.number} — ${summary}`,
+    text: [
+      `Here is invoice ${invoice.number}.`,
+      ``,
+      `Invoice    ${invoice.number}`,
+      `Issued     ${issued}`,
+      `Paid on    ${paid}`,
+      `Billed to  ${invoice.billTo?.name || '—'}`,
+      ...(invoice.reference ? [`Reference  ${invoice.reference}`] : []),
+      ...invoice.lines.map((l) => `Item       ${l.item}  ${l.price}`),
+      `Total      ${invoice.total}`,
+      `Status     PAID IN FULL`,
+      ``,
+      `From ${invoice.seller.name}`,
+      ...(invoice.seller.address ? [invoice.seller.address] : []),
+      ``,
+      // Null unless a GST/HST number is configured, and an unguarded null
+      // would print the word "null" in a customer's invoice.
+      ...(invoice.taxNote ? [invoice.taxNote, ''] : []),
+      `Something wrong on this invoice, or any other concern, including a`,
+      `refund? Email ${SUPPORT} and we'll correct it and re-issue.`,
+    ].join('\n'),
+    html: wrap({
+      eyebrow: `Invoice ${invoice.number}`,
+      title: `${invoice.total} — paid in full`,
+      preheader: `${invoice.number} — ${summary}`,
+      body:
+        paragraph(`Here is your invoice for ${summary}.`) +
+        details([
+          row('Invoice', invoice.number),
+          row('Issued', issued),
+          row('Paid on', paid),
+          row('Billed to', invoice.billTo?.name || '—'),
+          ...(invoice.billTo?.address ? [row('Address', invoice.billTo.address)] : []),
+          ...(invoice.billTo?.taxNumber ? [row('Their tax no.', invoice.billTo.taxNumber)] : []),
+          ...(invoice.reference ? [row('Reference', invoice.reference)] : []),
+          ...invoice.lines.map((l) => row('Item', `${l.item}  ${l.price}`)),
+          row('Total', invoice.total),
+          row('Status', 'Paid in full'),
+          row('From', invoice.seller.name),
+          ...(invoice.seller.address ? [row('Address', invoice.seller.address)] : []),
+        ]) +
+        muted(
+          `${invoice.taxNote ? `${invoice.taxNote} ` : ''}Something wrong on this invoice, or any other concern, including a refund? Email ${SUPPORT} and we’ll correct it and re-issue.`,
+        ),
+    }),
+  })
+}
+
 export function sendChatCode(email, code) {
   send({
     to: email,
@@ -102,6 +290,12 @@ export function sendPdfDownload({ to, title, url }) {
       url,
       ``,
       `The link works for 7 days. If it expires, reply to this email and we'll send a fresh one.`,
+      ``,
+      `Because this is a download, the sale is final and cannot be refunded.`,
+      `If the file is faulty, not as described, or never arrives — or you have`,
+      `any other concern — email ${SUPPORT} and we'll fix it.`,
+      ``,
+      `Your separate receipt is on its way, with a link to request an invoice.`,
     ].join('\n'),
     html: wrap({
       eyebrow: 'Your download',
@@ -111,7 +305,11 @@ export function sendPdfDownload({ to, title, url }) {
         paragraph('Thanks for the purchase! Your PDF is ready:') +
         button(url, 'Download the PDF') +
         muted(
-          'The link works for 7 days. If it expires, reply to this email and we’ll send a fresh one.',
+          'The link works for 7 days. If it expires, reply to this email and we’ll send a fresh one. ' +
+            'Because this is a download, the sale is final and cannot be refunded — but if the file is ' +
+            'faulty, not as described, or never arrives, or you have any other concern, email ' +
+            `${SUPPORT} and we’ll fix it. Your receipt follows in a separate email, with a link to ` +
+            'request an invoice.',
         ),
     }),
   })
@@ -137,7 +335,7 @@ export function notifyPdfDeliveryFailed({ title, email, sessionId }) {
       preheader: `${email} paid for "${title}" and has not received it.`,
       body:
         paragraph(
-          `<strong>${email}</strong> paid for “${title}”, but the download email could not be sent. They are owed the file.`,
+          `${email} paid for “${title}”, but the download email could not be sent. They are owed the file.`,
         ) +
         details([row('Item', title), row('Customer', email), row('Stripe session', sessionId)]) +
         muted('Send the file directly, or fix the mail settings and re-send.'),

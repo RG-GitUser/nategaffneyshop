@@ -234,11 +234,25 @@ export function TrafficChart({ data, mode, series, fmt }) {
   )
 }
 
-/** Donut + list. items need {label, value, color}; format renders a value. */
+/**
+ * Donut + list. items need {label, value, color}; format renders a value.
+ *
+ * Sized by the hole rather than the ring: the centre carries the total,
+ * and a money total ("$3,979.00") is far longer than the view counts this
+ * started out showing. Everything below is derived from these three
+ * numbers, so the ring can be resized without hunting down hardcoded
+ * coordinates.
+ */
+const SIZE = 184
+const RING = 20 // stroke width
+const R = 74 // radius to the middle of the stroke
+const MID = SIZE / 2
+/** Usable width inside the ring, which is what the total has to fit in. */
+const HOLE = 2 * (R - RING / 2)
+
 export function Donut({ items, format, centerLabel }) {
   const total = items.reduce((s, it) => s + it.value, 0)
-  const R = 52
-  const SW = 20
+  const SW = RING
   const C = 2 * Math.PI * R
   const gap = items.length > 1 ? 2.5 : 0
 
@@ -253,18 +267,18 @@ export function Donut({ items, format, centerLabel }) {
   return (
     <div className="adm-donut-row">
       <svg
-        width="132"
-        height="132"
-        viewBox="0 0 132 132"
+        width={SIZE}
+        height={SIZE}
+        viewBox={`0 0 ${SIZE} ${SIZE}`}
         role="img"
         aria-label={`${centerLabel} breakdown`}
       >
-        <g transform="rotate(-90 66 66)">
+        <g transform={`rotate(-90 ${MID} ${MID})`}>
           {segs.map((s) => (
             <circle
               key={s.label}
-              cx="66"
-              cy="66"
+              cx={MID}
+              cy={MID}
               r={R}
               fill="none"
               stroke={s.color}
@@ -274,10 +288,27 @@ export function Donut({ items, format, centerLabel }) {
             />
           ))}
         </g>
-        <text x="66" y="63" textAnchor="middle" className="adm-donut__total">
+        {/* textLength is the safety net: an unusually long total shrinks
+            to fit the hole rather than running out over the ring. */}
+        <text
+          x={MID}
+          y={MID - 4}
+          textAnchor="middle"
+          className="adm-donut__total"
+          lengthAdjust="spacingAndGlyphs"
+          ref={(el) => {
+            if (!el) return
+            // Only clamp when it actually overflows — forcing textLength
+            // on a short total would stretch it instead.
+            el.removeAttribute('textLength')
+            if (el.getComputedTextLength() > HOLE - 8) {
+              el.setAttribute('textLength', HOLE - 8)
+            }
+          }}
+        >
           {format ? format(total) : total.toLocaleString()}
         </text>
-        <text x="66" y="79" textAnchor="middle" className="adm-donut__label">
+        <text x={MID} y={MID + 17} textAnchor="middle" className="adm-donut__label">
           {centerLabel}
         </text>
       </svg>

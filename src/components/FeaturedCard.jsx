@@ -1,5 +1,6 @@
 import { ArrowRight } from './Icons.jsx'
 import { featured } from '../content.js'
+import { safeHref } from '../safeUrl.js'
 
 export default function FeaturedCard() {
   if (!featured) return null
@@ -27,7 +28,7 @@ export default function FeaturedCard() {
             {featured.oldPrice && <span className="price__was">{featured.oldPrice}</span>}
           </div>
 
-          <a className="btn btn--primary featured__cta" href={featured.href}>
+          <a className="btn btn--primary featured__cta" href={safeHref(featured.href)}>
             {featured.cta}
             <ArrowRight width={18} height={18} />
           </a>

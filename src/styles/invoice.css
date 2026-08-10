@@ -1,0 +1,440 @@
+/**
+ * Self-serve invoice page.
+ *
+ * The document half deliberately stays on white with dark ink in both
+ * themes: it exists to be printed or saved as a PDF and handed to someone
+ * else's finance team, and a dark-mode invoice prints as a black slab or
+ * (worse) as ink-free nothing depending on the browser's background
+ * setting. The page around it is a fixed dark grey — see the tokens below.
+ */
+
+/**
+ * An off-white page with the navy containers kept on it — the same trick
+ * admin.css uses: override the shared tokens for this page only, so every
+ * rule below keeps reading from var() and nothing needs hardcoding.
+ *
+ * Deliberately the same in both themes. This is a one-off transactional
+ * page reached from a link in a receipt, not part of browsing the site,
+ * and the visitor's saved light/dark choice was made in a different
+ * context entirely.
+ *
+ * Page text is dark and container text is light, because the two sit on
+ * opposite grounds. --field-bg is defined here because it lives in
+ * admin.css otherwise, so the inputs had no background colour at all.
+ */
+:root:has(.inv),
+:root[data-theme='dark']:has(.inv) {
+  --bg: #f4f5f7;
+  --bg-2: #eceef1;
+  --surface: #ffffff;
+  --surface-2: #f8f9fb;
+  --line: #dde0e6;
+  --line-2: #cbd1da;
+
+  /* Dark, faintly cool inks for text on the off-white. The site's own are
+     warm — --ink is bone (#ebe5d8) and --accent-fill is rust (#7d2800) —
+     so every one of them is replaced here. */
+  --ink: #101c28;
+  --ink-2: #414e5b;
+  --ink-soft: #57646f;
+  --ink-faint: #6c7885;
+
+  /* One cool-neutral scale, all in the same hue family as the page:
+     the panel sits a step below it, the fields a step above. Nothing is
+     stark white, so the off-white stays the dominant tone. */
+  --field-bg: #fcfdfe;
+  --panel-bg: #eaedf2;
+
+  --accent: #1d3e60;
+  --accent-fill: #14283c;
+  --accent-hi: #1e3a58;
+  --on-accent: #f2f6fa;
+
+  /* The site's glow carries a sienna ember off the top-right, which read
+     as brown. A cool wash instead, barely there on a light ground. */
+  --page-glow: radial-gradient(
+    120% 60% at 85% 0%,
+    rgba(30, 80, 140, 0.07) 0%,
+    rgba(30, 80, 140, 0.03) 38%,
+    transparent 80%
+  );
+}
+
+/**
+ * Also set on the elements themselves. The tokens alone were not enough:
+ * body kept painting the site's own background even with --bg replaced,
+ * so the colour is pinned here where nothing can fall back to it.
+ */
+:root:has(.inv),
+:root:has(.inv) body {
+  background-color: #f4f5f7;
+}
+
+:root:has(.inv) body {
+  background-image: var(--page-glow);
+}
+
+.inv {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 40px 20px 80px;
+  font-family: var(--body);
+  color: var(--ink);
+}
+
+.inv__back {
+  display: inline-block;
+  margin-bottom: 28px;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.inv__back:hover {
+  color: var(--accent);
+}
+
+.inv__title {
+  font-family: var(--display);
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.inv__sub {
+  margin-top: 10px;
+  max-width: 52ch;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.inv__status {
+  padding: 60px 0;
+  text-align: center;
+  color: var(--ink-2);
+}
+
+/* Literal colours, not var(--red): that token is near-black (#500d0d)
+   with no light/dark variants, so it reads poorly either way. */
+.inv__error {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid #d99b91;
+  background: #fdf0ee;
+  color: #8c2f22;
+  font-size: 1.05rem;
+}
+
+/* ---------- what is being invoiced ---------- */
+/* Same lifted surface as the fields, with the accent rule marking it as
+   information rather than something to fill in. */
+.inv__for {
+  margin-top: 26px;
+  padding: 16px 18px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line-2);
+  border-left: 3px solid var(--accent);
+  background: var(--panel-bg);
+}
+
+.inv__for-label {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.inv__for-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 5px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.inv__for-price {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.inv__for-meta {
+  margin-top: 3px;
+  font-size: 1rem;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- the form ---------- */
+.inv__form {
+  display: grid;
+  gap: 18px;
+  margin-top: 30px;
+}
+
+.inv__row {
+  display: grid;
+  gap: 18px;
+}
+
+.inv__field {
+  display: grid;
+  gap: 6px;
+}
+
+.inv__field label {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.inv__field input,
+.inv__field textarea {
+  width: 100%;
+  padding: 13px 15px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line-2);
+  background: var(--field-bg);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 1.08rem;
+}
+
+.inv__field input::placeholder,
+.inv__field textarea::placeholder {
+  color: #98a2ae;
+}
+
+.inv__field input:hover,
+.inv__field textarea:hover {
+  border-color: #9aa4b0;
+}
+
+.inv__field textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.inv__field input:focus,
+.inv__field textarea:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.inv__hint {
+  font-size: 0.95rem;
+  color: var(--ink-2);
+}
+
+.inv__form .btn {
+  justify-self: start;
+}
+
+/* ---------- issued ---------- */
+.inv__done {
+  margin-bottom: 26px;
+}
+
+.inv__done-title {
+  font-family: var(--display);
+  font-size: 1.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.inv__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.inv__foot {
+  margin-top: 26px;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+/* ---------- the document ---------- */
+.doc {
+  padding: clamp(20px, 5vw, 34px);
+  border-radius: var(--r-lg);
+  border: 1px solid #dededf;
+  background: #ffffff;
+  color: #17171a;
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+
+.doc__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #17171a;
+}
+
+.doc__eyebrow {
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #6b6b70;
+}
+
+.doc__number {
+  font-family: var(--mono);
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.doc__paid {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #1f6b3a;
+  color: #1f6b3a;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.doc__parties {
+  display: grid;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.doc__label {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6b6b70;
+  margin-bottom: 5px;
+}
+
+.doc__strong {
+  font-weight: 700;
+}
+
+.doc__lines {
+  white-space: pre-line;
+  color: #44444a;
+}
+
+.doc__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 26px;
+  margin-top: 24px;
+  padding: 14px 0;
+  border-top: 1px solid #dededf;
+  border-bottom: 1px solid #dededf;
+  font-size: 0.98rem;
+  color: #44444a;
+}
+
+.doc__meta strong {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6b6b70;
+  margin-right: 6px;
+}
+
+.doc__table {
+  width: 100%;
+  margin-top: 24px;
+  border-collapse: collapse;
+}
+
+.doc__table th {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #dededf;
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6b6b70;
+}
+
+.doc__table td {
+  padding: 14px 0;
+  vertical-align: top;
+}
+
+.doc__num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Only shown when an invoice covers more than one purchase, where the
+   dates differ and the reader needs to see which is which. */
+.doc__line-date {
+  font-size: 0.82rem;
+  color: #6b6b70;
+}
+
+.doc__table tfoot td {
+  border-top: 2px solid #17171a;
+  font-weight: 700;
+  font-size: 1.18rem;
+}
+
+.doc__note {
+  margin-top: 14px;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #6b6b70;
+}
+
+@media (min-width: 620px) {
+  .inv__row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .doc__parties {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Printing: the document, nothing else. Borders and rounding go too —
+   the paper is the card. */
+@media print {
+  /* If the visitor has "background graphics" switched on, the dark page
+     would otherwise print as a grey slab around the invoice. */
+  :root:has(.inv),
+  :root[data-theme='dark']:has(.inv) {
+    --bg: #ffffff;
+    --ink: #17171a;
+  }
+  .no-print {
+    display: none;
+  }
+  .inv {
+    padding: 0;
+    max-width: none;
+  }
+  .doc {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+  }
+}
