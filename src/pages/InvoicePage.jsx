@@ -136,6 +136,19 @@ export default function InvoicePage() {
             </p>
           </header>
 
+          {/* Which purchase this is for. A link can be sent for any one of
+              several purchases, so the page has to say which one landed —
+              otherwise you are filling in billing details blind. */}
+          {invoice && (
+            <div className="inv__for no-print">
+              <p className="inv__for-label">Invoice for</p>
+              <p className="inv__for-item">{invoice.item}</p>
+              <p className="inv__for-meta">
+                {invoice.total} · paid {longDate(invoice.paidAt)}
+              </p>
+            </div>
+          )}
+
           <form className="inv__form no-print" onSubmit={submit}>
             <div className="inv__field">
               <label htmlFor="billToName">Bill to *</label>

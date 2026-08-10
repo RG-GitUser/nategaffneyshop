@@ -127,6 +127,40 @@
   font-size: 1.05rem;
 }
 
+/* ---------- what is being invoiced ---------- */
+/* Same white wash as the fields, so it reads as part of the form's
+   surface rather than a separate card floating on the navy. */
+.inv__for {
+  margin-top: 26px;
+  padding: 16px 18px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line-2);
+  border-left: 3px solid var(--accent);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.inv__for-label {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.inv__for-item {
+  margin-top: 5px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.inv__for-meta {
+  margin-top: 3px;
+  font-size: 1rem;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ---------- the form ---------- */
 .inv__form {
   display: grid;
