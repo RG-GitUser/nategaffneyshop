@@ -83,7 +83,8 @@ export const api = {
   googleSaveSettings: (settings) =>
     request('/google/settings', { method: 'PUT', body: settings }),
   createBooking: (booking) => request('/bookings/admin', { method: 'POST', body: booking }),
-  bookingPrice: () => request('/bookings/price'),
+  // type: 'session' (default) or 'followup' — the short paid check-in.
+  bookingPrice: (type) => request(`/bookings/price${type ? `?type=${type}` : ''}`),
   saveBookingPrice: (body) => request('/bookings/price', { method: 'PUT', body }),
 
   // analytics

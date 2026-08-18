@@ -182,6 +182,26 @@ export const booking = {
 }
 
 /**
+ * The follow-up call — a short paid check-in for people Nate has already
+ * coached. Lives only at /followup/, handed out as a direct link; it is
+ * never linked from the landing page. Only the COPY lives here — the
+ * calendar mechanics (slots, days, blackouts, timezone) are shared with
+ * `booking` above, and the price/length come from the API
+ * (/api/bookings/price?type=followup — $50 / 15 min until changed in the
+ * admin Calendar tab).
+ */
+export const followup = {
+  eyebrow: 'Follow-up',
+  title: 'Follow-up call',
+  description:
+    'A quick 15-minute check-in for people I’ve already worked with — where you’ve landed since the session, what’s stuck, and what to do next. Pick a time and I’ll confirm by email.',
+  duration: '15 min',
+  price: '$50',
+  finePrint:
+    'You’ll get an email to confirm the time and handle payment. Reschedule or cancel free up to 24 hours before.',
+}
+
+/**
  * The newsletter — the main email capture on the page.
  * The 7-Day Story Starter rides along as the signup bonus so there's only
  * one form competing for attention. Set to null to remove the section.

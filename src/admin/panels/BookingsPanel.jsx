@@ -18,10 +18,18 @@ const EMPTY_DRAFT = {
   date: '',
   time: '',
   note: '',
+  type: 'session',
   status: 'confirmed',
   createEvent: true,
   notifyCustomer: true,
 }
+
+/** The two things people can book: the full session, and the short
+ *  follow-up call offered by direct link (/followup/) to past clients. */
+const PRICE_KINDS = [
+  { type: 'session', label: 'Session', plural: 'Sessions' },
+  { type: 'followup', label: 'Follow-up', plural: 'Follow-up calls' },
+]
 
 export default function BookingsPanel({ notify }) {
   const [rows, setRows] = useState([])
@@ -32,36 +40,46 @@ export default function BookingsPanel({ notify }) {
   const [draft, setDraft] = useState(null) // manual-booking modal state
   const [creating, setCreating] = useState(false)
   const [googleOn, setGoogleOn] = useState(false)
-  const [price, setPrice] = useState('') // dollars string; '' = payments off
-  const [savingPrice, setSavingPrice] = useState(false)
+  // Dollars strings by booking type; '' = payments off for that type.
+  const [prices, setPrices] = useState({ session: '', followup: '' })
+  const [savingPrice, setSavingPrice] = useState('') // type being saved
 
   useEffect(() => {
     api.googleStatus().then((g) => setGoogleOn(Boolean(g.connected))).catch(() => {})
-    api
-      .bookingPrice()
-      .then((p) => setPrice(p.priceCents ? (p.priceCents / 100).toFixed(2) : ''))
-      .catch(() => {})
+    for (const { type } of PRICE_KINDS) {
+      api
+        .bookingPrice(type)
+        .then((p) =>
+          setPrices((prev) => ({
+            ...prev,
+            [type]: p.priceCents ? (p.priceCents / 100).toFixed(2) : '',
+          })),
+        )
+        .catch(() => {})
+    }
   }, [])
 
-  async function savePrice() {
-    const n = Number(price)
-    const priceCents = price.trim() === '' ? null : Math.round(n * 100)
+  async function savePrice(type) {
+    const raw = prices[type]
+    const n = Number(raw)
+    const priceCents = raw.trim() === '' ? null : Math.round(n * 100)
     if (priceCents !== null && (!Number.isFinite(n) || priceCents < 50)) {
       notify('Enter a price of at least $0.50, or leave blank to turn payments off.', 'error')
       return
     }
-    setSavingPrice(true)
+    setSavingPrice(type)
     try {
-      await api.saveBookingPrice({ priceCents, currency: 'cad' })
+      await api.saveBookingPrice({ priceCents, currency: 'cad', type })
+      const { plural } = PRICE_KINDS.find((k) => k.type === type)
       notify(
         priceCents
-          ? `Sessions now cost $${(priceCents / 100).toFixed(2)} at booking.`
-          : 'Booking payments turned off — requests are free again.',
+          ? `${plural} now cost $${(priceCents / 100).toFixed(2)} at booking.`
+          : `${plural} are free again — payments turned off.`,
       )
     } catch (err) {
       notify(err.message, 'error')
     } finally {
-      setSavingPrice(false)
+      setSavingPrice('')
     }
   }
 
@@ -206,25 +224,32 @@ export default function BookingsPanel({ notify }) {
               </option>
             ))}
           </select>
-          <div
-            className="adm-inline"
-            title="Session price. When set, confirming a booking emails the customer a payment link. Blank = free."
-          >
-            <span className="adm-who">Session $</span>
-            <input
-              className="adm-search"
-              style={{ width: 90 }}
-              type="number"
-              min="0.50"
-              step="0.01"
-              placeholder="off"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-            />
-            <button className="adm-mini" onClick={savePrice} disabled={savingPrice}>
-              {savingPrice ? 'Saving…' : 'Set'}
-            </button>
-          </div>
+          {PRICE_KINDS.map(({ type, label }) => (
+            <div
+              key={type}
+              className="adm-inline"
+              title={`${label} price. When set, confirming a booking emails the customer a payment link. Blank = free.`}
+            >
+              <span className="adm-who">{label} $</span>
+              <input
+                className="adm-search"
+                style={{ width: 90 }}
+                type="number"
+                min="0.50"
+                step="0.01"
+                placeholder="off"
+                value={prices[type]}
+                onChange={(e) => setPrices({ ...prices, [type]: e.target.value })}
+              />
+              <button
+                className="adm-mini"
+                onClick={() => savePrice(type)}
+                disabled={savingPrice === type}
+              >
+                {savingPrice === type ? 'Saving…' : 'Set'}
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -298,6 +323,17 @@ export default function BookingsPanel({ notify }) {
                     value={draft.time}
                     onChange={(e) => setDraft({ ...draft, time: e.target.value })}
                   />
+                </div>
+                <div className="adm-field">
+                  <label htmlFor="nb-type">Kind</label>
+                  <select
+                    id="nb-type"
+                    value={draft.type}
+                    onChange={(e) => setDraft({ ...draft, type: e.target.value })}
+                  >
+                    <option value="session">session</option>
+                    <option value="followup">follow-up call</option>
+                  </select>
                 </div>
                 <div className="adm-field">
                   <label htmlFor="nb-status">Status</label>
@@ -428,6 +464,12 @@ export default function BookingsPanel({ notify }) {
                   </td>
                   <td>
                     <strong>{b.name}</strong>
+                    {b.type === 'followup' && (
+                      <>
+                        {' '}
+                        <span className="adm-pill">follow-up</span>
+                      </>
+                    )}
                     {b.paid && (
                       <>
                         {' '}

@@ -28,12 +28,35 @@ const STATUSES = ['pending', 'confirmed', 'cancelled', 'completed']
  * Pay-to-book. The price lives in settings — until the admin sets one
  * (and Stripe is configured) bookings stay free requests, so this whole
  * feature is switched on from the dashboard, not by a deploy.
+ *
+ * Two kinds of booking share the calendar: the full session, and the
+ * short follow-up call offered (by direct link only, at /followup/) to
+ * people Nate has already coached. The follow-up starts out at $50 / 15
+ * minutes without any dashboard setup; both stay editable there.
  */
-const PRICE_SETTINGS_ID = 'booking'
+const BOOKING_TYPES = {
+  session: {
+    settingsId: 'booking',
+    product: 'Coaching session',
+    defaults: { priceCents: null, durationMinutes: null },
+  },
+  followup: {
+    settingsId: 'booking-followup',
+    product: 'Follow-up call',
+    defaults: { priceCents: 5000, durationMinutes: 15 },
+  },
+}
 
-async function bookingPrice() {
-  const doc = await collections.settings().findOne({ _id: PRICE_SETTINGS_ID })
-  return { priceCents: doc?.priceCents || null, currency: doc?.currency || 'cad' }
+const typeOf = (booking) => BOOKING_TYPES[booking?.type] || BOOKING_TYPES.session
+
+async function bookingPrice(type = 'session') {
+  const kind = BOOKING_TYPES[type] || BOOKING_TYPES.session
+  const doc = await collections.settings().findOne({ _id: kind.settingsId })
+  return {
+    priceCents: doc?.priceCents !== undefined ? doc.priceCents : kind.defaults.priceCents,
+    currency: doc?.currency || 'cad',
+    durationMinutes: doc?.durationMinutes || kind.defaults.durationMinutes,
+  }
 }
 
 /**
@@ -54,6 +77,7 @@ const createSchema = z.object({
   name: z.string().min(1).max(120),
   email: z.string().email().max(200),
   note: z.string().max(2000).default(''),
+  type: z.enum(['session', 'followup']).default('session'),
 })
 
 /** The public form is unauthenticated, so it needs its own throttle —
@@ -77,13 +101,18 @@ function parseId(id, res) {
 }
 
 /** Public — what booking costs and how long a session runs, so the site's
- *  copy follows the dashboard settings instead of hardcoded strings. */
-bookingsRouter.get('/price', async (_req, res, next) => {
+ *  copy follows the dashboard settings instead of hardcoded strings.
+ *  ?type=followup asks about the short follow-up call instead. */
+bookingsRouter.get('/price', async (req, res, next) => {
   try {
-    const [p, cal] = await Promise.all([bookingPrice(), calendarSettings()])
+    const type = req.query.type in BOOKING_TYPES ? req.query.type : 'session'
+    const [p, cal] = await Promise.all([bookingPrice(type), calendarSettings()])
     res.json({
-      ...p,
-      durationMinutes: cal.durationMinutes || null,
+      priceCents: p.priceCents,
+      currency: p.currency,
+      // The session runs however long the calendar settings say; the
+      // follow-up carries its own (shorter) duration.
+      durationMinutes: p.durationMinutes || cal.durationMinutes || null,
       enabled: Boolean(p.priceCents) && stripeReady,
     })
   } catch (err) {
@@ -91,20 +120,23 @@ bookingsRouter.get('/price', async (_req, res, next) => {
   }
 })
 
-/** Admin — set (or clear) the session price. Null switches payments off. */
+/** Admin — set (or clear) a price. Null switches payments off for that
+ *  booking type. */
 bookingsRouter.put('/price', requireAdmin, async (req, res, next) => {
   try {
     const parsed = z
       .object({
         priceCents: z.number().int().min(50).max(9999999).nullable(),
         currency: z.enum(['cad', 'usd']).default('cad'),
+        type: z.enum(['session', 'followup']).default('session'),
       })
       .safeParse(req.body)
     if (!parsed.success) return res.status(400).json({ error: 'Invalid price' })
 
+    const { type, ...price } = parsed.data
     await collections.settings().updateOne(
-      { _id: PRICE_SETTINGS_ID },
-      { $set: { ...parsed.data, updatedAt: new Date(), updatedBy: req.admin.email } },
+      { _id: BOOKING_TYPES[type].settingsId },
+      { $set: { ...price, updatedAt: new Date(), updatedBy: req.admin.email } },
       { upsert: true },
     )
     await audit(req.admin.email, 'booking.price', parsed.data)
@@ -143,6 +175,11 @@ bookingsRouter.post('/', publicLimiter, async (req, res, next) => {
       status: 'pending',
       createdAt: new Date(),
       updatedAt: new Date(),
+    }
+    // A follow-up runs shorter than the calendar's default session; the
+    // length is stamped on the booking so the Google event gets it right.
+    if (doc.type === 'followup') {
+      doc.durationMinutes = (await bookingPrice('followup')).durationMinutes
     }
     const { insertedId } = await collections.bookings().insertOne(doc)
 
@@ -217,6 +254,9 @@ bookingsRouter.post('/admin', requireAdmin, async (req, res, next) => {
       adminCreated: true,
       createdAt: new Date(),
       updatedAt: new Date(),
+    }
+    if (doc.type === 'followup') {
+      doc.durationMinutes = (await bookingPrice('followup')).durationMinutes
     }
 
     const warnings = []
@@ -331,21 +371,22 @@ bookingsRouter.patch('/:id', requireAdmin, async (req, res, next) => {
      * The webhook marks the booking paid via the link's metadata.
      */
     if (becomingConfirmed && !before.paid && !before.payUrl && stripeReady) {
-      const { priceCents, currency } = await bookingPrice()
+      const { priceCents, currency } = await bookingPrice(before.type)
+      const product = typeOf(before).product
       if (priceCents) {
         try {
           const price = await stripe.prices.create(
             {
               currency,
               unit_amount: priceCents,
-              product_data: { name: 'Coaching session' },
+              product_data: { name: product },
             },
             ...onBehalf,
           )
           const link = await stripe.paymentLinks.create(
             {
               line_items: [{ price: price.id, quantity: 1 }],
-              metadata: { bookingId: before._id.toString(), title: 'Coaching session' },
+              metadata: { bookingId: before._id.toString(), title: product },
             },
             ...onBehalf,
           )
