@@ -206,10 +206,12 @@ function endOf(startIso, minutes) {
 function eventBody(booking, settings, { withConference, inviteCustomer = true } = {}) {
   const start = toRfc3339(booking.date, booking.time)
   if (!start) return null
-  const end = endOf(start, settings.durationMinutes)
+  // A follow-up call stamps its own (shorter) length on the booking;
+  // everything else runs the calendar settings' default.
+  const end = endOf(start, booking.durationMinutes || settings.durationMinutes)
 
   const body = {
-    summary: `Coaching — ${booking.name}`,
+    summary: `${booking.type === 'followup' ? 'Follow-up' : 'Coaching'} — ${booking.name}`,
     description: [
       `Booked through the site.`,
       ``,

@@ -51,6 +51,11 @@ app.use(
       // Same-origin and server-to-server calls arrive with no Origin header.
       if (!origin) return cb(null, true)
       if (config.allowedOrigins.includes(origin)) return cb(null, true)
+      // Dev only: Vite hops to 5174+ when another project holds 5173, and
+      // a moved port must not read as a CORS bug. Production stays strict.
+      if (!config.isProd && /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) {
+        return cb(null, true)
+      }
       cb(new Error(`Origin not allowed: ${origin}`))
     },
     // Required for the httpOnly session cookie to be sent at all.

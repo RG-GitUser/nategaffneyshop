@@ -14,7 +14,7 @@ const root = dirname(fileURLToPath(import.meta.url))
  * `vite` (dev) and `vite preview`.
  */
 function pageTrailingSlash() {
-  const pages = ['/privacy', '/terms', '/coaching', '/admin', '/invoice']
+  const pages = ['/privacy', '/terms', '/coaching', '/followup', '/admin', '/invoice']
   const redirect = (req, res, next) => {
     const [path, query] = req.url.split('?')
     if (!pages.includes(path)) return next()
@@ -38,7 +38,9 @@ function pageTrailingSlash() {
 export default defineConfig({
   plugins: [react(), pageTrailingSlash()],
   server: {
-    port: 5173,
+    // PORT lets a launcher assign one when 5173 is taken by another
+    // project's dev server; the API allows any localhost port in dev.
+    port: Number(process.env.PORT) || 5173,
     host: true, // lets you open the site on your phone over local wifi
     // In development, forward API calls to the local server so cookies are
     // same-origin and VITE_API_URL can stay empty. In production the two
@@ -78,6 +80,7 @@ export default defineConfig({
         privacy: resolve(root, 'privacy/index.html'),
         terms: resolve(root, 'terms/index.html'),
         coaching: resolve(root, 'coaching/index.html'),
+        followup: resolve(root, 'followup/index.html'),
         admin: resolve(root, 'admin/index.html'),
         invoice: resolve(root, 'invoice/index.html'),
       },

@@ -408,12 +408,14 @@ export function notifyChatUnbanned(email) {
 }
 
 export function notifyNewBooking(booking) {
+  // "session" vs the short paid check-in booked through /followup/.
+  const kind = booking.type === 'followup' ? 'follow-up call' : 'session'
   // to Nate
   send({
     to: config.smtp.notify,
     subject: `New booking request — ${when(booking)}`,
     text: [
-      `${booking.name} requested a session.`,
+      `${booking.name} requested a ${kind}.`,
       ``,
       `When:  ${when(booking)}`,
       `Name:  ${booking.name}`,
@@ -426,7 +428,7 @@ export function notifyNewBooking(booking) {
     ].join('\n'),
     html: wrap({
       eyebrow: 'New request',
-      title: `${booking.name} wants a session`,
+      title: `${booking.name} wants a ${kind}`,
       preheader: `${when(booking)} — confirm or reschedule in the dashboard.`,
       body:
         details([

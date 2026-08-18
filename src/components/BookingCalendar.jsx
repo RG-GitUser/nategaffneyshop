@@ -76,7 +76,15 @@ function zonedInstant(date, hour, minute, tz) {
   return new Date(t)
 }
 
-export default function BookingCalendar() {
+/**
+ * One calendar, two kinds of booking. The default renders the full
+ * coaching session; `type="followup"` (the unlisted /followup/ page)
+ * books the short paid check-in instead — same slots, same request→
+ * confirm→pay flow, its own price and copy. `copy` overrides display
+ * fields only (title, description, duration, price, …); the calendar
+ * mechanics always come from `booking` in content.js.
+ */
+export default function BookingCalendar({ type = 'session', copy = null }) {
   const today = useMemo(() => startOfDay(new Date()), [])
   const earliest = useMemo(
     () => addDays(today, booking?.leadTimeDays ?? 0),
@@ -101,11 +109,12 @@ export default function BookingCalendar() {
 
   useEffect(() => {
     const API_ = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
-    fetch(`${API_}/api/bookings/price`)
+    const query = type === 'session' ? '' : `?type=${type}`
+    fetch(`${API_}/api/bookings/price${query}`)
       .then((r) => r.json())
       .then(setPrice)
       .catch(() => setPrice(null))
-  }, [])
+  }, [type])
 
   /**
    * Slot times are written on Nate's clock (booking.timezoneName); the
@@ -155,8 +164,12 @@ export default function BookingCalendar() {
     }
   }
 
+  // Display copy: page-specific overrides win, everything else falls
+  // through to the shared booking section's fields.
+  const c = copy ? { ...booking, ...copy } : booking
+
   // Content deleted in the admin dashboard also hides the section.
-  if (!booking || (!booking.title && !booking.description)) return null
+  if (!booking || (!c.title && !c.description)) return null
 
   const blackouts = booking.blackouts || []
 
@@ -200,6 +213,7 @@ export default function BookingCalendar() {
           name: form.name,
           email: form.email,
           note: form.note,
+          type,
         }),
       })
       const payload = await res.json().catch(() => null)
@@ -250,19 +264,19 @@ export default function BookingCalendar() {
   return (
     <section className="section booking" id="book" ref={sectionRef}>
       <div className="section__head">
-        <span className="eyebrow">{booking.eyebrow}</span>
-        <h2 className="section__title">{booking.title}</h2>
+        <span className="eyebrow">{c.eyebrow}</span>
+        <h2 className="section__title">{c.title}</h2>
       </div>
 
       <div className="booking__card">
         <div className="booking__intro">
-          <p className="booking__desc">{booking.description}</p>
+          <p className="booking__desc">{c.description}</p>
           <ul className="booking__facts mono">
-            <li>{price?.durationMinutes ? `${price.durationMinutes} min` : booking.duration}</li>
+            <li>{price?.durationMinutes ? `${price.durationMinutes} min` : c.duration}</li>
             <li>
-              {price?.priceCents ? `$${(price.priceCents / 100).toFixed(0)}` : booking.price}
+              {price?.priceCents ? `$${(price.priceCents / 100).toFixed(0)}` : c.price}
             </li>
-            <li>{localized ? `Your time (${viewerZoneLabel})` : booking.timezone}</li>
+            <li>{localized ? `Your time (${viewerZoneLabel})` : c.timezone}</li>
           </ul>
         </div>
 
@@ -282,7 +296,7 @@ export default function BookingCalendar() {
             <p className="booking__done-note">
               {price?.enabled
                 ? "When Nate confirms, you'll get an email with a secure payment link — the spot is locked in once it's paid."
-                : booking.finePrint}
+                : c.finePrint}
             </p>
           </div>
         ) : (
@@ -447,7 +461,7 @@ export default function BookingCalendar() {
                     notice, half is kept.
                   </p>
                 )}
-                <p className="booking__fine mono">{booking.finePrint}</p>
+                <p className="booking__fine mono">{c.finePrint}</p>
               </form>
             )}
           </div>
