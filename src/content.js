@@ -12,15 +12,7 @@
  * ignored; any section missing from this list renders at the end, so
  * nothing can disappear by accident.
  */
-export const sections = [
-  'featuredVideo',
-  'offers',
-  'services',
-  'about',
-  'newsletter',
-  'testimonials',
-  'faqs',
-]
+export const sections = ['offers', 'services']
 
 /**
  * Custom containers added from the admin dashboard (Content tab →
@@ -31,22 +23,51 @@ export const custom = []
 
 /**
  * Archived section ids: kept with all their content but left off the
- * public page until restored from the dashboard.
+ * public page until restored from the dashboard. Nothing here is
+ * deleted — the copy further down this file is untouched and every one
+ * of these comes back the moment its id moves into `sections` above.
  *
- * 'booking' starts here: the coaching calendar lives on its own page at
- * /coaching/ (shared as a direct link) and is off the landing page by
- * default. Restore "Coaching / calendar" in the admin Content tab — or
- * move 'booking' back into `sections` above — to show it on the landing
- * page again; /coaching/ keeps working either way.
+ * Everything but the two things for sale is parked here for now, so the
+ * page is the portrait, the workbook, and the audit.
+ *
+ * 'booking' is the one that was already archived and should stay that
+ * way: the coaching calendar lives on its own page at /coaching/, shared
+ * as a direct link, and works from there whether or not it's on the
+ * landing page.
  */
-export const archived = ['booking']
+export const archived = [
+  'featuredVideo',
+  'about',
+  'newsletter',
+  'testimonials',
+  'faqs',
+  'booking',
+]
 
 /**
  * Service cards, managed entirely from the admin Services tab. Shaped
  * like offers: { title, description, price, tag, cta, href, accent }.
  * Empty list hides the section.
+ *
+ * The live dashboard is the source of truth — /api/services replaces
+ * this list wholesale on load. It's written out here so the audit still
+ * renders if the API is ever unreachable.
+ *
+ * `href: '#book'` points at the coaching calendar, which is archived (see
+ * `archived` above), so the card is a display price rather than a jump —
+ * same as it behaves in production.
  */
-export const services = []
+export const services = [
+  {
+    title: 'Content Audit',
+    description:
+      "The Content Audit is a deep dive into your Instagram page. I study your content, pinpoint what's working and what isn't, and walk you through it all in a video report you can actually learn from. You'll also get a copy of the Essential Creator's Workbook, My guide to content planning and strategy, delivered as a PDF.\n\nHere's what the Content Audit includes:\n\n- A full review of your recent content, what's landing and what's falling flat\n- Hook, pacing, and retention breakdown on your top and worst performing posts\n- Notes on your niche clarity, content pillars, and audience fit\n- A video walkthrough explaining the findings in plain terms\n- A copy of the Essential Creator's Workbook to help you act on it",
+    price: '$750 / Audit',
+    cta: 'Book',
+    href: '#book',
+    accent: 'navy',
+  },
+]
 
 export const profile = {
   name: 'Nate Gaffney',
@@ -99,46 +120,17 @@ export const featuredVideo = {
  */
 export const offers = [
   {
-    kind: 'product',
-    title: 'Content That Lands',
+    kind: 'pdf',
+    title: "Essential Creator's Workbook",
     description:
-      'A 60-page guide to hooks, pacing, and the structural stuff that makes a video work. Read it in an afternoon.',
-    price: '$39',
-    oldPrice: '$59',
-    cta: 'Get the guide',
+      "The Essential Creator's Workbook is a PDF for creators who are tired of guessing what to post next. Instead of another list of Instagram tips, it walks you through the actual foundation of consistent content: who you're for, what you stand for, and a system you can repeat every single week.\n\nWhat's inside:\n\n- Your Foundation: define your promise, your audience, and three content pillars\n- A competitor research framework to study five creators and pull proven ideas\n- A 50 ideas bank so you never run out of things to post\n- The \"5 Method,\" turning one idea into five videos (25 videos from five original thoughts)\n- Filming, editing, and publishing checklists you can use every time\n- A weekly review ritual to track what's actually working\n- The Creator Mindset, a one page reminder to keep you grounded\n- A 30 day challenge to put it all into action\n- The Creator Readiness Score, a gut check on whether you're ready to grow",
+    // Stored in the dashboard as a bare "25"; written with the symbol
+    // here because the card prints this string verbatim.
+    price: '$25',
+    cta: 'Get the PDF',
     href: '#',
     accent: 'navy',
-    tag: 'Most popular',
-  },
-  {
-    kind: 'product',
-    title: '1:1 Creator Consult',
-    description:
-      '45 minutes, just us. Bring your work, your rough cut, or the thing you can’t figure out. You leave with a plan.',
-    price: '$150',
-    cta: 'Book a call',
-    href: '#book', // the calendar — on this page when restored, else /coaching/
-    accent: 'umber',
-    rating: '5.0',
-  },
-  {
-    kind: 'product',
-    title: 'The Grade',
-    description:
-      'The color profiles and LUTs behind my last two years of work. Drop them straight into Premiere, Resolve, or Lightroom.',
-    price: '$29',
-    cta: 'Grab the pack',
-    href: '#',
-    accent: 'amber',
-  },
-  {
-    kind: 'link',
-    title: 'Hire me for a film',
-    description:
-      'Weddings, docs, and brand work through Wabanaki Media. Tell me what you’re making.',
-    cta: 'Start a project',
-    href: '#',
-    accent: 'olive',
+    tag: 'Perfect place to start',
   },
 ]
 
