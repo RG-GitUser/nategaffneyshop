@@ -8,7 +8,6 @@ import BookingsPanel from './panels/BookingsPanel.jsx'
 import PaymentsPanel from './panels/PaymentsPanel.jsx'
 import AnalyticsPanel from './panels/AnalyticsPanel.jsx'
 import AccountPanel from './panels/AccountPanel.jsx'
-import ThemeToggle from '../components/ThemeToggle.jsx'
 import { ConfirmHost } from './confirm.jsx'
 
 const TABS = [
@@ -68,8 +67,6 @@ export default function AdminApp() {
 
   return (
     <>
-      <ThemeToggle />
-
       <div className="adm">
         <header className="adm-header">
           <div>

@@ -188,7 +188,7 @@ export default function CheckoutModal({
                 everything the receipt does not cover. */}
             <p className="pay__done-note">
               Need an invoice for your business? There’s a link in your receipt
-              email. Anything else — a refund, a problem, a question — write to{' '}
+              email. For a refund, a problem, or any other question, write to{' '}
               <a className="pay__done-link" href={`mailto:${SUPPORT}`}>
                 {SUPPORT}
               </a>
@@ -202,12 +202,12 @@ export default function CheckoutModal({
 
         {digital && state !== 'paid' && state !== 'error' && (
           <div className="pay__terms">
-            <p className="pay__terms-title">This is a download — the sale is final</p>
+            <p className="pay__terms-title">This is a download, so the sale is final</p>
             <p className="pay__terms-copy">
               Your file is sent as soon as you pay. Because a file can’t be given
               back, <strong>this purchase can’t be refunded or cancelled</strong>.
-              If it never arrives, or it’s faulty or not as described — or you have
-              any other concern — email{' '}
+              If it never arrives, or it’s faulty or not as described, or you have
+              any other concern, email{' '}
               <a href={`mailto:${SUPPORT}`}>{SUPPORT}</a> and we’ll put it right.
             </p>
             <label className="pay__ack">

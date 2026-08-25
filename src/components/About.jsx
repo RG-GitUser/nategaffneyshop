@@ -33,7 +33,7 @@ export default function About() {
           {about.paragraphs.map((p) => (
             <p key={p.slice(0, 24)}>{p}</p>
           ))}
-          <p className="about__signature">— {about.signature}</p>
+          <p className="about__signature">{about.signature}</p>
         </div>
       </div>
     </section>

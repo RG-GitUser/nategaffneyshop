@@ -2,9 +2,9 @@
    NATE GAFFNEY — design tokens & base
    Bone paper, Garamond, burnt orange doing the talking.
 
-   THEMING: every color lives in the two blocks below. Light is the
-   default; [data-theme="dark"] overrides it. Nothing downstream
-   hardcodes a color, so a reskin is a change to these blocks only.
+   THEMING: every color lives in the :root block below — the site is
+   light-only. Nothing downstream hardcodes a color, so a reskin is a
+   change to that block only.
    ============================================================ */
 
 /* ============================================================
@@ -90,8 +90,21 @@
   --umber-wash: rgba(0, 14, 59, 0.14);
   --olive: #295d93; /* mix(navy 55%, sky) */
   --olive-wash: rgba(92, 190, 255, 0.18);
-  --card-lead: #8c3d51; /* mix(navy 45%, coral) */
-  --card-lead-wash: rgba(255, 99, 99, 0.14);
+  /* The lead card accent — what the offer buttons fill with — is the
+     brand navy in light mode, per the "blue buttons in light" direction.
+     Straight #000e3b, no mix. */
+  --card-lead: var(--navy);
+  --card-lead-wash: rgba(0, 14, 59, 0.14);
+  /* Text riding on a --card-accent FILL. The light theme's card accents
+     are all dark mixes, so paper sits on them; the dark theme's are
+     bright coral/sky, so navy does. Neither --on-accent nor --on-navy
+     flips the right way for both. */
+  --on-card: var(--paper);
+
+  /* Display headlines (the name, card titles). The poster sets its title
+     in coral, but straight coral on paper is 2.6:1 — on the light page
+     the headlines stay ink. */
+  --headline: var(--ink);
 
   /* Atmosphere. Sized in % rather than vh, so the stack spans the whole
      document instead of stopping partway down. Each layer carries
@@ -106,14 +119,17 @@
     ),
     radial-gradient(
       110% 55% at 8% 100%,
-      rgba(92, 190, 255, 0.16) 0%,
-      rgba(92, 190, 255, 0.08) 30%,
-      rgba(92, 190, 255, 0.035) 60%,
+      rgba(92, 190, 255, 0.24) 0%,
+      rgba(92, 190, 255, 0.12) 30%,
+      rgba(92, 190, 255, 0.05) 60%,
       transparent 88%
     );
   --bar-bg: rgba(235, 236, 239, 0.92);
+  /* The reference poster is grain-forward — the texture is meant to be
+     seen, not subliminal. Light mode carries less than dark so the body
+     text stays crisp on paper. */
   --grain-blend: multiply;
-  --grain-opacity: 0.055;
+  --grain-opacity: 0.09;
 
   /* Shadows are the navy at low opacity, so even the depth stays inside
      the palette rather than being a generic grey. */
@@ -123,13 +139,12 @@
   --avatar-shadow: 0 2px 6px rgba(0, 14, 59, 0.18),
     0 14px 30px rgba(0, 14, 59, 0.26), 0 30px 64px rgba(0, 14, 59, 0.22);
   /* ---- type ----
-     Apple Garamond can't be served on the web (proprietary Apple font), so
-     it renders only for people who have it installed. EB Garamond is the
-     fallback everyone else sees. */
-  --display: 'Apple Garamond', 'ITC Garamond', 'EB Garamond', 'Adobe Garamond Pro',
-    Garamond, ui-serif, Georgia, serif;
-  --body: 'Apple Garamond', 'ITC Garamond', 'EB Garamond', 'Adobe Garamond Pro',
-    Garamond, ui-serif, Georgia, serif;
+     Red Tail Hawk Sans is the brand display face, self-hosted from
+     /fonts (see the @font-face rules below the reset). Inter carries the
+     body and UI text, served from Google Fonts like the mono. */
+  --display: 'Red Tail Hawk Sans', 'Inter', system-ui, 'Segoe UI', Arial,
+    sans-serif;
+  --body: 'Inter', system-ui, 'Segoe UI', Arial, sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
 
   /* ---- shape ---- */
@@ -147,98 +162,35 @@
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-:root[data-theme='dark'] {
-  /* ---- DARK ---- the ground is the navy itself, taken most of the way
-     to black. Cards sit a step LIGHTER in the same navy rather than a
-     neutral grey: with a blue palette a grey card reads as dirty, where
-     a lifted navy reads as its own plane.
+/* ---------- brand font ----------
+   Self-hosted: Red Tail Hawk Sans isn't on any CDN. woff2 with a woff
+   fallback covers effectively every browser; font-display: swap keeps
+   text readable while the files land. */
+@font-face {
+  font-family: 'Red Tail Hawk Sans';
+  src: url('/fonts/RedTailHawkSans-Regular.woff2') format('woff2'),
+    url('/fonts/RedTailHawkSans-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
-     This is the theme the three colours were made for. Coral and sky
-     both clear 5:1 on the cards here and neither can manage 3:1 on
-     paper, so dark is where they do the talking and light is where they
-     mostly fill.
+@font-face {
+  font-family: 'Red Tail Hawk Sans';
+  src: url('/fonts/RedTailHawkSans-Bold.woff2') format('woff2'),
+    url('/fonts/RedTailHawkSans-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
-     Literals for the same reason as the light block — color-mix is not
-     available on older mobile browsers. */
-  --bg: #00061b; /* mix(#000 55%, navy) — the anchor */
-  --bg-2: #0d1326; /* inset chips — between the page and the cards */
-  --surface: #0d1a45; /* cards: lifted navy, not grey */
-  --surface-2: #1c2951; /* raised: modals, hover states */
-
-  --line: #384366; /* mix(#fff 18%, surface) */
-  --line-2: #555f7d; /* mix(#fff 30%, surface) */
-
-  --ink: var(--paper);
-  --ink-2: #c0c2c9; /* mix(paper 82%, bg) */
-  --ink-soft: #91959e; /* mix(paper 62%, bg) */
-  --ink-faint: #717481; /* mix(paper 48%, bg) — 3.6:1, labels only */
-
-  /* Navy is the ground here, so a navy fill has to be lifted well clear
-     of it to register as a fill at all. Paper still rides on top. */
-  --navy-fill: #1f2b53; /* mix(#fff 12%, navy) */
-  --navy-fill-hover: #333e62; /* mix(#fff 20%, navy) */
-
-  /* Sky takes over as the talking accent: 9.8:1 on the page, 8.2:1 on a
-     card, where the light theme's deepened coral would sink into the
-     ground. The fills stay coral with navy on top, exactly as in light —
-     a light fill doesn't care which theme it's sitting in. */
-  --accent: var(--sky);
-  --accent-hi: #ff7676; /* mix(#fff 12%, coral) — fill hover */
-  --accent-fill: var(--coral);
-  --accent-deep: #ff8c8c; /* mix(#fff 26%, coral) — must READ here, so it lifts */
-  --accent-wash: rgba(255, 99, 99, 0.22);
-  --on-accent: var(--navy);
-  --on-accent-tint: #26325c; /* mix(on-accent 90%, accent) */
-  --accent-border: rgba(92, 190, 255, 0.45);
-
-  /* Card accents sit on the card surface, not the page. Here they can
-     separate by hue as well as lightness — the whole point of the dark
-     theme is that all three colours survive on this ground. */
-  --amber: var(--coral);
-  --amber-wash: rgba(255, 99, 99, 0.24);
-  --umber: #6cc4ff; /* mix(#fff 10%, sky) */
-  --umber-wash: rgba(92, 190, 255, 0.24);
-  --olive: #4b9cd1; /* mix(#000 18%, sky) */
-  --olive-wash: rgba(92, 190, 255, 0.16);
-  --card-lead: #ff6c6c; /* mix(#fff 6%, coral) */
-  --card-lead-wash: rgba(255, 99, 99, 0.2);
-
-  /* Errors have to lift too — #8c3636 on this ground is 1.3:1. */
-  --red: #ff8c8c;
-
-  /* Coral ember off the top-right, sky rising from the bottom-left, and
-     a lifted paper band across the top. The colour layers sit under the
-     content, so light text over them keeps its contrast. */
-  --page-glow: radial-gradient(
-      120% 60% at 85% 0%,
-      rgba(255, 99, 99, 0.14) 0%,
-      rgba(255, 99, 99, 0.08) 28%,
-      rgba(255, 99, 99, 0.035) 58%,
-      transparent 88%
-    ),
-    radial-gradient(
-      110% 55% at 8% 100%,
-      rgba(92, 190, 255, 0.16) 0%,
-      rgba(92, 190, 255, 0.08) 30%,
-      rgba(92, 190, 255, 0.03) 60%,
-      transparent 88%
-    ),
-    linear-gradient(
-      180deg,
-      rgba(235, 236, 239, 0.07) 0%,
-      rgba(235, 236, 239, 0.035) 16%,
-      rgba(235, 236, 239, 0.015) 36%,
-      transparent 64%
-    );
-  --bar-bg: rgba(0, 6, 27, 0.88);
-  --grain-blend: overlay;
-  --grain-opacity: 0.05;
-
-  --shadow-sm: 0 1px 2px rgba(0, 3, 12, 0.55);
-  --shadow-md: 0 4px 16px rgba(0, 3, 12, 0.6);
-  --shadow-lg: 0 12px 38px rgba(0, 3, 12, 0.7);
-  --avatar-shadow: 0 2px 8px rgba(0, 3, 12, 0.65),
-    0 16px 34px rgba(0, 3, 12, 0.7), 0 34px 70px rgba(0, 3, 12, 0.6);
+@font-face {
+  font-family: 'Red Tail Hawk Sans';
+  src: url('/fonts/RedTailHawkSans-Black.woff2') format('woff2'),
+    url('/fonts/RedTailHawkSans-Black.woff') format('woff');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
 }
 
 /* ---------- reset ---------- */
@@ -268,8 +220,9 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--body);
-  /* Garamond runs small — bump the base size so body copy stays readable */
-  font-size: 18px;
+  /* Inter runs true to size — the old 18px was compensating for
+     Garamond's small x-height. */
+  font-size: 16px;
   line-height: 1.62;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -293,7 +246,6 @@ body::before {
   mix-blend-mode: var(--grain-blend);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-
 img,
 svg,
 video {
@@ -512,9 +464,7 @@ p {
  * against a ~620px column and their own breakpoints (the newsletter
  * splitting at 860px, testimonials going three-up at 700px) read the
  * viewport, not the column — start the split any earlier and those fire
- * against a column far narrower than they expect. At 1080px the content
- * side is still ~640px, so every section keeps the proportions it was
- * designed with.
+ * against a column far narrower than they expect.
  *
  * The rail is not sticky. An earlier version was, and with the
  * full-length photo it ran ~1000px tall, so on any normal laptop it
@@ -532,11 +482,19 @@ p {
 }
 
 @media (min-width: 1080px) {
-  .shell {
-    max-width: 1180px;
+  /* Landing page only — the shell with a profile rail. The subpages
+     (/about/, /coaching/, /followup/) keep the base single centred
+     column at every width, so their one card sits mid-screen instead of
+     in the left track of a grid built for the rail. */
+  .shell:has(.rail) {
+    /* A fixed page width centred in the window, per the marked-up
+       screenshot: the profile column starts at the left margin and the
+       cards stretch to the right one, with no dead gutter outside. */
+    width: 100%;
+    max-width: 1360px;
     display: grid;
-    grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
-    gap: clamp(40px, 4vw, 56px);
+    grid-template-columns: 300px 1fr;
+    gap: clamp(48px, 5vw, 80px);
     /* start, not stretch: the rail is a short block at the top of its
        column, not a full-height panel with the photo floating in it */
     align-items: start;
@@ -545,6 +503,30 @@ p {
   /* the gap owns the spacing now */
   .rail {
     margin-bottom: 0;
+  }
+
+  /* The two things for sale sit beside each other rather than stacked.
+     Fluid tracks: the cards share whatever width the shell's content
+     column has, so they widen with the page instead of pinning to a
+     fixed card width.
+
+     A section carries a top margin for the stacked case; inside the grid
+     the gap owns that spacing instead, so it's zeroed out and the two
+     section heads line up with each other rather than stepping down. */
+  .shell:has(.rail) .stack {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    align-items: start;
+  }
+
+  .shell:has(.rail) .stack > .section {
+    margin-top: 0;
+  }
+
+  /* the footer closes the whole column, not one half of it */
+  .shell:has(.rail) .stack > .footer {
+    grid-column: 1 / -1;
   }
 }
 

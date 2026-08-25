@@ -12,7 +12,7 @@
  * ignored; any section missing from this list renders at the end, so
  * nothing can disappear by accident.
  */
-export const sections = ['offers', 'services']
+export const sections = ['offers', 'services', 'coachingCard', 'aboutMe']
 
 /**
  * Custom containers added from the admin dashboard (Content tab →
@@ -61,7 +61,8 @@ export const services = [
   {
     title: 'Content Audit',
     description:
-      "The Content Audit is a deep dive into your Instagram page. I study your content, pinpoint what's working and what isn't, and walk you through it all in a video report you can actually learn from. You'll also get a copy of the Essential Creator's Workbook, My guide to content planning and strategy, delivered as a PDF.\n\nHere's what the Content Audit includes:\n\n- A full review of your recent content, what's landing and what's falling flat\n- Hook, pacing, and retention breakdown on your top and worst performing posts\n- Notes on your niche clarity, content pillars, and audience fit\n- A video walkthrough explaining the findings in plain terms\n- A copy of the Essential Creator's Workbook to help you act on it",
+      "A deep dive into your Instagram, delivered as a video walkthrough of what's working, what isn't, and what to do next. The Workbook is included.",
+    blurb: "A video walkthrough of what's working on your Instagram and what to do next.",
     price: '$750 / Audit',
     cta: 'Book',
     href: '#book',
@@ -73,9 +74,9 @@ export const profile = {
   name: 'Nate Gaffney',
   handle: '@nategaffney',
   // Short + human. This is the first thing someone reads after tapping your bio link.
-  tagline: 'Wolastoqey filmmaker. Nicheless Nomad.',
+  tagline: 'Wolastoqey filmmaker.',
   blurb:
-    'Obsessed with turning inner life into art. Director, writer, journaler, creative director — never just one thing.',
+    'Obsessed with turning inner life into art. Director, writer, journaler, creative director. Never just one thing.',
   // Web-sized copy (720×1280, ~100KB). The 3.8MB original is kept alongside
   // it as profilepicture-source.jpg for the OG image / print use.
   // If the file goes missing the page falls back to initials — nothing breaks.
@@ -123,7 +124,10 @@ export const offers = [
     kind: 'pdf',
     title: "Essential Creator's Workbook",
     description:
-      "The Essential Creator's Workbook is a PDF for creators who are tired of guessing what to post next. Instead of another list of Instagram tips, it walks you through the actual foundation of consistent content: who you're for, what you stand for, and a system you can repeat every single week.\n\nWhat's inside:\n\n- Your Foundation: define your promise, your audience, and three content pillars\n- A competitor research framework to study five creators and pull proven ideas\n- A 50 ideas bank so you never run out of things to post\n- The \"5 Method,\" turning one idea into five videos (25 videos from five original thoughts)\n- Filming, editing, and publishing checklists you can use every time\n- A weekly review ritual to track what's actually working\n- The Creator Mindset, a one page reminder to keep you grounded\n- A 30 day challenge to put it all into action\n- The Creator Readiness Score, a gut check on whether you're ready to grow",
+      'A PDF that replaces guessing what to post with a repeatable weekly system: your pillars, an ideas bank, and checklists for filming, editing and publishing.',
+    // One line for the card itself; the fuller description above stays
+    // for anywhere with room for it.
+    blurb: 'A repeatable weekly posting system, in one PDF.',
     // Stored in the dashboard as a bare "25"; written with the symbol
     // here because the card prints this string verbatim.
     price: '$25',
@@ -148,7 +152,7 @@ export const booking = {
   eyebrow: 'Book a session',
   title: '1:1 Coaching',
   description:
-    'Forty-five minutes on whatever’s actually in your way — a rough cut, pricing, burnout, the work you keep not making. Pick a time that works and tell me what you want to get out of it.',
+    'Forty-five minutes on whatever’s actually in your way: a rough cut, pricing, burnout, the work you keep not making. Pick a time that works and tell me what you want to get out of it.',
   duration: '45 min',
   price: '$150',
   // Fallback label, shown only when a browser can't convert timezones.
@@ -186,7 +190,7 @@ export const followup = {
   eyebrow: 'Follow-up',
   title: 'Follow-up call',
   description:
-    'A quick 15-minute check-in for people I’ve already worked with — where you’ve landed since the session, what’s stuck, and what to do next. Pick a time and I’ll confirm by email.',
+    'A quick 15-minute check-in for people I’ve already worked with: where you’ve landed since the session, what’s stuck, and what to do next. Pick a time and I’ll confirm by email.',
   duration: '15 min',
   price: '$50',
   finePrint:
@@ -206,11 +210,11 @@ export const newsletter = {
     'What I’m making, what’s working, and what flopped that week. Written the same way I’d text it to a friend who’s also figuring this out.',
   bullets: [
     'One idea you can use on your next shoot',
-    'A breakdown of something that performed — and why',
+    'A breakdown of something that performed, and why',
     'The honest numbers, including the bad ones',
   ],
   bonus:
-    'Join and I’ll send you The 7-Day Story Starter — one prompt a day until you’ve got something worth filming.',
+    'Join and I’ll send you The 7-Day Story Starter: one prompt a day until you’ve got something worth filming.',
   cta: 'Subscribe',
   placeholder: 'you@email.com',
   // Where the email goes. Point this at your ConvertKit / Beehiiv / Substack

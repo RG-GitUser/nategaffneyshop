@@ -104,6 +104,28 @@ if (DEMO) {
   demoCount = rows.length
 }
 
+/**
+ * First boot on a fresh data dir: the API is the source of truth for the
+ * public cards even when empty, so empty collections would render a
+ * homepage with no products at all. Seed the bundled content.js cards
+ * once; from then on the dashboard owns them. content.js is pure data
+ * with no imports, so node can load it straight from the frontend tree.
+ */
+const db = client.db(process.env.MONGODB_DB)
+const bundled = await import('../../src/content.js')
+if ((await db.collection('shopItems').countDocuments()) === 0 && bundled.offers.length) {
+  await db.collection('shopItems').insertMany(
+    bundled.offers.map((o, i) => ({ ...o, order: i, visible: true, createdAt: new Date() })),
+  )
+  console.log(`  SEED     ${bundled.offers.length} shop card(s) from content.js`)
+}
+if ((await db.collection('services').countDocuments()) === 0 && bundled.services.length) {
+  await db.collection('services').insertMany(
+    bundled.services.map((s, i) => ({ ...s, order: i, visible: true, createdAt: new Date() })),
+  )
+  console.log(`  SEED     ${bundled.services.length} service card(s) from content.js`)
+}
+
 await client.close()
 
 console.log('')

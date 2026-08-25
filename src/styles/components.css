@@ -3,80 +3,27 @@
    Ordered top-to-bottom the way the page reads.
    ============================================================ */
 
-/* ---------- Theme toggle ---------- */
-.themetoggle {
-  position: fixed;
-  z-index: 80;
-  top: max(14px, env(safe-area-inset-top));
-  right: 14px;
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  border-radius: var(--r-md);
-  background: var(--bar-bg);
-  backdrop-filter: blur(12px) saturate(150%);
-  -webkit-backdrop-filter: blur(12px) saturate(150%);
-  border: 1px solid var(--line-2);
-  color: var(--ink-2);
-  box-shadow: var(--shadow-sm);
-  transition: color 0.16s var(--ease), border-color 0.16s var(--ease),
-    transform 0.16s var(--ease);
-}
-
-@media (min-width: 900px) {
-  .themetoggle {
-    top: 22px;
-    right: 22px;
-  }
-}
-
-@media (hover: hover) {
-  .themetoggle:hover {
-    color: var(--accent);
-    border-color: var(--accent);
-    transform: translateY(-1px);
-  }
-}
-
-.themetoggle:active {
-  transform: scale(0.94);
-}
-
-/* the icon swaps on click — give it a little spin so the change registers */
-.themetoggle__icon {
-  display: grid;
-  place-items: center;
-  animation: toggle-spin 0.32s var(--ease);
-}
-
-@keyframes toggle-spin {
-  from {
-    opacity: 0;
-    transform: rotate(-45deg) scale(0.7);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
 /* ---------- Avatar ---------- */
 .avatar {
-  /* Cropped portrait: trims headroom off the top and his legs off the
-     bottom, leaving cap-to-forearms. The ratio is wider than the file's
-     own 720:1288, which is what makes cover zoom in; the 69% focus then
-     slides that window down so the cap sits just inside the top edge.
-     Measured against the source — his cap starts at y=236 of 1288. */
-  --avatar-focus: 50% 69%;
+  /* A circle at the head of the rail, the way a profile photo reads on a
+     link-in-bio page, rather than the tall portrait this was. A square
+     window out of a 720:1288 file crops hard, so the focus slides it up
+     onto his face — measured against the source, his cap starts at
+     y=236 of 1288, which puts the head around 18% down the travel. */
+  --avatar-size: 220px;
+  /* 12% (was 18%) slides the photo itself downward in the circle, so the
+     face sits lower instead of riding the top edge. */
+  --avatar-focus: 50% 12%;
 
-  /* Capped and centred: at the full 620px column width the portrait
-     would run nearly 900px tall and push everything below the fold. */
-  width: 100%;
-  max-width: 380px;
+  /* Both axes are stated, so this needs no aspect-ratio and no fallback
+     for the browsers that lack it. */
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  max-width: 100%;
+  /* Centred under the centred mobile profile; the 1080px block above
+     pulls it to the shared left edge beside the content column. */
   margin-inline: auto;
-  aspect-ratio: 393 / 566;
-  border-radius: 0; /* no frame, no rounding — bare image */
+  border-radius: 50%;
   overflow: hidden;
   /* Layered rather than one blur: a tight contact shadow plus two wider,
      softer casts reads as the photo sitting on the page. The shared
@@ -105,6 +52,9 @@
 }
 
 /* ---------- Profile ---------- */
+/* Centred at every width: the photo, name, handle, location and socials
+   stack down one centre line, on phones and beside the desktop columns
+   alike. */
 .profile {
   display: flex;
   flex-direction: column;
@@ -112,30 +62,19 @@
   text-align: center;
 }
 
-/* Beside a column of content, centred profile text reads as adrift —
-   a shared left edge is what ties the two halves together. Same 1080px
-   breakpoint as the two-column shell in global.css. */
-@media (min-width: 1080px) {
-  .profile {
-    align-items: flex-start;
-    text-align: left;
-  }
-
-  /* The cap and the auto margins existed to stop the portrait filling a
-     620px column; the rail column is already narrower than either. */
-  .avatar {
-    max-width: none;
-    margin-inline: 0;
-  }
-}
-
 .profile__name {
-  font-size: clamp(2.2rem, 8.5vw, 2.9rem);
+  /* Smaller than the old display size, and fluid enough that the name
+     always runs straight across on a single line — nowrap plus the
+     6.5vw floor keeps it from ever breaking to two. */
+  font-size: clamp(1.5rem, 6.5vw, 2.1rem);
+  white-space: nowrap;
   margin-top: 18px;
   text-transform: uppercase;
   font-weight: 600;
   letter-spacing: 0.024em;
   line-height: 1;
+  /* Coral in dark, ink in light — the poster's title treatment. */
+  color: var(--headline);
 }
 
 .profile__handle {
@@ -227,12 +166,21 @@
   gap: 9px;
 }
 
+/* Inside the landing containers everything hangs off the centre line —
+   the price row joins the title and blurb there. */
+.offer .price {
+  justify-content: center;
+}
+
 .price__now {
   font-family: var(--display);
   font-size: 1.85rem;
   font-weight: 600;
   letter-spacing: 0;
   font-feature-settings: 'tnum' 1;
+  /* The off-red: coral pulled a third toward navy, the only red that
+     stays readable on the paper ground (5.1:1). */
+  color: var(--accent);
 }
 
 .price--sm .price__now {
@@ -547,11 +495,16 @@
   display: flex;
   flex-wrap: wrap; /* lets an image banner take the full first row */
   gap: 16px;
-  padding: 18px;
-  border-radius: var(--r-lg);
+  /* The Stan-store reference card: a soft big-radius container floating
+     on a shadow, no hard border, and room to breathe inside. */
+  padding: 20px;
+  border-radius: 20px;
+  /* Every card the same block: full column width from the grid, and one
+     shared height rather than each card hugging its own content. */
+  min-height: 220px;
   background: var(--surface);
-  border: 1px solid var(--line);
-  transition: border-color 0.16s var(--ease), background-color 0.16s var(--ease),
+  box-shadow: var(--shadow-md);
+  transition: box-shadow 0.16s var(--ease), background-color 0.16s var(--ease),
     transform 0.16s var(--ease);
 }
 
@@ -576,12 +529,12 @@
 
 @media (hover: hover) {
   .offer:hover {
-    border-color: var(--card-accent);
+    box-shadow: var(--shadow-lg);
     background: var(--surface-2);
     transform: translateY(-2px);
   }
   .offer:hover .offer__cta {
-    gap: 10px;
+    filter: brightness(1.08);
   }
   .offer:hover .offer__index {
     background: var(--card-accent);
@@ -597,10 +550,10 @@
 /* optional card image: full-bleed banner above the numbered row */
 .offer__media {
   flex: 1 1 100%;
-  margin: -18px -18px 0; /* bleed over the card's 18px padding */
+  margin: -20px -20px 0; /* bleed over the card's 20px padding */
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  border-radius: 20px 20px 0 0; /* follows the card's own radius */
   border-bottom: 1px solid var(--line);
 }
 
@@ -632,6 +585,12 @@
 .offer__body {
   flex: 1;
   min-width: 0;
+  /* Column layout so the CTA can pin itself to the card's bottom edge —
+     that plus the min-height on .offer is what makes every card come out
+     the same size regardless of how much sits above the button. */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .offer__top {
@@ -642,11 +601,20 @@
 }
 
 .offer__title {
-  font-size: 1.3rem;
+  /* Centred on its own full-width row. The fluid size is tuned so the
+     long workbook title stretches across the card without wrapping on
+     phones; when it does wrap on narrow desktop cards, balance splits
+     the lines evenly instead of leaving one word dangling. */
+  width: 100%;
+  text-align: center;
+  font-size: clamp(1.15rem, 4.1vw, 1.45rem);
+  line-height: 1.2;
+  text-wrap: balance;
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   overflow-wrap: anywhere;
+  color: var(--headline); /* the poster's coral titles in dark mode */
 }
 
 .offer__tag {
@@ -659,6 +627,24 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+/* The tiny line between the title and the button. Clamped to two lines
+   so a dashboard card that only has the long description still reads as
+   a blurb, not a paragraph. */
+.offer__blurb {
+  text-align: center;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 40ch;
+  margin-inline: auto;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
 .offer__desc {
@@ -750,18 +736,119 @@
   font-size: 0.9rem;
 }
 
+/* The reference's big pill: a solid fill in the card's accent, spanning
+   the whole card width, tall enough to be the obvious tap target. */
 .offer__cta {
-  margin-left: auto;
-  display: inline-flex;
+  width: 100%;
+  margin-top: auto; /* rides the card's bottom edge — see .offer__body */
+  display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  min-height: 52px;
+  padding: 14px 20px;
+  border-radius: 14px;
+  background: var(--card-accent);
+  color: var(--on-card);
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--card-accent);
-  transition: gap 0.16s var(--ease);
+  transition: filter 0.16s var(--ease);
+}
+
+/* ---------- About-me container ---------- */
+/* Rides on .offer for the shape, so it stays in lockstep with the
+   product cards; these classes only restate the rail's text styles
+   inside the card, centred to match the card titles. */
+.about-me {
+  text-align: center;
+}
+
+/* The rail's avatar sits flush left; inside this centred card the same
+   component centres with the text around it. */
+.about-me .avatar {
+  margin-inline: auto;
+}
+
+.about-me__handle {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.02em;
+}
+
+.about-me__tagline {
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: var(--ink);
+}
+
+.about-me__blurb {
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.about-me__location {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* The longer story on the /about/ page. Left-aligned inside the centred
+   card: multi-paragraph text centred reads like a greeting card. */
+.about-me__story {
+  margin-top: 10px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+  display: grid;
+  gap: 13px;
+}
+
+.about-me__story h2 {
+  font-size: 1.35rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--headline);
+  text-align: center;
+}
+
+.about-me__story p {
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+.about-me__signature {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent) !important;
+}
+
+/* Sits where the CTA does on the product cards — pinned to the bottom
+   with a rule above it, like the rail's own trust line. */
+.about-me__trust {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  line-height: 1.7;
 }
 
 /* ---------- Booking calendar ---------- */
@@ -2147,15 +2234,12 @@
 
 /* ============================================================
    FALLBACKS for browsers without aspect-ratio (iOS < 15, older
-   Android WebView). Without these the portrait, video thumbnail and
+   Android WebView). Without these the video thumbnail and the
    about photo collapse to zero height — the "page full of missing
    images" failure. Fixed heights approximate the ratios at the
    column width; modern browsers never see these.
    ============================================================ */
 @supports not (aspect-ratio: 1 / 1) {
-  .avatar {
-    height: 500px;
-  }
   .film__media {
     height: 200px;
   }

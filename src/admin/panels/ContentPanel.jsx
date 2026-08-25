@@ -22,19 +22,25 @@ import * as defaults from '../../content.js'
  * Custom containers are appended dynamically from the stored `custom` list.
  */
 const SECTIONS_META = [
-  { id: 'featuredVideo', label: 'Featured video' },
   { id: 'offers', label: 'Products', note: 'Cards are managed in the Products tab.' },
   { id: 'services', label: 'Services', note: 'Cards are managed in the Services tab.' },
   {
-    id: 'booking',
-    label: 'Coaching / calendar',
-    note: 'Also lives on its own page at /coaching/. Archiving here only takes it off the landing page — the /coaching/ link keeps working.',
+    id: 'coachingCard',
+    label: 'Coaching',
+    group: 'booking',
+    note: 'The 1:1 coaching container. Its button opens the calendar page at /coaching/, which uses this same copy.',
   },
-  { id: 'about', label: 'About ("Hey, I’m Nate")' },
-  { id: 'newsletter', label: 'Newsletter' },
-  { id: 'testimonials', label: 'Testimonials' },
-  { id: 'faqs', label: 'FAQ' },
+  {
+    id: 'aboutMe',
+    label: 'About Me',
+    group: 'about',
+    note: 'The About Me container links to the /about/ page. These fields fill that page.',
+  },
 ]
+
+/** A section can edit a data group with a different id than its own
+ *  (the coaching card edits `booking`, the About Me card edits `about`). */
+const groupOf = (id) => SECTIONS_META.find((s) => s.id === id)?.group || id
 
 const FIELDS = [
   {
@@ -56,25 +62,8 @@ const FIELDS = [
     ],
   },
   {
-    group: 'featuredVideo',
-    label: 'Featured video',
-    fields: [
-      { key: 'title', label: 'Title' },
-      { key: 'subtitle', label: 'Subtitle' },
-      { key: 'blurb', label: 'Blurb', textarea: true },
-      { key: 'href', label: 'YouTube URL (blank = no video shown)' },
-      { key: 'cta', label: 'Button text' },
-      {
-        key: 'thumbnail',
-        label: 'Thumbnail',
-        image: true,
-        hint: 'Shown on the video card — grab the YouTube thumbnail and drop it here.',
-      },
-    ],
-  },
-  {
     group: 'about',
-    label: 'About ("Hey, I’m Nate")',
+    label: 'About page',
     fields: [
       { key: 'eyebrow', label: 'Eyebrow' },
       { key: 'heading', label: 'Heading' },
@@ -84,25 +73,13 @@ const FIELDS = [
         key: 'image',
         label: 'Photo',
         image: true,
-        hint: 'Optional — sits beside the text. Without one the card stays text-only.',
+        hint: 'Optional. Sits beside the text. Without one the card stays text-only.',
       },
     ],
   },
   {
-    group: 'newsletter',
-    label: 'Newsletter',
-    fields: [
-      { key: 'name', label: 'Name' },
-      { key: 'cadence', label: 'Cadence' },
-      { key: 'description', label: 'Description', textarea: true },
-      { key: 'bonus', label: 'Bonus line', textarea: true },
-      { key: 'subscribers', label: 'Subscriber count' },
-      { key: 'cta', label: 'Button text' },
-    ],
-  },
-  {
     group: 'booking',
-    label: 'Coaching / calendar',
+    label: 'Coaching',
     fields: [
       { key: 'title', label: 'Title' },
       { key: 'description', label: 'Description', textarea: true },
@@ -117,11 +94,13 @@ const FIELDS = [
 const ACCENTS = ['navy', 'umber', 'olive', 'amber']
 
 const FIELDS_BY_GROUP = Object.fromEntries(FIELDS.map((f) => [f.group, f]))
+/* Keys this panel edits. Anything else stored (retired sections like the
+   newsletter or FAQ copy) rides along untouched in _extra — removed from
+   the dashboard, never deleted from the data. */
 const KNOWN_KEYS = new Set([
   'sections',
   'archived',
   'custom',
-  'faqs',
   ...FIELDS.map((f) => f.group),
 ])
 
@@ -133,16 +112,13 @@ function toForm(stored) {
   }
   out.about.paragraphsText = (out.about.paragraphs || []).join('\n')
 
-  out.faqs = (Array.isArray(stored.faqs) ? stored.faqs : defaults.faqs || []).map(
-    (f) => ({ q: f.q || '', a: f.a || '' }),
-  )
-
   out.custom = (Array.isArray(stored.custom) ? stored.custom : [])
     .filter((c) => c && c.id)
     .map((c) => ({
       id: c.id,
       title: c.title || '',
       accent: ACCENTS.includes(c.accent) ? c.accent : 'navy',
+      page: Boolean(c.page),
       fields: (c.fields || []).map((f, i) => ({
         id: f.id || `${c.id}-f${i}`,
         label: f.label || '',
@@ -182,14 +158,11 @@ function toPayload(form) {
     .filter(Boolean)
   delete out.about.paragraphsText
 
-  out.faqs = form.faqs
-    .map((f) => ({ q: f.q.trim(), a: f.a.trim() }))
-    .filter((f) => f.q || f.a)
-
   out.custom = form.custom.map((c) => ({
     id: c.id,
     title: c.title.trim(),
     accent: c.accent,
+    page: Boolean(c.page),
     fields: c.fields
       .map((f) => ({ id: f.id, label: f.label.trim(), value: f.value, type: f.type }))
       .filter((f) => f.label || f.value.trim()),
@@ -285,13 +258,10 @@ export default function ContentPanel({ notify }) {
   }
 
   function clearGroupFields(id) {
-    if (id === 'faqs') {
-      setForm((f) => ({ ...f, faqs: [] }))
-      return
-    }
+    const group = groupOf(id)
     const cleared = {}
-    for (const fld of FIELDS_BY_GROUP[id].fields) cleared[fld.key] = ''
-    setForm((f) => ({ ...f, [id]: { ...f[id], ...cleared } }))
+    for (const fld of FIELDS_BY_GROUP[group].fields) cleared[fld.key] = ''
+    setForm((f) => ({ ...f, [group]: { ...f[group], ...cleared } }))
   }
 
   /**
@@ -305,14 +275,14 @@ export default function ContentPanel({ notify }) {
     const meta = id === 'profile' ? { label: 'Profile' } : metaFor(id)
     if (!meta) return
     const isCustom = Boolean(meta.customContainer)
-    const hasFields = Boolean(FIELDS_BY_GROUP[id]) || id === 'faqs'
+    const hasFields = Boolean(FIELDS_BY_GROUP[groupOf(id)])
     const ok = await confirmDialog({
       title: `Delete "${meta.label}"?`,
       message: isCustom
         ? 'The container and everything in it are removed for good once you save.'
         : hasFields
           ? 'Everything written in this container is permanently cleared once you save.'
-          : 'The cards in this section are managed in another tab, so nothing is deleted here — the section moves to Archived and comes off the public page once you save.',
+          : 'The cards in this section are managed in another tab, so nothing is deleted here. The section moves to Archived and comes off the public page once you save.',
       confirmLabel: 'Delete',
       danger: true,
       verifyText: meta.label,
@@ -414,8 +384,8 @@ export default function ContentPanel({ notify }) {
       <div>
         <h2 className="adm-h2">Content</h2>
         <p className="adm-sub">
-          Your content could not be loaded, so it isn’t safe to edit right now —
-          saving would overwrite what’s stored. Nothing has changed.
+          Your content could not be loaded, so it isn’t safe to edit right now.
+          Saving would overwrite what’s stored. Nothing has changed.
         </p>
         <p className="adm-muted">({loadError})</p>
         <div className="adm-actions" style={{ marginTop: 16 }}>
@@ -478,59 +448,6 @@ export default function ContentPanel({ notify }) {
     </div>
   )
 
-  const renderFaqEditor = () => (
-    <div className="adm-rows">
-      {form.faqs.map((row, j) => (
-        <div className="adm-row-item" key={j}>
-          <div className="adm-row-head">
-            <input
-              type="text"
-              placeholder="Question"
-              value={row.q}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  faqs: f.faqs.map((r, k) => (k === j ? { ...r, q: e.target.value } : r)),
-                }))
-              }
-            />
-            <button
-              type="button"
-              className="adm-mini adm-mini--danger"
-              onClick={() =>
-                setForm((f) => ({ ...f, faqs: f.faqs.filter((_, k) => k !== j) }))
-              }
-            >
-              Remove
-            </button>
-          </div>
-          <textarea
-            rows={2}
-            placeholder="Answer"
-            value={row.a}
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                faqs: f.faqs.map((r, k) => (k === j ? { ...r, a: e.target.value } : r)),
-              }))
-            }
-          />
-        </div>
-      ))}
-      <div>
-        <button
-          type="button"
-          className="adm-mini"
-          onClick={() =>
-            setForm((f) => ({ ...f, faqs: [...f.faqs, { q: '', a: '' }] }))
-          }
-        >
-          Add question
-        </button>
-      </div>
-    </div>
-  )
-
   const renderCustomEditor = (container) => (
     <div className="adm-rows">
       <div className="adm-field">
@@ -545,6 +462,18 @@ export default function ContentPanel({ notify }) {
           value={container.title}
           onChange={(e) => setCustom(container.id, { title: e.target.value })}
         />
+      </div>
+
+      <div className="adm-field">
+        <label className="adm-check">
+          <input
+            type="checkbox"
+            checked={Boolean(container.page)}
+            onChange={(e) => setCustom(container.id, { page: e.target.checked })}
+          />
+          Link to page? The landing shows this as a card with a button, and
+          the content opens on its own page titled with the name above.
+        </label>
       </div>
 
       <div className="adm-field">
@@ -662,8 +591,8 @@ export default function ContentPanel({ notify }) {
           <p className="adm-sub">
             The text in each container on the public site, top to bottom in
             the order below. Drag a container by its ⠿ handle to rearrange,
-            and save as you go — every container has its own Save button.
-            Deleted text stays deleted — a fully emptied container hides its
+            and save as you go. Every container has its own Save button.
+            Deleted text stays deleted. A fully emptied container hides its
             section.
           </p>
         </div>
@@ -682,7 +611,7 @@ export default function ContentPanel({ notify }) {
         <div className="adm-group-head">
           <div>
             <h3 className="adm-h3">Profile</h3>
-            <p className="adm-muted">The side rail — always shown first.</p>
+            <p className="adm-muted">The side rail. Always shown first.</p>
           </div>
           <div className="adm-group-tools">
             <button
@@ -708,9 +637,8 @@ export default function ContentPanel({ notify }) {
             label: customContainer.title || 'Untitled container',
           })
         if (!meta || meta.hidden) return null
-        const editable = Boolean(FIELDS_BY_GROUP[id])
-        const isFaqs = id === 'faqs'
-        const slim = !editable && !isFaqs && !customContainer
+        const editable = Boolean(FIELDS_BY_GROUP[groupOf(id)])
+        const slim = !editable && !customContainer
         return (
           <section
             className={`adm-group${slim ? ' adm-group--slim' : ''}${
@@ -748,7 +676,7 @@ export default function ContentPanel({ notify }) {
                   </h3>
                   {meta.note && <p className="adm-muted">{meta.note}</p>}
                   {customContainer && (
-                    <p className="adm-muted">Custom container — yours to fill.</p>
+                    <p className="adm-muted">Custom container. Yours to fill.</p>
                   )}
                 </div>
               </div>
@@ -771,8 +699,7 @@ export default function ContentPanel({ notify }) {
                 </button>
               </div>
             </div>
-            {editable && renderFields(id)}
-            {isFaqs && renderFaqEditor()}
+            {editable && renderFields(groupOf(id))}
             {customContainer && renderCustomEditor(customContainer)}
           </section>
         )

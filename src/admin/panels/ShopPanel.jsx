@@ -80,7 +80,7 @@ export default function ShopPanel({ notify }) {
         return
       }
       if (!payload.priceCents) {
-        notify('Set a charge amount — the PDF is only sent after payment.', 'error')
+        notify('Set a charge amount. The PDF is only sent after payment.', 'error')
         return
       }
     }
@@ -94,8 +94,8 @@ export default function ShopPanel({ notify }) {
         const ok = await confirmDialog({
           title: 'Save without a charge amount?',
           message:
-            'No Charge amount is set, so this card will NOT open checkout — ' +
-            'it will just follow its link.',
+            'No Charge amount is set, so this card will NOT open checkout. ' +
+            'It will just follow its link.',
           confirmLabel: 'Save anyway',
         })
         if (!ok) return
@@ -116,7 +116,7 @@ export default function ShopPanel({ notify }) {
   async function remove(item) {
     const ok = await confirmDialog({
       title: `Delete "${item.title}"?`,
-      message: 'The item is removed permanently — this cannot be undone.',
+      message: 'The item is removed permanently. This cannot be undone.',
       confirmLabel: 'Delete',
       danger: true,
     })
@@ -293,7 +293,7 @@ export default function ShopPanel({ notify }) {
                     onUploaded={(filename, name) =>
                       setDraft({ ...draft, pdfFile: filename, pdfName: name })
                     }
-                    hint="Kept private — buyers get an emailed download link only after Stripe confirms their payment."
+                    hint="Kept private. Buyers get an emailed download link only after Stripe confirms their payment."
                   />
                 </div>
               )}
@@ -358,8 +358,8 @@ export default function ShopPanel({ notify }) {
               <p className="adm-sub adm-field--wide">
                 Set a <strong>charge amount</strong> and clicking the card opens
                 Stripe Checkout. Leave it blank and the card just follows its link
-                instead. The “Price” field above is the text shown on the card —
-                this is the money that actually moves.
+                instead. The “Price” field above is the text shown on the card.
+                This is the money that actually moves.
               </p>
             </div>
 

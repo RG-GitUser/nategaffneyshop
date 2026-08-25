@@ -12,24 +12,24 @@ export const privacy = {
   title: 'Privacy Policy',
   updated: '9 August 2026',
   intro: [
-    'This policy explains what personal information Wabanaki Software Solutions Inc. ("we", "us") collects through this website, why we collect it, who we share it with, and what control you have over it.',
+    'This policy explains what personal information Nate Gaffney ("we", "us") collects through this website, why we collect it, who we share it with, and what control you have over it.',
     'The short version: we collect as little as we can get away with, we do not sell your information to anyone, and we never see your card details.',
   ],
   sections: [
     {
       heading: '1. Who is responsible for your information',
       paragraphs: [
-        'Wabanaki Software Solutions Inc. is responsible for the personal information collected through this site. For any privacy question or request, contact <a href="mailto:support@nategaffney.store">support@nategaffney.store</a>.',
+        'Nate Gaffney is responsible for the personal information collected through this site. The website itself was built by Wabanaki Software Solutions Inc., whose role was limited to creating the website: it does not operate this site, does not collect or hold the personal information described in this policy, and has no responsibility or liability for it. For any privacy question or request, contact <a href="mailto:support@nategaffney.store">support@nategaffney.store</a>.',
       ],
     },
     {
       heading: '2. What we collect',
       listTitle: 'Information you give us directly:',
       list: [
-        '<strong>Newsletter signup</strong> — your email address.',
-        '<strong>Booking a session</strong> — your name, email, chosen date and time, and whatever you write in the notes field. Please do not put sensitive personal or health information in that box.',
-        '<strong>Buying something</strong> — your name, email, billing address and country, as required to complete the sale and meet tax rules.',
-        '<strong>Emailing us</strong> — whatever you choose to include in your message.',
+        '<strong>Newsletter signup</strong>: your email address.',
+        '<strong>Booking a session</strong>: your name, email, chosen date and time, and whatever you write in the notes field. Please do not put sensitive personal or health information in that box.',
+        '<strong>Buying something</strong>: your name, email, billing address and country, as required to complete the sale and meet tax rules.',
+        '<strong>Emailing us</strong>: whatever you choose to include in your message.',
       ],
       after: [
         '<strong>Payment information.</strong> Card numbers, expiry dates and security codes go directly to our payment provider and are never collected, seen, or stored by us. We receive only limited confirmation data back, such as your name, email, billing country, the last four digits of the card, and whether the payment succeeded.',
@@ -40,12 +40,12 @@ export const privacy = {
     {
       heading: '3. Why we use it, and our legal basis',
       list: [
-        '<strong>To deliver what you bought</strong> — sending files, confirming orders, running your session. Basis: performing our contract with you.',
-        '<strong>To manage bookings</strong> — confirming times, sending reminders and joining links, handling changes. Basis: performing our contract with you.',
-        '<strong>To send the newsletter</strong> — only if you signed up. Basis: your consent, which you can withdraw at any time.',
-        '<strong>To answer your questions</strong> — replying to emails and support requests. Basis: our legitimate interest in running the business.',
-        '<strong>To keep the site secure</strong> — spotting abuse and fraud. Basis: our legitimate interest in protecting the site.',
-        '<strong>To meet legal duties</strong> — keeping tax and accounting records. Basis: legal obligation.',
+        '<strong>To deliver what you bought</strong>: sending files, confirming orders, running your session. Basis: performing our contract with you.',
+        '<strong>To manage bookings</strong>: confirming times, sending reminders and joining links, handling changes. Basis: performing our contract with you.',
+        '<strong>To send the newsletter</strong>: only if you signed up. Basis: your consent, which you can withdraw at any time.',
+        '<strong>To answer your questions</strong>: replying to emails and support requests. Basis: our legitimate interest in running the business.',
+        '<strong>To keep the site secure</strong>: spotting abuse and fraud. Basis: our legitimate interest in protecting the site.',
+        '<strong>To meet legal duties</strong>: keeping tax and accounting records. Basis: legal obligation.',
       ],
       after: [
         'We do not use your information to make automated decisions that significantly affect you, and we do not build advertising profiles.',
@@ -55,7 +55,7 @@ export const privacy = {
       heading: '4. Consent and marketing email (CASL)',
       paragraphs: [
         'We only send marketing email to people who asked for it. Every message includes a working unsubscribe link and our contact details, and unsubscribes are actioned promptly.',
-        'Withdrawing consent for marketing does not stop transactional messages — order confirmations, download links, booking confirmations and receipts — because those are needed to deliver what you asked for.',
+        'Withdrawing consent for marketing does not stop transactional messages (order confirmations, download links, booking confirmations and receipts), because those are needed to deliver what you asked for.',
       ],
     },
     {
@@ -78,11 +78,11 @@ export const privacy = {
     {
       heading: '7. How long we keep it',
       list: [
-        '<strong>Purchase and tax records</strong> — kept as long as Canadian tax law requires, currently at least six years.',
-        '<strong>Booking records</strong> — kept for two years after the session, so we have a record of what was agreed.',
-        '<strong>Newsletter subscription</strong> — kept until you unsubscribe, plus a minimal record of the unsubscribe so we do not email you again by mistake.',
-        '<strong>Emails you send us</strong> — kept for as long as needed to deal with the matter, then deleted periodically.',
-        '<strong>Server logs</strong> — kept for a short period by our host, then rotated out.',
+        '<strong>Purchase and tax records</strong>: kept as long as Canadian tax law requires, currently at least six years.',
+        '<strong>Booking records</strong>: kept for two years after the session, so we have a record of what was agreed.',
+        '<strong>Newsletter subscription</strong>: kept until you unsubscribe, plus a minimal record of the unsubscribe so we do not email you again by mistake.',
+        '<strong>Emails you send us</strong>: kept for as long as needed to deal with the matter, then deleted periodically.',
+        '<strong>Server logs</strong>: kept for a short period by our host, then rotated out.',
       ],
     },
     {
@@ -116,7 +116,7 @@ export const privacy = {
     {
       heading: '11. Links to other sites',
       paragraphs: [
-        'This site links out to other places — social profiles, and the payment page where you check out. Once you follow a link, that service’s own privacy policy applies. We are not responsible for how they handle your information — worth reading their policies if it matters to you.',
+        'This site links out to other places: social profiles, and the payment page where you check out. Once you follow a link, that service’s own privacy policy applies. We are not responsible for how they handle your information, so it is worth reading their policies if it matters to you.',
       ],
     },
     {
@@ -128,8 +128,8 @@ export const privacy = {
     {
       heading: '13. Questions and complaints',
       paragraphs: [
-        'Please come to us first — most things are quickest to fix directly:',
-        '<strong>Wabanaki Software Solutions Inc.</strong><br /><a href="mailto:support@nategaffney.store">support@nategaffney.store</a>',
+        'Please come to us first. Most things are quickest to fix directly:',
+        '<strong>Nate Gaffney</strong><br /><a href="mailto:support@nategaffney.store">support@nategaffney.store</a>',
         'If you are not satisfied with our response, you can complain to the <strong>Office of the Privacy Commissioner of Canada</strong> at <a href="https://www.priv.gc.ca" target="_blank" rel="noreferrer noopener">priv.gc.ca</a>, or to the privacy regulator in your own country if you live outside Canada.',
       ],
     },

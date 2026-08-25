@@ -132,7 +132,7 @@ export default function InvoicePage() {
             <h1 className="inv__title">Get an invoice</h1>
             <p className="inv__sub">
               For your business or an expense claim. Tell us who to bill and we’ll
-              issue it now — you’ll see it here and get a copy by email.
+              issue it now. You’ll see it here and get a copy by email.
             </p>
           </header>
 
@@ -335,7 +335,7 @@ function InvoiceDoc({ invoice }) {
           already reads as a total with no tax in it. */}
       {invoice.taxNote && <p className="doc__note">{invoice.taxNote}</p>}
       <p className="doc__note">
-        Paid by card in full — nothing is outstanding on this invoice. Questions:{' '}
+        Paid by card in full. Nothing is outstanding on this invoice. Questions:{' '}
         {SUPPORT}
       </p>
     </article>

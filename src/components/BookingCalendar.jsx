@@ -289,13 +289,13 @@ export default function BookingCalendar({ type = 'session', copy = null }) {
             {/* Emails speak Nate's time, so leave both on the receipt. */}
             {localized && (
               <p className="booking__fine mono">
-                {selectedSlot} {booking.timezone} on Nate’s calendar — emails
+                {selectedSlot} {booking.timezone} on Nate’s calendar. Emails
                 will use that time.
               </p>
             )}
             <p className="booking__done-note">
               {price?.enabled
-                ? "When Nate confirms, you'll get an email with a secure payment link — the spot is locked in once it's paid."
+                ? "When Nate confirms, you'll get an email with a secure payment link. The spot is locked in once it's paid."
                 : c.finePrint}
             </p>
           </div>
@@ -457,7 +457,7 @@ export default function BookingCalendar({ type = 'session', copy = null }) {
                 {price?.enabled && (
                   <p className="booking__fine mono">
                     ${(price.priceCents / 100).toFixed(0)}, paid by secure link once
-                    Nate confirms. Cancel a day ahead for a full refund — with less
+                    Nate confirms. Cancel a day ahead for a full refund. With less
                     notice, half is kept.
                   </p>
                 )}

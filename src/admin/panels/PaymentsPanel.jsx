@@ -231,7 +231,7 @@ export default function PaymentsPanel({ notify }) {
         <div>
           <h2 className="adm-h2">Payments</h2>
           <p className="adm-sub">
-            Live Stripe data. Card numbers are never sent to this page — only the
+            Live Stripe data. Card numbers are never sent to this page. Only the
             brand and last four.
           </p>
         </div>
@@ -314,8 +314,8 @@ export default function PaymentsPanel({ notify }) {
 
       {unconfigured ? (
         <p className="adm-alert adm-alert--warn">
-          Stripe isn’t connected yet. Add <code>STRIPE_SECRET_KEY</code> — and{' '}
-          <code>STRIPE_ACCOUNT_ID</code> if you’re on Connect — to{' '}
+          Stripe isn’t connected yet. Add <code>STRIPE_SECRET_KEY</code> (plus{' '}
+          <code>STRIPE_ACCOUNT_ID</code> if you’re on Connect) to{' '}
           <code>server/.env</code> and restart the service. Everything else on
           this dashboard works without it.
         </p>
@@ -482,7 +482,7 @@ export default function PaymentsPanel({ notify }) {
               page imply there is nothing further back. */}
           {truncated && (
             <p className="adm-muted">
-              Counted the most recent {scanned} payments — anything older than
+              Counted the most recent {scanned} payments. Anything older than
               that isn’t included, so the page count is a floor.
             </p>
           )}
@@ -495,7 +495,7 @@ export default function PaymentsPanel({ notify }) {
             <h3 className="adm-h3">Invoice {picking.customer}</h3>
             <p className="adm-sub">
               Tick everything this invoice should cover. One invoice, one
-              customer — the total is the sum of what you pick.
+              customer. The total is the sum of what you pick.
             </p>
 
             <ul className="adm-picklist">
@@ -584,7 +584,7 @@ export default function PaymentsPanel({ notify }) {
                     notify('Link copied.')
                     setInvoiceUrl(null)
                   } catch {
-                    notify('Copy blocked — select the link and copy it.', 'error')
+                    notify('Copy blocked. Select the link and copy it.', 'error')
                   }
                 }}
               >

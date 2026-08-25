@@ -160,10 +160,6 @@
   font-weight: 600;
 }
 
-:root[data-theme='dark'] .legal__todo {
-  color: var(--accent);
-}
-
 .legal__foot {
   margin-top: clamp(44px, 7vw, 70px);
   padding-top: 26px;

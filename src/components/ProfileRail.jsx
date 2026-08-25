@@ -12,8 +12,8 @@ export default function ProfileRail() {
         <h1 className="profile__name">{profile.name}</h1>
         <p className="profile__handle">{profile.handle}</p>
 
-        <p className="profile__tagline">{profile.tagline}</p>
-        <p className="profile__blurb">{profile.blurb}</p>
+        {/* Tagline, blurb and the trust line moved into the About Me
+            container — the rail keeps just the identity essentials. */}
 
         {profile.location && (
           <p className="profile__location">
@@ -41,8 +41,6 @@ export default function ProfileRail() {
             )
           })}
         </ul>
-
-        {profile.trust && <p className="profile__trust">{profile.trust}</p>}
       </div>
     </aside>
   )

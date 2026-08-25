@@ -47,7 +47,7 @@ export default function Newsletter() {
 
           {done ? (
             <p className="newsletter__done" role="status">
-              You’re in. Check your inbox — the first prompt is on its way.
+              You’re in. Check your inbox. The first prompt is on its way.
             </p>
           ) : (
             <>

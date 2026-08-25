@@ -74,7 +74,7 @@ export default function BookingsPanel({ notify }) {
       notify(
         priceCents
           ? `${plural} now cost $${(priceCents / 100).toFixed(2)} at booking.`
-          : `${plural} are free again — payments turned off.`,
+          : `${plural} are free again. Payments are off.`,
       )
     } catch (err) {
       notify(err.message, 'error')
@@ -134,7 +134,7 @@ export default function BookingsPanel({ notify }) {
         await api.refund(b.paymentIntent, { amount: cents })
         notify(`Cancelled and refunded ${money(cents)}.`)
       } else {
-        notify('Cancelled — no refund issued.')
+        notify('Cancelled. No refund issued.')
       }
       load()
     } catch (err) {
@@ -172,7 +172,7 @@ export default function BookingsPanel({ notify }) {
   async function remove(id) {
     const ok = await confirmDialog({
       title: 'Delete this booking?',
-      message: 'It is removed permanently — this cannot be undone.',
+      message: 'It is removed permanently. This cannot be undone.',
       confirmLabel: 'Delete',
       danger: true,
     })
@@ -192,7 +192,7 @@ export default function BookingsPanel({ notify }) {
         <div>
           <h2 className="adm-h2">Calendar</h2>
           <p className="adm-sub">
-            Confirm, reschedule or cancel requests — or book someone in yourself.
+            Confirm, reschedule or cancel requests, or book someone in yourself.
           </p>
         </div>
         <div className="adm-toolbar">
@@ -407,7 +407,7 @@ export default function BookingsPanel({ notify }) {
       ) : shown.length === 0 ? (
         <p className="adm-muted">
           {view === 'archived'
-            ? 'Nothing archived yet — mark a booking Done and it moves here.'
+            ? 'Nothing archived yet. Mark a booking Done and it moves here.'
             : 'No bookings yet.'}
         </p>
       ) : (

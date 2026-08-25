@@ -50,72 +50,10 @@
 
 }
 
-/**
- * The dashboard drops the site's warm bone paper for a neutral tool
- * palette: near-white page, white cards. Set at the root (not on .adm) so
- * <body> inherits it too — otherwise the warm page shows around the
- * dashboard's own box. Only the surface tokens are overridden, so every
- * accent, status and chart color still comes from the shared brand set.
- */
-:root:has(.adm),
-:root:has(.adm-login) {
-  --bg: #f7f7f8;
-  --bg-2: #f1f1f3;
-  --surface: #ffffff;
-  --surface-2: #ffffff;
-  --line: #e3e3e6;
-  --line-2: #c9c9cf;
-}
-
-/* Neutral dark greys — same idea, warm brown removed. */
-:root[data-theme='dark']:has(.adm),
-:root[data-theme='dark']:has(.adm-login) {
-  --bg: #1c1c1f;
-  --bg-2: #232327;
-  --surface: #26262b;
-  --surface-2: #2e2e34;
-  --line: #3a3a41;
-  --line-2: #4c4c55;
-}
-
-/* Same hues re-stepped for the dark surface (#0e0a06) — not an automatic
-   flip; validated separately. */
-:root[data-theme='dark'] .adm {
-  --viz-1: #3987e5;
-  --viz-2: #d95926;
-  --viz-3: #199e70;
-  --viz-4: #c98500;
-  --viz-5: #d55181;
-  --viz-other: #6d675f;
-
-  /* status text lifts to stay readable on the dark cards */
-  --st-pending: #f5b83d;
-  --st-pending-wash: rgba(240, 165, 31, 0.18);
-  --st-confirmed: #3ecb87;
-  --st-confirmed-wash: rgba(35, 184, 118, 0.16);
-  --st-completed: #63a4f0;
-  --st-completed-wash: rgba(60, 134, 224, 0.16);
-  --st-cancelled: #ee7a6d;
-  --st-cancelled-wash: rgba(217, 88, 74, 0.16);
-
-  --field-bg: #1c1c1f;
-}
-
-/* Headings inherit the serif from the global h1-h4 rule, so pull them
-   back to the UI font here… */
-.adm h1,
-.adm h2,
-.adm h3,
-.adm-login h1 {
-  font-family: var(--ui-font);
-  letter-spacing: 0;
-}
-
-/* …except the one that stays in the serif on purpose. */
-.adm-title {
-  font-family: var(--display) !important;
-  letter-spacing: 0.022em !important;
-}
+/* The dashboard rides the site's own palette and display type now —
+   same paper ground, same card surfaces, same Red Tail Hawk headings
+   (which the global h1-h4 rule already provides) — so the tool looks
+   like the site it edits. Body text stays in the UI font above. */
 
 .adm {
   /* Wide enough that the Payments table shows every column without a
@@ -286,23 +224,11 @@
 .adm-group {
   margin-top: 26px;
   padding: clamp(18px, 3vw, 24px);
-  border-radius: var(--r-lg);
-  /* Crisp white panels on the near-white page — the card reads through
-     its border and shadow rather than a tint. Navy spine stays, the same
-     border-left motif the rest of the brand uses. */
+  /* The public site's container: soft big radius floating on a shadow,
+     no hard border. */
+  border-radius: 20px;
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--navy-fill);
-  box-shadow:
-    0 1px 3px rgba(18, 11, 7, 0.06),
-    0 8px 22px rgba(18, 11, 7, 0.045);
-}
-
-/* The dark cards already separate cleanly — keep them flat and neutral. */
-:root[data-theme='dark'] .adm-group {
-  background: var(--surface);
-  border-color: var(--line);
-  box-shadow: none;
+  box-shadow: var(--shadow-md);
 }
 
 .adm-grid {
