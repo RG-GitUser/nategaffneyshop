@@ -16,9 +16,13 @@
  */
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const dir = new URL('../src/styles/', import.meta.url).pathname
-  .replace(/^\/([A-Za-z]:)/, '$1') // windows path from file URL
+// fileURLToPath, not .pathname: a URL path is percent-encoded, so a
+// checkout under a directory with a space in it ('Stuff n Things')
+// became 'Stuff%20n%20Things' and the read failed with ENOENT. It also
+// handles the Windows drive-letter form this used to patch by hand.
+const dir = fileURLToPath(new URL('../src/styles/', import.meta.url))
 
 let failed = false
 
