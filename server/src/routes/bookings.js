@@ -110,9 +110,19 @@ bookingsRouter.get('/price', async (req, res, next) => {
     res.json({
       priceCents: p.priceCents,
       currency: p.currency,
-      // The session runs however long the calendar settings say; the
-      // follow-up carries its own (shorter) duration.
-      durationMinutes: p.durationMinutes || cal.durationMinutes || null,
+      /**
+       * The session runs however long the calendar settings say — the
+       * "Session length" saved in the admin Account tab. That wins over
+       * anything on the price record: old app versions wrote a
+       * durationMinutes there, and the dashboard has no way to change
+       * it, so letting it take priority left the badge stuck at 45
+       * however often the real setting was saved. The follow-up still
+       * carries its own (shorter) duration.
+       */
+      durationMinutes:
+        type === 'session'
+          ? cal.durationMinutes || p.durationMinutes || null
+          : p.durationMinutes || cal.durationMinutes || null,
       enabled: Boolean(p.priceCents) && stripeReady,
     })
   } catch (err) {
