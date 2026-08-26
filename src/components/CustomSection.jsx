@@ -10,6 +10,7 @@
  * renders through this same component with `full` set.
  */
 import OfferCard from './OfferCard.jsx'
+import RichText from '../richtext.jsx'
 import { safeImageSrc } from '../safeUrl.js'
 
 export default function CustomSection({ container, full = false }) {
@@ -67,13 +68,7 @@ export default function CustomSection({ container, full = false }) {
             // One cell per field, so fields sit side by side on wide
             // screens instead of stacking into one long column.
             <div key={f.id || i} className="custom-copy__item">
-              {f.value
-                .split('\n')
-                .map((s) => s.trim())
-                .filter(Boolean)
-                .map((p, j) => (
-                  <p key={j}>{p}</p>
-                ))}
+              <RichText text={f.value} />
             </div>
           ),
         )}

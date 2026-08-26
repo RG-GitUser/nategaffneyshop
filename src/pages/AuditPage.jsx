@@ -2,6 +2,7 @@ import { useState } from 'react'
 import CheckoutModal, { checkoutMode } from '../components/CheckoutModal.jsx'
 import Footer from '../components/Footer.jsx'
 import { ArrowRight } from '../components/Icons.jsx'
+import RichText from '../richtext.jsx'
 import { profile, services, auditPage } from '../content.js'
 
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
@@ -59,14 +60,11 @@ export default function AuditPage() {
     audit?.price || (audit?.priceCents ? `$${(audit.priceCents / 100).toFixed(0)}` : null)
 
   // The full descriptor, exactly as written in the Services tab — the
-  // card clamps it to two lines, this page runs all of it, with blank
-  // lines becoming paragraph breaks. The bundled auditPage.intro only
-  // steps in if the stored card has no description at all.
-  const paragraphs = (audit?.description || '')
-    .split(/\n+/)
-    .map((t) => t.trim())
-    .filter(Boolean)
-  const intro = paragraphs.length ? paragraphs : auditPage.intro
+  // card clamps it to two lines, this page runs all of it, with line
+  // breaks, **bold** and "- " bullets rendered (see richtext.jsx). The
+  // bundled auditPage.intro only steps in if the stored card has no
+  // description at all.
+  const intro = (audit?.description || '').trim() || auditPage.intro.join('\n\n')
 
   return (
     <>
@@ -92,11 +90,9 @@ export default function AuditPage() {
                 </div>
 
                 <div className="audit__card">
-                  {intro.map((p) => (
-                    <p className="audit__para" key={p.slice(0, 32)}>
-                      {p}
-                    </p>
-                  ))}
+                  <div className="audit__copy">
+                    <RichText text={intro} />
+                  </div>
 
                   {auditPage.list?.length > 0 && (
                     <>
