@@ -11,15 +11,14 @@
      onto his face — measured against the source, his cap starts at
      y=236 of 1288, which puts the head around 18% down the travel. */
   --avatar-size: 220px;
-  /* 54% (was 46%). The circle shows a 720px-tall window out of the
-     1288px file, with 568px of travel — each percent moves the crop
-     ~5.7px down the source. 54% opens the window at y=307: the crown
-     of the cap is cropped away but the brim and the whole face stay,
-     and the frame runs down past the crossed arms toward the waist.
-     Chosen by rendering the candidate crops (38/46/54/62) and looking
-     at them — 62% starts cutting his eyes off, so 54% is the far end
-     of useful travel. */
-  --avatar-focus: 50% 54%;
+  /* 40% (was 54%, which chopped the cap's crown). The circle shows a
+     720px-tall window out of the 1288px file, with 568px of travel —
+     each percent moves the crop ~5.7px down the source. 40% opens the
+     window at y=227: the cap (which starts at y=236) sits just inside
+     the top edge, whole, and the bottom still reaches the crossed arms
+     and watch. Chosen by rendering candidate crops and looking at
+     them — higher cuts the cap, lower brings back wall above it. */
+  --avatar-focus: 50% 40%;
 
   /* Both axes are stated, so this needs no aspect-ratio and no fallback
      for the browsers that lack it. */
