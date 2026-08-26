@@ -14,17 +14,24 @@ export default function Services() {
   return (
     <section className="section" id="services">
       <div className="offers">
-        {services.map((s, i) => (
-          <OfferCard
-            key={s.id || s.title}
-            offer={{
-              ...s,
-              kind: s.price || s.priceCents ? 'product' : 'link',
-              checkoutType: 'service',
-            }}
-            index={i}
-          />
-        ))}
+        {services.map((s, i) => {
+          const offer = {
+            ...s,
+            kind: s.price || s.priceCents ? 'product' : 'link',
+            checkoutType: 'service',
+          }
+          /* The Content Audit card is a doorway, not a checkout: it goes
+             to /audit/, where the full description and the booking live.
+             Overrides the stored '#book' href — that points at the
+             archived landing-page calendar and goes nowhere — and drops
+             the id so a charge amount can't turn the card itself into a
+             Stripe trigger. */
+          if (/audit/i.test(s.title || '')) {
+            offer.href = '/audit/'
+            offer.id = null
+          }
+          return <OfferCard key={s.id || s.title} offer={offer} index={i} />
+        })}
       </div>
     </section>
   )
