@@ -912,7 +912,15 @@
   gap: 14px;
 }
 
-.audit__para {
+/* The audit copy renders through richtext.jsx — paragraphs, bullets,
+   bold — all sharing the reading style. */
+.audit__copy {
+  display: grid;
+  gap: 14px;
+}
+
+.audit__copy p,
+.audit__copy li {
   font-size: 1.05rem;
   line-height: 1.7;
   color: var(--ink-soft);
@@ -988,14 +996,48 @@
   border-bottom: 1px solid var(--line);
 }
 
+/* The description renders through richtext.jsx: paragraphs, bullets,
+   bold. Spacing by margin rather than grid gap, so the text can flow
+   through CSS columns on wide screens. */
 .booking__desc {
   font-size: 1.05rem;
   color: var(--ink-soft);
   line-height: 1.65;
-  max-width: 52ch;
-  /* The dashboard textarea holds real line breaks — honour them, or a
-     long description collapses into one unreadable wall of text. */
-  white-space: pre-line;
+  max-width: 60ch;
+}
+
+.booking__desc > * + * {
+  margin-top: 12px;
+}
+
+/* ---------- rich text (dashboard-entered copy) ---------- */
+/* "- " lines from the dashboard become these lists — same accent-dash
+   marker the audit page's authored list uses. */
+.rich-list {
+  list-style: none;
+  padding: 0;
+}
+
+.rich-list li {
+  position: relative;
+  padding-left: 20px;
+  line-height: 1.6;
+  break-inside: avoid;
+}
+
+.rich-list li + li {
+  margin-top: 7px;
+}
+
+.rich-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
 }
 
 .booking__facts {
@@ -1029,7 +1071,7 @@
 @media (min-width: 900px) {
   .booking__desc {
     columns: 2;
-    column-gap: 44px;
+    column-gap: 56px;
     max-width: none;
   }
 

@@ -82,7 +82,13 @@ const FIELDS = [
     label: 'Coaching',
     fields: [
       { key: 'title', label: 'Title' },
-      { key: 'description', label: 'Description', textarea: true },
+      {
+        key: 'description',
+        label: 'Description',
+        textarea: true,
+        rows: 8,
+        hint: 'Line breaks are kept. **bold** shows bold, *italics* italic, and lines starting with "- " become a bulleted list.',
+      },
       { key: 'duration', label: 'Duration' },
       { key: 'price', label: 'Price' },
       { key: 'timezone', label: 'Timezone label' },
@@ -442,12 +448,15 @@ export default function ContentPanel({ notify }) {
               hint={f.hint}
             />
           ) : f.textarea ? (
-            <textarea
-              id={`${group}-${f.key}`}
-              rows={f.rows || 3}
-              value={form[group][f.key] ?? ''}
-              onChange={(e) => setField(group, f.key, e.target.value)}
-            />
+            <>
+              <textarea
+                id={`${group}-${f.key}`}
+                rows={f.rows || 3}
+                value={form[group][f.key] ?? ''}
+                onChange={(e) => setField(group, f.key, e.target.value)}
+              />
+              {f.hint && <p className="adm-muted">{f.hint}</p>}
+            </>
           ) : (
             <input
               id={`${group}-${f.key}`}
@@ -586,7 +595,10 @@ export default function ContentPanel({ notify }) {
           ) : (
             <textarea
               rows={3}
-              placeholder="Text shown on the site (blank lines split paragraphs)"
+              placeholder={
+                'Text shown on the site. Line breaks split paragraphs, ' +
+                '**bold** shows bold, and lines starting with "- " become bullets.'
+              }
               value={f.value}
               onChange={(e) =>
                 setCustom(container.id, {

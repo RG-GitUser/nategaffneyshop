@@ -477,7 +477,7 @@ p {
    (see .booking__card in components.css) instead of one long scroll. */
 @media (min-width: 900px) {
   .shell:has(.booking):not(:has(.rail)) {
-    max-width: 980px;
+    max-width: min(1160px, 100%);
   }
 }
 

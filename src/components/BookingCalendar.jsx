@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Chevron, ArrowRight } from './Icons.jsx'
+import RichText from '../richtext.jsx'
 import { booking } from '../content.js'
 
 /**
@@ -270,7 +271,9 @@ export default function BookingCalendar({ type = 'session', copy = null }) {
 
       <div className="booking__card">
         <div className="booking__intro">
-          <p className="booking__desc">{c.description}</p>
+          <div className="booking__desc">
+            <RichText text={c.description} />
+          </div>
           <ul className="booking__facts mono">
             <li>{price?.durationMinutes ? `${price.durationMinutes} min` : c.duration}</li>
             <li>
