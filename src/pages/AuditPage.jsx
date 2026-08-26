@@ -4,6 +4,7 @@ import Footer from '../components/Footer.jsx'
 import { ArrowRight } from '../components/Icons.jsx'
 import RichText from '../richtext.jsx'
 import { profile, services, auditPage } from '../content.js'
+import { safeImageSrc } from '../safeUrl.js'
 
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
@@ -90,6 +91,15 @@ export default function AuditPage() {
                 </div>
 
                 <div className="audit__card">
+                  {safeImageSrc(audit.image) && (
+                    <img
+                      className="audit__img"
+                      src={safeImageSrc(audit.image)}
+                      alt=""
+                      loading="lazy"
+                    />
+                  )}
+
                   <div className="audit__copy">
                     <RichText text={intro} />
                   </div>

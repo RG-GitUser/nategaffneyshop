@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
+import ImageDrop from '../ImageDrop.jsx'
 import { confirmDialog } from '../confirm.jsx'
 
 const BLANK = {
   title: '',
   description: '',
+  image: '',
   price: '',
   tag: '',
   amount: '', // dollars, converted to priceCents on save
@@ -229,13 +231,39 @@ export default function ServicesPanel({ notify }) {
               </div>
 
               <div className="adm-field adm-field--wide">
+                <label>Card image</label>
+                <ImageDrop
+                  slot="service"
+                  value={draft.image || ''}
+                  notify={notify}
+                  onUploaded={(url) => setDraft({ ...draft, image: url })}
+                  hint="Optional. Shown at the top of the card, cropped to 16:9 — and on the audit's own page."
+                />
+                {draft.image && (
+                  <button
+                    type="button"
+                    className="adm-mini adm-mini--danger"
+                    onClick={() => setDraft({ ...draft, image: '' })}
+                  >
+                    Remove image
+                  </button>
+                )}
+              </div>
+
+              <div className="adm-field adm-field--wide">
                 <label htmlFor="svc-desc">Description</label>
                 <textarea
                   id="svc-desc"
-                  rows={3}
+                  rows={6}
                   value={draft.description ?? ''}
                   onChange={(e) => setDraft({ ...draft, description: e.target.value })}
                 />
+                <p className="adm-muted">
+                  The card shows the first two lines; the audit page runs all of
+                  it. Line breaks are kept, **bold** shows bold, *italics*
+                  italic, and lines starting with &quot;- &quot; become a
+                  bulleted list.
+                </p>
               </div>
 
               {/* Fill this in to sell the service through Stripe. */}

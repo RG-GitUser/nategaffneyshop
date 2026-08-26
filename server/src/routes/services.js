@@ -15,9 +15,19 @@ export const servicesRouter = Router()
 /** Same rule as shop items: no javascript:/data: links from the dashboard. */
 const safeHref = (s) => !/^[a-z][a-z0-9+.-]*:/i.test(s) || /^(https?|mailto|tel):/i.test(s)
 
+/** Same rule as shop items: http(s) or site-relative only. */
+const safeImage = (s) => !/^[a-z][a-z0-9+.-]*:/i.test(s) || /^https?:/i.test(s)
+
 const serviceSchema = z.object({
   title: z.string().min(1).max(120),
   description: z.string().max(1000).default(''),
+  /** Uploaded card image URL (from /api/media). Optional. */
+  image: z
+    .string()
+    .max(500)
+    .refine(safeImage, 'Image must be an http(s) or site-relative URL')
+    .optional()
+    .nullable(),
   price: z.string().max(40).optional().nullable(),
   /** What Stripe actually charges, in cents. Read from the database at
    *  checkout so the browser can never send its own amount. Null = the
