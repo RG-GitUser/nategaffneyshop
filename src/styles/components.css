@@ -38,9 +38,19 @@
   display: grid;
   place-items: center;
   flex: none;
+  /* Safari: the filtered child below can otherwise paint outside the
+     border-radius clip — a new stacking context keeps the circle a
+     circle in WebKit. */
+  position: relative;
+  isolation: isolate;
 }
 
 .avatar__img {
+  /* Pinned to the circle's box rather than sized with percentages in a
+     grid cell — Safari miscomputes percentage heights for grid items,
+     which squashed the photo and made object-fit crop it wrongly. */
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
