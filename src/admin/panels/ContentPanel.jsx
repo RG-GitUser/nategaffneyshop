@@ -87,17 +87,39 @@ const FIELDS = [
         label: 'Description',
         textarea: true,
         rows: 8,
-        hint: 'Line breaks are kept. **bold** shows bold, *italics* italic, and lines starting with "- " become a bulleted list.',
+        hint: (
+          <>
+            Style your text as you type: <strong>**word**</strong> shows as{' '}
+            <strong>bold</strong>, <em>*word*</em> as <em>italics</em>, and any
+            line that starts with <strong>-&nbsp;</strong> becomes a bullet
+            point. Press Enter for a new paragraph.
+          </>
+        ),
       },
       {
         key: 'duration',
-        label: 'Duration (fallback text)',
-        hint: 'Shown only when no session length is saved under Account → Google Calendar. That setting drives the badge on the booking page AND the length of the calendar invite — change it there.',
+        label: 'Duration',
+        hint: (
+          <>
+            <strong>To change the session length shown on the booking
+            page:</strong> go to the <strong>Account</strong> tab, find
+            “Session length (minutes)”, and save. That also sets how long the
+            calendar invite runs. The text typed here is only a backup, used
+            when no session length is saved there.
+          </>
+        ),
       },
       {
         key: 'price',
-        label: 'Price (fallback text)',
-        hint: 'Shown only while no charge amount is set in the Calendar tab. With one set, the badge shows the real amount Stripe charges.',
+        label: 'Price',
+        hint: (
+          <>
+            <strong>To change the price shown on the booking page:</strong> go
+            to the <strong>Calendar</strong> tab and set the coaching price
+            there — that’s the amount customers are actually charged. The text
+            typed here is only a backup, used while no price is set there.
+          </>
+        ),
       },
       { key: 'timezone', label: 'Timezone label' },
       { key: 'finePrint', label: 'Fine print', textarea: true },
@@ -453,7 +475,7 @@ export default function ContentPanel({ notify }) {
                 value={form[group][f.key] ?? ''}
                 onChange={(e) => setField(group, f.key, e.target.value)}
               />
-              {f.hint && <p className="adm-muted">{f.hint}</p>}
+              {f.hint && <p className="adm-hint">{f.hint}</p>}
             </>
           ) : (
             <>
@@ -463,7 +485,7 @@ export default function ContentPanel({ notify }) {
                 value={form[group][f.key] ?? ''}
                 onChange={(e) => setField(group, f.key, e.target.value)}
               />
-              {f.hint && <p className="adm-muted">{f.hint}</p>}
+              {f.hint && <p className="adm-hint">{f.hint}</p>}
             </>
           )}
         </div>
@@ -594,21 +616,26 @@ export default function ContentPanel({ notify }) {
               hint="Shown full-width inside the container."
             />
           ) : (
-            <textarea
-              rows={3}
-              placeholder={
-                'Text shown on the site. Line breaks split paragraphs, ' +
-                '**bold** shows bold, and lines starting with "- " become bullets.'
-              }
-              value={f.value}
-              onChange={(e) =>
-                setCustom(container.id, {
-                  fields: container.fields.map((x) =>
-                    x.id === f.id ? { ...x, value: e.target.value } : x,
-                  ),
-                })
-              }
-            />
+            <>
+              <textarea
+                rows={3}
+                placeholder="Text shown on the site"
+                value={f.value}
+                onChange={(e) =>
+                  setCustom(container.id, {
+                    fields: container.fields.map((x) =>
+                      x.id === f.id ? { ...x, value: e.target.value } : x,
+                    ),
+                  })
+                }
+              />
+              <p className="adm-hint">
+                Style your text as you type: <strong>**word**</strong> shows as{' '}
+                <strong>bold</strong>, <em>*word*</em> as <em>italics</em>, and
+                any line that starts with <strong>-&nbsp;</strong> becomes a
+                bullet point. Press Enter for a new paragraph.
+              </p>
+            </>
           )}
         </div>
       ))}

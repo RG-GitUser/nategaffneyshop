@@ -258,11 +258,13 @@ export default function ServicesPanel({ notify }) {
                   value={draft.description ?? ''}
                   onChange={(e) => setDraft({ ...draft, description: e.target.value })}
                 />
-                <p className="adm-muted">
-                  The card shows the first two lines; the audit page runs all of
-                  it. Line breaks are kept, **bold** shows bold, *italics*
-                  italic, and lines starting with &quot;- &quot; become a
-                  bulleted list.
+                <p className="adm-hint">
+                  The card on the landing page shows just the first two lines —
+                  the service’s own page shows everything written here. Style
+                  your text as you type: <strong>**word**</strong> shows as{' '}
+                  <strong>bold</strong>, <em>*word*</em> as <em>italics</em>,
+                  and any line that starts with <strong>-&nbsp;</strong>{' '}
+                  becomes a bullet point. Press Enter for a new paragraph.
                 </p>
               </div>
 
