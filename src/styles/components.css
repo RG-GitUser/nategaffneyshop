@@ -993,6 +993,9 @@
   color: var(--ink-soft);
   line-height: 1.65;
   max-width: 52ch;
+  /* The dashboard textarea holds real line breaks — honour them, or a
+     long description collapses into one unreadable wall of text. */
+  white-space: pre-line;
 }
 
 .booking__facts {
@@ -1019,22 +1022,23 @@
   padding: clamp(22px, 4.5vw, 30px);
 }
 
-/* On the widened booking pages the card splits in two: the pitch on the
-   left, the calendar and form on the right — instead of stacking into
-   one long scroll. Kicks in with the wider shell in global.css. */
+/* On the widened booking pages the pitch reads horizontally: the
+   description flows into two side-by-side text columns across the full
+   card width, and the calendar sits centred underneath — instead of a
+   skinny thousand-pixel shaft of text beside a short calendar. */
 @media (min-width: 900px) {
-  .booking__card {
-    display: grid;
-    grid-template-columns: 340px 1fr;
-    align-items: start;
+  .booking__desc {
+    columns: 2;
+    column-gap: 44px;
+    max-width: none;
   }
 
-  .booking__intro {
-    border-bottom: 0;
-    border-right: 1px solid var(--line);
-    /* the intro column matches the card's full height so its divider
-       runs edge to edge */
-    align-self: stretch;
+  /* The calendar was drawn for a ~620px column; centred at that width
+     it reads as a calendar rather than day cells stretched across a
+     980px card. */
+  .booking__picker > * {
+    max-width: 640px;
+    margin-inline: auto;
   }
 }
 
