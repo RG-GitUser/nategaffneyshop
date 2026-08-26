@@ -132,9 +132,15 @@ function toForm(stored) {
   // so a section added in a later deploy can't silently vanish. Archived
   // sections live in their own list and must not be re-appended here.
   const ids = [...SECTIONS_META.map((s) => s.id), ...out.custom.map((c) => c.id)]
-  out.archived = (Array.isArray(stored.archived) ? stored.archived : []).filter(
-    (id) => ids.includes(id),
-  )
+  const storedArchived = Array.isArray(stored.archived) ? stored.archived : []
+  out.archived = storedArchived.filter((id) => ids.includes(id))
+  /* Archived ids this panel has no row for — the retired sections, whose
+     copy already rides along in _extra. Dropping them from the list on
+     save would leave the copy stored but no longer marked archived, so
+     the day one of them returns to SECTIONS_META it would come back as a
+     LIVE section instead of a hidden one. Held aside, written back
+     untouched in toStored, never shown. */
+  out._archivedHidden = storedArchived.filter((id) => !ids.includes(id))
   const storedOrder = Array.isArray(stored.sections) ? stored.sections : []
   out.sections = [
     ...storedOrder.filter((id) => ids.includes(id) && !out.archived.includes(id)),
@@ -151,7 +157,11 @@ function toForm(stored) {
 }
 
 function toPayload(form) {
-  const out = { ...form._extra, sections: form.sections, archived: form.archived }
+  const out = {
+    ...form._extra,
+    sections: form.sections,
+    archived: [...form.archived, ...(form._archivedHidden || [])],
+  }
   for (const { group } of FIELDS) out[group] = { ...form[group] }
   out.about.paragraphs = (out.about.paragraphsText || '')
     .split('\n')
