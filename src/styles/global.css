@@ -439,14 +439,9 @@ p {
     calc(48px + env(safe-area-inset-bottom));
 }
 
-/* On phones the portrait is full-width at the very top, so the fixed
-   theme toggle was floating on the photo itself. Push the content start
-   below the toggle instead. */
-@media (max-width: 899px) {
-  .page {
-    padding-top: 72px;
-  }
-}
+/* The 72px phone padding that used to live here made room for the fixed
+   theme toggle. The toggle is gone, so the space is too — the portrait
+   starts right at the page padding like everything else. */
 
 @media (min-width: 900px) {
   .page {
@@ -475,6 +470,15 @@ p {
   width: 100%;
   max-width: 620px;
   margin-inline: auto;
+}
+
+/* The booking pages (/coaching/, /followup/) get a wider column once
+   there's room: the intro paragraph and the calendar sit side by side
+   (see .booking__card in components.css) instead of one long scroll. */
+@media (min-width: 900px) {
+  .shell:has(.booking):not(:has(.rail)) {
+    max-width: 980px;
+  }
 }
 
 .rail {

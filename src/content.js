@@ -65,10 +65,35 @@ export const services = [
     blurb: "A video walkthrough of what's working on your Instagram and what to do next.",
     price: '$750 / Audit',
     cta: 'Book',
-    href: '#book',
+    // The card links to the audit's own page; Services.jsx enforces this
+    // even when the dashboard-stored card still says '#book'.
+    href: '/audit/',
     accent: 'navy',
   },
 ]
+
+/**
+ * The audit's own page at /audit/. The card above stays terse; the page
+ * runs the service's FULL description from the dashboard Services tab,
+ * plus everything here. Title, price and the charge amount come from
+ * the service entry too — `intro` below is only a fallback for when the
+ * stored card has no description at all.
+ */
+export const auditPage = {
+  eyebrow: 'Work with me',
+  intro: [
+    'The Content Audit is a deep dive into your Instagram page. I study your content the way a new visitor would — what you’re posting, how it’s landing, and how it all reads to someone finding you for the first time.',
+    'You get it back as a video walkthrough: me, on your page, showing you what’s working, what isn’t, and exactly what to do next.',
+  ],
+  listTitle: 'What you get',
+  list: [
+    'A recorded video walkthrough of your page, yours to keep',
+    'What’s working, and what’s quietly holding you back',
+    'A concrete plan for what to post next, and why',
+    'The Essential Creator’s Workbook, included',
+  ],
+  finePrint: 'After you book, I’ll email you to line everything up.',
+}
 
 export const profile = {
   name: 'Nate Gaffney',

@@ -667,6 +667,16 @@
   overflow-wrap: anywhere;
 }
 
+/* Cards sit side by side from here up, so every blurb block spans the
+   clamp's full two lines even when the text only fills one — the
+   price / read-time line under it lands at the same height on every
+   card in the row. */
+@media (min-width: 1080px) {
+  .offer__blurb {
+    min-height: 3em; /* 2 lines × 1.5 line-height */
+  }
+}
+
 .offer__desc {
   margin-top: 8px;
   font-size: 1.1rem;
@@ -882,6 +892,86 @@
   line-height: 1.7;
 }
 
+/* ---------- Content Audit page ---------- */
+/* A reading layout, deliberately unlike the landing cards: left-aligned
+   copy, a bulleted list, and the price + button held to the end. */
+.audit__card {
+  /* .offer__cta paints with --card-accent, which normally comes from
+     .offer — this card isn't one, so it sets the token itself or the
+     button renders with no fill at all. --card-lead matches the navy
+     BOOK button on the audit's landing card. */
+  --card-accent: var(--card-lead);
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: clamp(24px, 5vw, 36px);
+  display: grid;
+  gap: 14px;
+}
+
+.audit__para {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+.audit__list-title {
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--headline);
+}
+
+.audit__list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 9px;
+}
+
+.audit__list li {
+  position: relative;
+  padding-left: 22px;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.audit__list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+/* Price and button close the page together, set off from the copy. */
+.audit__book {
+  margin-top: 10px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 12px;
+}
+
+.audit__cta {
+  margin-top: 0; /* no flex bottom-pinning here — the grid gap spaces it */
+}
+
+.audit__fine {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  text-align: center;
+}
+
 /* ---------- Booking calendar ---------- */
 .booking__card {
   border-radius: var(--r-xl);
@@ -924,6 +1014,25 @@
 
 .booking__picker {
   padding: clamp(22px, 4.5vw, 30px);
+}
+
+/* On the widened booking pages the card splits in two: the pitch on the
+   left, the calendar and form on the right — instead of stacking into
+   one long scroll. Kicks in with the wider shell in global.css. */
+@media (min-width: 900px) {
+  .booking__card {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    align-items: start;
+  }
+
+  .booking__intro {
+    border-bottom: 0;
+    border-right: 1px solid var(--line);
+    /* the intro column matches the card's full height so its divider
+       runs edge to edge */
+    align-self: stretch;
+  }
 }
 
 /* --- month grid --- */
