@@ -216,22 +216,25 @@
   color: var(--ink-faint);
 }
 
-/* Friendly guidance under a field: a soft card with an accent edge, so
-   instructions read as help rather than fine print. */
+/* Friendly guidance under a field: quiet — a thin rule and small muted
+   text, so help reads as a footnote rather than a warning box. */
 .adm-hint {
   margin-top: 8px;
-  padding: 9px 12px;
-  border-radius: var(--r-sm);
-  border-left: 3px solid var(--accent);
-  background: var(--accent-wash);
-  font-size: 0.86rem;
+  padding-left: 10px;
+  border-left: 2px solid var(--line);
+  font-size: 0.84rem;
   line-height: 1.55;
-  color: var(--ink-soft);
-  max-width: 60ch;
+  color: var(--ink-faint);
+  max-width: 62ch;
 }
 
 .adm-hint strong {
-  color: var(--ink);
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.adm-hint em {
+  color: var(--ink-soft);
 }
 
 .adm-nowrap {
