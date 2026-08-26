@@ -11,14 +11,13 @@
      onto his face — measured against the source, his cap starts at
      y=236 of 1288, which puts the head around 18% down the travel. */
   --avatar-size: 220px;
-  /* 32% (was 12%). The circle shows a 720px-tall window out of the 1288px
-     file, with 568px of travel — so each percent moves the crop ~5.7px
-     down the source. At 12% the window opened at y=68, leaving 168px of
-     house siding above the cap: nearly a quarter of the circle spent on
-     the wall behind him. 32% opens it at y=182, which trims that band to
-     54px and brings his crossed arms into frame. Past ~40% the cap starts
-     grazing the top edge, so this is about as far up as the photo goes. */
-  --avatar-focus: 50% 32%;
+  /* 38% (was 32%). The circle shows a 720px-tall window out of the
+     1288px file, with 568px of travel — each percent moves the crop
+     ~5.7px down the source. His cap starts at y=236; 38% opens the
+     window at y=216, so only a ~20px sliver of siding rides above the
+     cap and his crossed arms come further into frame. Past ~40% the cap
+     starts grazing the top edge, so there's little travel left. */
+  --avatar-focus: 50% 38%;
 
   /* Both axes are stated, so this needs no aspect-ratio and no fallback
      for the browsers that lack it. */
