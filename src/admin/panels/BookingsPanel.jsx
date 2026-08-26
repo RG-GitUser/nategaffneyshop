@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { api } from '../api.js'
 import { StatusBar, VizToggle } from './charts.jsx'
 import { confirmDialog } from '../confirm.jsx'
@@ -43,9 +43,26 @@ export default function BookingsPanel({ notify }) {
   // Dollars strings by booking type; '' = payments off for that type.
   const [prices, setPrices] = useState({ session: '', followup: '' })
   const [savingPrice, setSavingPrice] = useState('') // type being saved
+  /**
+   * The session length lives with the calendar settings (it also sizes
+   * the Google event), but it's edited here beside the price — one
+   * place for "what a session costs and how long it runs". Saving posts
+   * the calendar settings back with only the length changed, so the
+   * calendar id and timezone ride along untouched.
+   */
+  const [calSettings, setCalSettings] = useState(null)
+  const [sessionLen, setSessionLen] = useState('')
+  const [savingLen, setSavingLen] = useState(false)
 
   useEffect(() => {
-    api.googleStatus().then((g) => setGoogleOn(Boolean(g.connected))).catch(() => {})
+    api
+      .googleStatus()
+      .then((g) => {
+        setGoogleOn(Boolean(g.connected))
+        setCalSettings({ calendarId: g.calendarId, timeZone: g.timeZone })
+        setSessionLen(g.durationMinutes ? String(g.durationMinutes) : '')
+      })
+      .catch(() => {})
     for (const { type } of PRICE_KINDS) {
       api
         .bookingPrice(type)
@@ -80,6 +97,29 @@ export default function BookingsPanel({ notify }) {
       notify(err.message, 'error')
     } finally {
       setSavingPrice('')
+    }
+  }
+
+  async function saveSessionLen() {
+    const minutes = Number(sessionLen)
+    if (!Number.isInteger(minutes) || minutes < 15 || minutes > 240) {
+      notify('Session length must be between 15 and 240 minutes.', 'error')
+      return
+    }
+    setSavingLen(true)
+    try {
+      await api.googleSaveSettings({
+        calendarId: (calSettings?.calendarId || 'primary').trim(),
+        timeZone: (calSettings?.timeZone || 'America/Halifax').trim(),
+        durationMinutes: minutes,
+      })
+      notify(
+        `Sessions now run ${minutes} minutes — on the booking page and on calendar invites.`,
+      )
+    } catch (err) {
+      notify(err.message, 'error')
+    } finally {
+      setSavingLen(false)
     }
   }
 
@@ -225,30 +265,58 @@ export default function BookingsPanel({ notify }) {
             ))}
           </select>
           {PRICE_KINDS.map(({ type, label }) => (
-            <div
-              key={type}
-              className="adm-inline"
-              title={`${label} price. When set, confirming a booking emails the customer a payment link. Blank = free.`}
-            >
-              <span className="adm-who">{label} $</span>
-              <input
-                className="adm-search"
-                style={{ width: 90 }}
-                type="number"
-                min="0.50"
-                step="0.01"
-                placeholder="off"
-                value={prices[type]}
-                onChange={(e) => setPrices({ ...prices, [type]: e.target.value })}
-              />
-              <button
-                className="adm-mini"
-                onClick={() => savePrice(type)}
-                disabled={savingPrice === type}
+            <Fragment key={type}>
+              <div
+                className="adm-inline"
+                title={`${label} price. When set, confirming a booking emails the customer a payment link. Blank = free.`}
               >
-                {savingPrice === type ? 'Saving…' : 'Set'}
-              </button>
-            </div>
+                <span className="adm-who">{label} $</span>
+                <input
+                  className="adm-search"
+                  style={{ width: 90 }}
+                  type="number"
+                  min="0.50"
+                  step="0.01"
+                  placeholder="off"
+                  value={prices[type]}
+                  onChange={(e) => setPrices({ ...prices, [type]: e.target.value })}
+                />
+                <button
+                  className="adm-mini"
+                  onClick={() => savePrice(type)}
+                  disabled={savingPrice === type}
+                >
+                  {savingPrice === type ? 'Saving…' : 'Set'}
+                </button>
+              </div>
+              {type === 'session' && (
+                <div
+                  className="adm-inline"
+                  title="How long a session runs — shown on the booking page and used for the length of the calendar invite."
+                >
+                  <span className="adm-who">Length</span>
+                  <input
+                    className="adm-search"
+                    style={{ width: 70 }}
+                    type="number"
+                    min="15"
+                    max="240"
+                    step="5"
+                    placeholder="45"
+                    value={sessionLen}
+                    onChange={(e) => setSessionLen(e.target.value)}
+                  />
+                  <span className="adm-who">min</span>
+                  <button
+                    className="adm-mini"
+                    onClick={saveSessionLen}
+                    disabled={savingLen}
+                  >
+                    {savingLen ? 'Saving…' : 'Set'}
+                  </button>
+                </div>
+              )}
+            </Fragment>
           ))}
         </div>
       </div>

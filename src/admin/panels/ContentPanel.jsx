@@ -450,9 +450,9 @@ export default function ContentPanel({ notify }) {
               )
             </>
           ) : null}{' '}
-          are set elsewhere: the length under <strong>Account → Session
-          length</strong>, and the price in the <strong>Calendar</strong> tab —
-          that’s the amount customers are actually charged.
+          are set in the <strong>Calendar</strong> tab, side by side at the top
+          — the price there is the amount customers are actually charged, and
+          the length also sets how long the calendar invite runs.
         </p>
       )}
       <div className="adm-grid">
