@@ -57,7 +57,7 @@ const FIELDS = [
         key: 'avatar',
         label: 'Profile photo',
         image: true,
-        hint: 'Tall portrait, shown in the left rail.',
+        hint: 'Shown in the circle at the top of the page. Any photo works — the circle crops it to a square biased toward the top, so a portrait with the face in the upper part looks best. Drop a new image here to replace it.',
       },
     ],
   },
