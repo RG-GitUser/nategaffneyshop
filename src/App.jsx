@@ -72,8 +72,9 @@ export default function App() {
                 />
               )
             })}
-            <Footer />
           </main>
+
+          <Footer />
         </div>
       </div>
 

@@ -31,8 +31,9 @@ export default function CoachingPage() {
 
           <main className="stack">
             <BookingCalendar />
-            <Footer />
           </main>
+
+          <Footer />
         </div>
       </div>
     </>
