@@ -971,6 +971,11 @@
   gap: 12px;
 }
 
+/* Centred over the centred button, like on the cards. */
+.audit__book .price {
+  justify-content: center;
+}
+
 .audit__cta {
   margin-top: 0; /* no flex bottom-pinning here — the grid gap spaces it */
 }
