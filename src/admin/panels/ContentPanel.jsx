@@ -96,31 +96,11 @@ const FIELDS = [
           </>
         ),
       },
-      {
-        key: 'duration',
-        label: 'Duration',
-        hint: (
-          <>
-            <strong>To change the session length shown on the booking
-            page:</strong> go to the <strong>Account</strong> tab, find
-            “Session length (minutes)”, and save. That also sets how long the
-            calendar invite runs. The text typed here is only a backup, used
-            when no session length is saved there.
-          </>
-        ),
-      },
-      {
-        key: 'price',
-        label: 'Price',
-        hint: (
-          <>
-            <strong>To change the price shown on the booking page:</strong> go
-            to the <strong>Calendar</strong> tab and set the coaching price
-            there — that’s the amount customers are actually charged. The text
-            typed here is only a backup, used while no price is set there.
-          </>
-        ),
-      },
+      /* No duration or price editors here: the booking page shows the
+         REAL settings (session length from the Account tab, the charge
+         amount from the Calendar tab), and text fields that looked
+         editable but were silently overridden only caused confusion.
+         The stored fallback text rides along untouched via toPayload. */
       { key: 'timezone', label: 'Timezone label' },
       { key: 'finePrint', label: 'Fine print', textarea: true },
     ],
@@ -223,6 +203,10 @@ export default function ContentPanel({ notify }) {
   const [saving, setSaving] = useState(false)
   const [dragIndex, setDragIndex] = useState(null)
   const [loadError, setLoadError] = useState('')
+  // The real session length and price, shown next to the Coaching copy so
+  // it's obvious where those live. Purely informational — editing them
+  // happens in the Account and Calendar tabs.
+  const [bookingLive, setBookingLive] = useState(null)
 
   /**
    * A failed load must NOT fall back to an editable form seeded with the
@@ -253,6 +237,10 @@ export default function ContentPanel({ notify }) {
 
   useEffect(() => {
     load()
+    api
+      .bookingPrice()
+      .then(setBookingLive)
+      .catch(() => setBookingLive(null))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -449,7 +437,35 @@ export default function ContentPanel({ notify }) {
   if (!form) return <p className="adm-muted">Loading…</p>
 
   const renderFields = (group) => (
-    <div className="adm-grid">
+    <>
+      {/* The badge on the booking page reads the real settings, so the
+          Coaching copy section says where they live and what they are
+          right now — instead of offering lookalike text fields that
+          would be silently overridden. */}
+      {group === 'booking' && (
+        <p className="adm-hint">
+          The session length and price on the booking page
+          {bookingLive?.durationMinutes || bookingLive?.priceCents ? (
+            <>
+              {' '}
+              (currently{' '}
+              <strong>
+                {bookingLive.durationMinutes
+                  ? `${bookingLive.durationMinutes} min`
+                  : '—'}
+                {bookingLive.priceCents
+                  ? ` · $${(bookingLive.priceCents / 100).toFixed(0)}`
+                  : ''}
+              </strong>
+              )
+            </>
+          ) : null}{' '}
+          are set elsewhere: the length under <strong>Account → Session
+          length</strong>, and the price in the <strong>Calendar</strong> tab —
+          that’s the amount customers are actually charged.
+        </p>
+      )}
+      <div className="adm-grid">
       {FIELDS_BY_GROUP[group].fields.map((f) => (
         <div
           className={`adm-field${f.textarea || f.image ? ' adm-field--wide' : ''}`}
@@ -500,7 +516,8 @@ export default function ContentPanel({ notify }) {
           )}
         </div>
       ))}
-    </div>
+      </div>
+    </>
   )
 
   const renderCustomEditor = (container) => (
