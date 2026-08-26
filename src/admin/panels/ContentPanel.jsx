@@ -89,8 +89,16 @@ const FIELDS = [
         rows: 8,
         hint: 'Line breaks are kept. **bold** shows bold, *italics* italic, and lines starting with "- " become a bulleted list.',
       },
-      { key: 'duration', label: 'Duration' },
-      { key: 'price', label: 'Price' },
+      {
+        key: 'duration',
+        label: 'Duration (fallback text)',
+        hint: 'Shown only when no session length is saved under Account → Google Calendar. That setting drives the badge on the booking page AND the length of the calendar invite — change it there.',
+      },
+      {
+        key: 'price',
+        label: 'Price (fallback text)',
+        hint: 'Shown only while no charge amount is set in the Calendar tab. With one set, the badge shows the real amount Stripe charges.',
+      },
       { key: 'timezone', label: 'Timezone label' },
       { key: 'finePrint', label: 'Fine print', textarea: true },
     ],
@@ -448,12 +456,15 @@ export default function ContentPanel({ notify }) {
               {f.hint && <p className="adm-muted">{f.hint}</p>}
             </>
           ) : (
-            <input
-              id={`${group}-${f.key}`}
-              type="text"
-              value={form[group][f.key] ?? ''}
-              onChange={(e) => setField(group, f.key, e.target.value)}
-            />
+            <>
+              <input
+                id={`${group}-${f.key}`}
+                type="text"
+                value={form[group][f.key] ?? ''}
+                onChange={(e) => setField(group, f.key, e.target.value)}
+              />
+              {f.hint && <p className="adm-muted">{f.hint}</p>}
+            </>
           )}
         </div>
       ))}
