@@ -47,8 +47,9 @@ export default function ContainerPage() {
                 </p>
               </section>
             )}
-            <Footer />
           </main>
+
+          <Footer />
         </div>
       </div>
     </>

@@ -28,8 +28,9 @@ export default function FollowupPage() {
 
           <main className="stack">
             <BookingCalendar type="followup" copy={followup} />
-            <Footer />
           </main>
+
+          <Footer />
         </div>
       </div>
     </>
