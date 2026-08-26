@@ -228,23 +228,12 @@ export default function AccountPanel({ notify, me }) {
                       placeholder="America/Halifax"
                     />
                   </div>
-                  <div className="adm-field">
-                    <label htmlFor="g-dur">Session length (minutes)</label>
-                    <input
-                      id="g-dur"
-                      type="number"
-                      min={15}
-                      max={240}
-                      step={5}
-                      value={cal?.durationMinutes ?? 45}
-                      onChange={(e) => setCal({ ...cal, durationMinutes: e.target.value })}
-                    />
-                  </div>
                 </div>
                 <p className="adm-muted">
                   "primary" is the connected account's main calendar. To use another
                   calendar, paste its ID from Google Calendar → Settings → "Integrate
-                  calendar".
+                  calendar". The session length is set in the Calendar tab, next to
+                  the price.
                 </p>
                 <div className="adm-actions">
                   <button className="btn btn--primary adm-save" disabled={savingCal}>
