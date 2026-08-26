@@ -1,15 +1,10 @@
-import ThemeToggle from './components/ThemeToggle.jsx'
 import ProfileRail from './components/ProfileRail.jsx'
-import FeaturedVideo from './components/FeaturedVideo.jsx'
 import OfferCard from './components/OfferCard.jsx'
-import BookingCalendar from './components/BookingCalendar.jsx'
-import Newsletter from './components/Newsletter.jsx'
-import About from './components/About.jsx'
-import Testimonials from './components/Testimonials.jsx'
-import Faq from './components/Faq.jsx'
 import Footer from './components/Footer.jsx'
 import StickyBar from './components/StickyBar.jsx'
 import Services from './components/Services.jsx'
+import AboutMe from './components/AboutMe.jsx'
+import CoachingCard from './components/CoachingCard.jsx'
 import CustomSection from './components/CustomSection.jsx'
 import { offers, sections, custom, archived } from './content.js'
 
@@ -17,11 +12,6 @@ function Offers() {
   if (offers.length === 0) return null
   return (
     <section className="section">
-      <div className="section__head">
-        <span className="eyebrow">The catalog</span>
-        <h2 className="section__title">Products</h2>
-      </div>
-
       <div className="offers">
         {offers.map((offer, i) => (
           <OfferCard key={offer.title} offer={offer} index={i} />
@@ -31,16 +21,19 @@ function Offers() {
   )
 }
 
-/** Every section the admin can reorder. Footer always stays last. */
+/** Every section the admin can reorder. Footer always stays last.
+ *
+ *  Only what the page actually shows is registered. Retired ids in
+ *  stored dashboard data (featuredVideo, newsletter, testimonials,
+ *  faqs, booking, about) are ignored as unknown — the calendar lives on
+ *  /coaching/ (reached from the coaching card) and the story on /about/
+ *  (reached from the About Me card). New sections are built from the
+ *  dashboard's "Add container". */
 const SECTIONS = {
-  featuredVideo: FeaturedVideo,
   offers: Offers,
   services: Services,
-  booking: BookingCalendar,
-  about: About,
-  newsletter: Newsletter,
-  testimonials: Testimonials,
-  faqs: Faq,
+  coachingCard: CoachingCard,
+  aboutMe: AboutMe,
 }
 
 /** Stored order, unknown ids dropped, missing sections appended at the end.
@@ -64,8 +57,6 @@ export default function App() {
   // URL, so nothing public may route people to it.
   return (
     <>
-      <ThemeToggle />
-
       <div className="page">
         <div className="shell">
           <ProfileRail />

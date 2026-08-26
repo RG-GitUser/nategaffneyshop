@@ -85,7 +85,7 @@ export default function ServicesPanel({ notify }) {
   async function remove(item) {
     const ok = await confirmDialog({
       title: `Delete "${item.title}"?`,
-      message: 'The service is removed permanently — this cannot be undone.',
+      message: 'The service is removed permanently. This cannot be undone.',
       confirmLabel: 'Delete',
       danger: true,
     })
@@ -266,7 +266,7 @@ export default function ServicesPanel({ notify }) {
 
               <p className="adm-sub adm-field--wide">
                 Set a <strong>charge amount</strong> and clicking the card opens
-                Stripe Checkout — the customer pays right there. Leave it blank
+                Stripe Checkout. The customer pays right there. Leave it blank
                 and the card just follows its link. The “Price” field above is
                 only the text shown on the card.
               </p>

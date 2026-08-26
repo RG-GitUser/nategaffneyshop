@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { api } from './api.js'
+import { safeImageSrc } from '../safeUrl.js'
 
 /**
  * Drag-and-drop image upload. Drop a file on it or click to browse;
@@ -32,7 +33,7 @@ export default function ImageDrop({ slot, value, onUploaded, notify, hint }) {
       className={`adm-drop${over ? ' is-over' : ''}`}
       role="button"
       tabIndex={0}
-      aria-label="Upload an image — drop a file or press Enter to browse"
+      aria-label="Upload an image. Drop a file or press Enter to browse"
       onDragOver={(e) => {
         e.preventDefault()
         setOver(true)
@@ -56,7 +57,13 @@ export default function ImageDrop({ slot, value, onUploaded, notify, hint }) {
           e.target.value = '' // same file again should re-trigger
         }}
       />
-      {value && <img className="adm-drop__thumb" src={value} alt="" />}
+      {/* Same guard as the public site: a stored value that is not
+          http(s) or site-relative (a file:/// path, a javascript: or
+          data: URI) renders no thumbnail instead of a browser security
+          error. */}
+      {safeImageSrc(value) && (
+        <img className="adm-drop__thumb" src={safeImageSrc(value)} alt="" />
+      )}
       <p className="adm-drop__text">
         {busy
           ? 'Uploading…'

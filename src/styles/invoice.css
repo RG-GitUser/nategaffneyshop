@@ -22,8 +22,7 @@
  * opposite grounds. --field-bg is defined here because it lives in
  * admin.css otherwise, so the inputs had no background colour at all.
  */
-:root:has(.inv),
-:root[data-theme='dark']:has(.inv) {
+:root:has(.inv) {
   --bg: #f4f5f7;
   --bg-2: #eceef1;
   --surface: #ffffff;
@@ -418,10 +417,9 @@
 /* Printing: the document, nothing else. Borders and rounding go too —
    the paper is the card. */
 @media print {
-  /* If the visitor has "background graphics" switched on, the dark page
+  /* If the visitor has "background graphics" switched on, the page
      would otherwise print as a grey slab around the invoice. */
-  :root:has(.inv),
-  :root[data-theme='dark']:has(.inv) {
+  :root:has(.inv) {
     --bg: #ffffff;
     --ink: #17171a;
   }

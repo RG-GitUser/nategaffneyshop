@@ -60,7 +60,7 @@ export default function PdfDrop({ value, onUploaded, notify, hint }) {
         {busy
           ? 'Uploading…'
           : value
-            ? `Uploaded: ${value} — drop a new PDF to replace it.`
+            ? `Uploaded: ${value}. Drop a new PDF to replace it.`
             : 'Drag a PDF here, or click to choose one.'}
       </p>
       {hint && <p className="adm-muted">{hint}</p>}

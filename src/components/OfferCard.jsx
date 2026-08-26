@@ -1,24 +1,23 @@
 import { useState } from 'react'
-import { ArrowRight, Star } from './Icons.jsx'
+import { Star } from './Icons.jsx'
 import CheckoutModal, { checkoutMode } from './CheckoutModal.jsx'
 import { safeHref, safeImageSrc } from '../safeUrl.js'
 
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
+/**
+ * Deliberately terse: title, price, button. Descriptions still live in
+ * the data (content.js and the dashboard) — the card just doesn't render
+ * them, so restoring the fuller card is a markup change, not a data one.
+ */
 export default function OfferCard({ offer, index = 0 }) {
   const isProduct = offer.kind === 'product' || offer.kind === 'pdf'
   /** A file can't be handed back, so it's sold final-sale — said on the
    *  card as well as at checkout, before anyone has spent anything. */
   const isDownload = offer.kind === 'pdf'
-  const number = String(index + 1).padStart(2, '0')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [paying, setPaying] = useState(false)
-  const [expanded, setExpanded] = useState(false)
-
-  /** Long copy is clamped so one wordy card can't swallow the page; the
-   *  cutoff is roughly what four clamped lines can hold. */
-  const longDesc = (offer.description || '').length > 180
 
   /** Items stored with a priceCents go through Stripe Checkout. Anything
    *  else keeps its plain href, so link-out cards still work. */
@@ -66,7 +65,7 @@ export default function OfferCard({ offer, index = 0 }) {
 
   return (
     <a
-      className={`offer offer--${offer.accent || 'navy'} rise${expanded ? ' offer--expanded' : ''}`}
+      className={`offer offer--${offer.accent || 'navy'} rise`}
       href={safeHref(offer.href)}
       onClick={buyable ? startCheckout : undefined}
       aria-busy={busy || undefined}
@@ -78,59 +77,39 @@ export default function OfferCard({ offer, index = 0 }) {
         </div>
       )}
 
-      <span className="offer__index" aria-hidden="true">
-        {number}
-      </span>
-
       <div className="offer__body">
-        <div className="offer__top">
-          <h3 className="offer__title">{offer.title}</h3>
-          {offer.tag && <span className="offer__tag">{offer.tag}</span>}
-        </div>
+        <h3 className="offer__title">{offer.title}</h3>
 
-        <p className={`offer__desc${longDesc && !expanded ? ' offer__desc--clamped' : ''}`}>
-          {offer.description}
-        </p>
-
-        {longDesc && (
-          <button
-            type="button"
-            className="offer__more"
-            aria-expanded={expanded}
-            onClick={(e) => {
-              // The whole card is a link (or a checkout trigger) — this
-              // toggle must do neither.
-              e.preventDefault()
-              e.stopPropagation()
-              setExpanded((v) => !v)
-            }}
-          >
-            {expanded ? 'Read less' : 'Read more'}
-          </button>
+        {/* One small line under the title. Dashboard-managed cards may
+            only have the fuller description — the clamp in CSS keeps
+            even that to blurb length. */}
+        {(offer.blurb || offer.description) && (
+          <p className="offer__blurb">{offer.blurb || offer.description}</p>
         )}
 
-        <div className="offer__foot">
-          {isProduct ? (
-            <div className="price price--sm">
-              <span className="price__now">{offer.price}</span>
-              {offer.oldPrice && <span className="price__was">{offer.oldPrice}</span>}
-            </div>
-          ) : (
-            <span />
-          )}
+        {isProduct && (
+          <div className="price price--sm">
+            <span className="price__now">{offer.price}</span>
+            {offer.oldPrice && <span className="price__was">{offer.oldPrice}</span>}
+          </div>
+        )}
 
-          {offer.rating && (
-            <span className="offer__rating">
-              <Star width={13} height={13} />
-              {offer.rating}
-            </span>
-          )}
+        {/* Takes the price's slot on a card that hasn't got one, so all
+            four containers keep the same title / blurb / accent line /
+            button rhythm. Carries the price colour deliberately. */}
+        {!isProduct && offer.meta && <p className="offer__meta">{offer.meta}</p>}
 
-          <span className="offer__cta">
-            {busy ? 'Opening…' : offer.cta}
-            <ArrowRight width={15} height={15} />
+        {offer.rating && (
+          <span className="offer__rating">
+            <Star width={13} height={13} />
+            {offer.rating}
           </span>
-        </div>
+        )}
+
+        {/* Styled as the button, but stays a span: the whole card is the
+            link (or the checkout trigger), and a real <button> nested in
+            an <a> is invalid markup with two competing click targets. */}
+        <span className="offer__cta">{busy ? 'Opening…' : offer.cta}</span>
 
         {isDownload && buyable && (
           <p className="offer__note">Instant download · final sale, no refunds</p>
@@ -147,8 +126,8 @@ export default function OfferCard({ offer, index = 0 }) {
           digital={isDownload}
           doneNote={
             offer.kind === 'pdf'
-              ? 'Payment received — your download link and receipt are on their way to your email.'
-              : 'Payment received — your receipt is on its way to your email.'
+              ? 'Payment received. Your download link and receipt are on their way to your email.'
+              : 'Payment received. Your receipt is on its way to your email.'
           }
           onClose={() => setPaying(false)}
         />

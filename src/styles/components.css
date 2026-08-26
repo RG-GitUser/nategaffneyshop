@@ -3,86 +3,33 @@
    Ordered top-to-bottom the way the page reads.
    ============================================================ */
 
-/* ---------- Theme toggle ---------- */
-.themetoggle {
-  position: fixed;
-  z-index: 80;
-  top: max(14px, env(safe-area-inset-top));
-  right: 14px;
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  border-radius: var(--r-md);
-  background: var(--bar-bg);
-  backdrop-filter: blur(12px) saturate(150%);
-  -webkit-backdrop-filter: blur(12px) saturate(150%);
-  border: 1px solid var(--line-2);
-  color: var(--ink-2);
-  box-shadow: var(--shadow-sm);
-  transition: color 0.16s var(--ease), border-color 0.16s var(--ease),
-    transform 0.16s var(--ease);
-}
-
-@media (min-width: 900px) {
-  .themetoggle {
-    top: 22px;
-    right: 22px;
-  }
-}
-
-@media (hover: hover) {
-  .themetoggle:hover {
-    color: var(--accent);
-    border-color: var(--accent);
-    transform: translateY(-1px);
-  }
-}
-
-.themetoggle:active {
-  transform: scale(0.94);
-}
-
-/* the icon swaps on click — give it a little spin so the change registers */
-.themetoggle__icon {
-  display: grid;
-  place-items: center;
-  animation: toggle-spin 0.32s var(--ease);
-}
-
-@keyframes toggle-spin {
-  from {
-    opacity: 0;
-    transform: rotate(-45deg) scale(0.7);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
 /* ---------- Avatar ---------- */
 .avatar {
-  /* Cropped portrait: trims headroom off the top and his legs off the
-     bottom, leaving cap-to-forearms. The ratio is wider than the file's
-     own 720:1288, which is what makes cover zoom in; the 69% focus then
-     slides that window down so the cap sits just inside the top edge.
-     Measured against the source — his cap starts at y=236 of 1288. */
-  --avatar-focus: 50% 69%;
+  /* A circle at the head of the rail, the way a profile photo reads on a
+     link-in-bio page, rather than the tall portrait this was. A square
+     window out of a 720:1288 file crops hard, so the focus slides it up
+     onto his face — measured against the source, his cap starts at
+     y=236 of 1288, which puts the head around 18% down the travel. */
+  --avatar-size: 220px;
+  /* 12% (was 18%) slides the photo itself downward in the circle, so the
+     face sits lower instead of riding the top edge. */
+  --avatar-focus: 50% 12%;
 
-  /* Capped and centred: at the full 620px column width the portrait
-     would run nearly 900px tall and push everything below the fold. */
-  width: 100%;
-  max-width: 380px;
+  /* Both axes are stated, so this needs no aspect-ratio and no fallback
+     for the browsers that lack it. */
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  max-width: 100%;
+  /* Centred under the centred mobile profile; the 1080px block above
+     pulls it to the shared left edge beside the content column. */
   margin-inline: auto;
-  aspect-ratio: 393 / 566;
-  border-radius: 0; /* no frame, no rounding — bare image */
+  border-radius: 50%;
   overflow: hidden;
   /* Layered rather than one blur: a tight contact shadow plus two wider,
      softer casts reads as the photo sitting on the page. The shared
      --shadow-lg token was too faint to see against the bone background. */
   box-shadow: var(--avatar-shadow);
-  background: linear-gradient(145deg, var(--accent-fill) 0%, var(--accent-deep) 100%);
+  background: linear-gradient(145deg, var(--accent-fill) 0%, var(--sky) 100%);
   display: grid;
   place-items: center;
   flex: none;
@@ -105,6 +52,9 @@
 }
 
 /* ---------- Profile ---------- */
+/* Centred at every width: the photo, name, handle, location and socials
+   stack down one centre line, on phones and beside the desktop columns
+   alike. */
 .profile {
   display: flex;
   flex-direction: column;
@@ -113,12 +63,18 @@
 }
 
 .profile__name {
-  font-size: clamp(2.2rem, 8.5vw, 2.9rem);
+  /* Smaller than the old display size, and fluid enough that the name
+     always runs straight across on a single line — nowrap plus the
+     6.5vw floor keeps it from ever breaking to two. */
+  font-size: clamp(1.5rem, 6.5vw, 2.1rem);
+  white-space: nowrap;
   margin-top: 18px;
   text-transform: uppercase;
   font-weight: 600;
   letter-spacing: 0.024em;
   line-height: 1;
+  /* Coral in dark, ink in light — the poster's title treatment. */
+  color: var(--headline);
 }
 
 .profile__handle {
@@ -210,16 +166,39 @@
   gap: 9px;
 }
 
+/* Inside the landing containers everything hangs off the centre line —
+   the price row joins the title and blurb there. */
+.offer .price {
+  justify-content: center;
+}
+
 .price__now {
   font-family: var(--display);
   font-size: 1.85rem;
   font-weight: 600;
   letter-spacing: 0;
   font-feature-settings: 'tnum' 1;
+  /* The off-red: coral pulled a third toward navy, the only red that
+     stays readable on the paper ground (5.1:1). */
+  color: var(--accent);
 }
 
 .price--sm .price__now {
   font-size: 1.3rem;
+}
+
+/* The read-time line on the About Me card. Sits where the price sits on
+   the other three and borrows its colour, but not its size — it's a
+   quiet meta line, not a number the eye should land on first. */
+.offer__meta {
+  font-family: var(--display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--accent);
+  /* The price centres via justify-content on its flex row, which a bare
+     <p> gets nothing from — say it outright so the line sits on the
+     card's centre like everything else in the container. */
+  text-align: center;
 }
 
 .price__was {
@@ -233,14 +212,15 @@
 .featured {
   position: relative;
   border-radius: var(--r-xl);
-  /* Runs the full warm range — orange into red into the dark brown —
-     rather than three shades of one colour. */
+  /* Runs coral into sky rather than three shades of one colour. Both
+     ends are LIGHT, which is what lets --on-accent (navy) stay readable
+     across the whole card; the old warm ramp finished in a dark brown
+     and could only carry pale text. */
   background: linear-gradient(
     152deg,
     var(--accent-hi) 0%,
-    var(--orange) 30%,
-    var(--red) 68%,
-    var(--chocolate) 100%
+    var(--coral) 34%,
+    var(--sky) 100%
   );
   color: var(--on-accent);
   box-shadow: var(--shadow-lg);
@@ -255,7 +235,7 @@
   display: inline-block;
   padding: 7px 12px;
   border-radius: var(--r-sm);
-  background: rgba(18, 11, 7, 0.22);
+  background: rgba(0, 14, 59, 0.22);
   font-family: var(--mono);
   font-size: 0.62rem;
   font-weight: 700;
@@ -281,12 +261,12 @@
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(18, 11, 7, 0.72);
+  color: rgba(0, 14, 59, 0.72);
 }
 
 .featured__desc {
   margin-top: 16px;
-  color: rgba(18, 11, 7, 0.88);
+  color: rgba(0, 14, 59, 0.88);
   font-size: 1.1rem;
   line-height: 1.6;
   max-width: 46ch;
@@ -304,12 +284,12 @@
   position: relative;
   padding: 10px 0 10px 22px;
   font-size: 1.05rem;
-  color: rgba(18, 11, 7, 0.92);
-  border-top: 1px solid rgba(18, 11, 7, 0.25);
+  color: rgba(0, 14, 59, 0.92);
+  border-top: 1px solid rgba(0, 14, 59, 0.25);
 }
 
 .featured__bullets li:last-child {
-  border-bottom: 1px solid rgba(18, 11, 7, 0.25);
+  border-bottom: 1px solid rgba(0, 14, 59, 0.25);
 }
 
 .featured__bullets li::before {
@@ -338,19 +318,23 @@
   opacity: 0.6;
 }
 
+/* Inverted against the card: the gradient is light, so the button that
+   sits on it is the navy. That flips the label to --on-navy — the old
+   pairing put --accent-deep on a pale pill, which would now be dark
+   text on a dark pill. */
 .featured__cta {
   width: 100%;
   background: var(--on-accent);
-  color: var(--accent-deep);
+  color: var(--on-navy);
   box-shadow: none;
 }
 
 @media (hover: hover) {
   .featured__cta:hover {
-    /* tint the cream slightly toward the orange — works in both themes,
-       unlike a hardcoded #fff which blew out on dark */
+    /* tint the navy slightly toward the accent — works in both themes,
+       unlike a hardcoded colour which blew out on one of them */
     background: var(--on-accent-tint);
-    color: var(--accent-deep);
+    color: var(--on-navy);
   }
 }
 
@@ -375,14 +359,14 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(18, 11, 7, 0.85);
+  color: rgba(0, 14, 59, 0.85);
 }
 
 .pulse {
   width: 7px;
   height: 7px;
   background: var(--on-accent);
-  box-shadow: 0 0 0 0 rgba(18, 11, 7, 0.6);
+  box-shadow: 0 0 0 0 rgba(0, 14, 59, 0.6);
   animation: pulse 2.2s infinite;
 }
 
@@ -398,7 +382,7 @@
 .featured__note {
   margin-top: 8px;
   font-size: 0.85rem;
-  color: rgba(18, 11, 7, 0.62);
+  color: rgba(0, 14, 59, 0.62);
 }
 
 /* ---------- Featured video ---------- */
@@ -442,7 +426,7 @@
 .film__fallback {
   width: 100%;
   height: 100%;
-  background: linear-gradient(145deg, var(--accent-fill) 0%, var(--accent-deep) 100%);
+  background: linear-gradient(145deg, var(--accent-fill) 0%, var(--sky) 100%);
 }
 
 .film__body {
@@ -500,9 +484,18 @@
   gap: 10px;
 }
 
-@media (min-width: 1100px) {
+/* Starts at the width where the shell splits into portrait-plus-content
+   (global.css), so the cards widen in step with the column rather than a
+   breakpoint later.
+
+   The 250px track is what sets the rhythm: two across from 1080px, three
+   across once the content column clears ~770px (about a 1215px window).
+   auto-fit rather than a fixed track count so the tracks a section has no
+   cards for collapse — a section down to one item fills its row instead
+   of sitting in the left third with dead columns beside it. */
+@media (min-width: 1080px) {
   .offers {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
   }
 }
 
@@ -516,11 +509,22 @@
   display: flex;
   flex-wrap: wrap; /* lets an image banner take the full first row */
   gap: 16px;
-  padding: 18px;
-  border-radius: var(--r-lg);
+  /* The Stan-store reference card: a soft big-radius container floating
+     on a shadow, no hard border, and room to breathe inside. */
+  padding: 20px;
+  border-radius: 20px;
+  /* Every card the same block: full column width from the grid, and one
+     shared height rather than each card hugging its own content.
+
+     233px is the tallest the four cards actually came out at when the
+     CTA was 52px — the floor has to clear the real copy or the taller
+     cards go on hugging their content and the row stops matching. Read
+     it together with .offer__cta: shortening the button frees height,
+     and this is what stops the cards collecting it. */
+  min-height: 233px;
   background: var(--surface);
-  border: 1px solid var(--line);
-  transition: border-color 0.16s var(--ease), background-color 0.16s var(--ease),
+  box-shadow: var(--shadow-md);
+  transition: box-shadow 0.16s var(--ease), background-color 0.16s var(--ease),
     transform 0.16s var(--ease);
 }
 
@@ -545,12 +549,12 @@
 
 @media (hover: hover) {
   .offer:hover {
-    border-color: var(--card-accent);
+    box-shadow: var(--shadow-lg);
     background: var(--surface-2);
     transform: translateY(-2px);
   }
   .offer:hover .offer__cta {
-    gap: 10px;
+    filter: brightness(1.08);
   }
   .offer:hover .offer__index {
     background: var(--card-accent);
@@ -566,10 +570,10 @@
 /* optional card image: full-bleed banner above the numbered row */
 .offer__media {
   flex: 1 1 100%;
-  margin: -18px -18px 0; /* bleed over the card's 18px padding */
+  margin: -20px -20px 0; /* bleed over the card's 20px padding */
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  border-radius: 20px 20px 0 0; /* follows the card's own radius */
   border-bottom: 1px solid var(--line);
 }
 
@@ -601,6 +605,12 @@
 .offer__body {
   flex: 1;
   min-width: 0;
+  /* Column layout so the CTA can pin itself to the card's bottom edge —
+     that plus the min-height on .offer is what makes every card come out
+     the same size regardless of how much sits above the button. */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .offer__top {
@@ -611,11 +621,20 @@
 }
 
 .offer__title {
-  font-size: 1.3rem;
+  /* Centred on its own full-width row. The fluid size is tuned so the
+     long workbook title stretches across the card without wrapping on
+     phones; when it does wrap on narrow desktop cards, balance splits
+     the lines evenly instead of leaving one word dangling. */
+  width: 100%;
+  text-align: center;
+  font-size: clamp(1.15rem, 4.1vw, 1.45rem);
+  line-height: 1.2;
+  text-wrap: balance;
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   overflow-wrap: anywhere;
+  color: var(--headline); /* the poster's coral titles in dark mode */
 }
 
 .offer__tag {
@@ -628,6 +647,24 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+/* The tiny line between the title and the button. Clamped to two lines
+   so a dashboard card that only has the long description still reads as
+   a blurb, not a paragraph. */
+.offer__blurb {
+  text-align: center;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 40ch;
+  margin-inline: auto;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
 .offer__desc {
@@ -714,23 +751,135 @@
   padding: 8px 11px;
   border-radius: var(--r-sm);
   border: 1px solid var(--red);
-  background: rgba(80, 13, 13, 0.12);
+  background: rgba(140, 54, 54, 0.12);
   color: var(--red);
   font-size: 0.9rem;
 }
 
+/* The reference's big pill: a solid fill in the card's accent, spanning
+   the whole card width. Down from the original 52px — the card holds its
+   own height regardless (see .offer), so the space this frees goes to
+   breathing room rather than shrinking the container. */
 .offer__cta {
-  margin-left: auto;
-  display: inline-flex;
+  width: 100%;
+  margin-top: auto; /* rides the card's bottom edge — see .offer__body */
+  display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  min-height: 38px;
+  padding: 8px 20px;
+  border-radius: 14px;
+  background: var(--card-accent);
+  color: var(--on-card);
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--card-accent);
-  transition: gap 0.16s var(--ease);
+  transition: filter 0.16s var(--ease);
+}
+
+/* A mouse can hit 38px precisely; a thumb can't. Touch pointers get the
+   44px back — the cards have the headroom for it either way. */
+@media (pointer: coarse) {
+  .offer__cta {
+    min-height: 44px;
+    padding: 11px 20px;
+  }
+}
+
+/* ---------- About-me container ---------- */
+/* Rides on .offer for the shape, so it stays in lockstep with the
+   product cards; these classes only restate the rail's text styles
+   inside the card, centred to match the card titles. */
+.about-me {
+  text-align: center;
+}
+
+/* The rail's avatar sits flush left; inside this centred card the same
+   component centres with the text around it. */
+.about-me .avatar {
+  margin-inline: auto;
+}
+
+.about-me__handle {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.02em;
+}
+
+.about-me__tagline {
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: var(--ink);
+}
+
+.about-me__blurb {
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.about-me__location {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* The longer story on the /about/ page. Left-aligned inside the centred
+   card: multi-paragraph text centred reads like a greeting card. */
+.about-me__story {
+  margin-top: 10px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+  display: grid;
+  gap: 13px;
+}
+
+.about-me__story h2 {
+  font-size: 1.35rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--headline);
+  text-align: center;
+}
+
+.about-me__story p {
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+.about-me__signature {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent) !important;
+}
+
+/* Sits where the CTA does on the product cards — pinned to the bottom
+   with a rule above it, like the rail's own trust line. */
+.about-me__trust {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  line-height: 1.7;
 }
 
 /* ---------- Booking calendar ---------- */
@@ -1003,7 +1152,7 @@
   padding: 12px 15px;
   border-radius: var(--r-md);
   border: 1px solid var(--red);
-  background: rgba(80, 13, 13, 0.12);
+  background: rgba(140, 54, 54, 0.12);
   color: var(--red);
   font-size: 0.95rem;
 }
@@ -1049,13 +1198,13 @@
   font-family: var(--mono);
   font-size: 0.9rem;
   letter-spacing: 0.06em;
-  color: rgba(235, 229, 216, 0.85);
+  color: rgba(235, 236, 239, 0.85);
 }
 
 .booking__done-note {
   margin-top: 14px;
   font-size: 0.95rem;
-  color: rgba(235, 229, 216, 0.72);
+  color: rgba(235, 236, 239, 0.72);
   max-width: 44ch;
   margin-inline: auto;
 }
@@ -1262,7 +1411,7 @@
   padding: 11px 14px;
   border-radius: var(--r-md);
   border: 1px solid var(--red);
-  background: rgba(80, 13, 13, 0.12);
+  background: rgba(140, 54, 54, 0.12);
   color: var(--red);
   font-size: 0.95rem;
 }
@@ -1411,7 +1560,7 @@
 .pay__scrim {
   position: absolute;
   inset: 0;
-  background: rgba(18, 11, 7, 0.62);
+  background: rgba(0, 14, 59, 0.62);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
 }
@@ -1426,7 +1575,7 @@
   overflow-y: auto;
   background: #ffffff;
   border-radius: var(--r-xl);
-  border-top: 4px solid var(--orange);
+  border-top: 4px solid var(--coral);
   box-shadow: var(--shadow-lg);
   padding: 18px;
 }
@@ -1441,7 +1590,7 @@
   border-radius: var(--r-sm);
   font-size: 1.5rem;
   line-height: 1;
-  color: #6b6b6b;
+  color: #6c748e;
   background: #ffffff;
 }
 
@@ -1453,7 +1602,7 @@
   padding: 38px 16px 26px;
   text-align: center;
   font-family: var(--body);
-  color: #120b07;
+  color: #000e3b;
 }
 
 .pay__error {
@@ -1461,7 +1610,7 @@
   padding: 12px 14px;
   border-radius: var(--r-md);
   border: 1px solid var(--red);
-  background: rgba(80, 13, 13, 0.08);
+  background: rgba(140, 54, 54, 0.08);
   color: var(--red);
   font-size: 1rem;
 }
@@ -1474,7 +1623,7 @@
 }
 
 .pay__card--paid .pay__close {
-  color: rgba(235, 229, 216, 0.8);
+  color: rgba(235, 236, 239, 0.8);
 }
 
 .pay__done-title {
@@ -1489,7 +1638,7 @@
 .pay__done-note {
   margin: 10px 0 18px;
   font-size: 1rem;
-  color: rgba(235, 229, 216, 0.75);
+  color: rgba(235, 236, 239, 0.75);
 }
 
 /* Second note is supporting detail, not the headline */
@@ -1510,10 +1659,10 @@
   margin-bottom: 14px;
   padding: 14px 16px;
   border-radius: var(--r-md);
-  border: 1px solid #e0d4c2;
-  background: #fdf7ee;
+  border: 1px solid #cfd8e8;
+  background: #f2f6fd;
   font-family: var(--body);
-  color: #120b07;
+  color: #000e3b;
 }
 
 .pay__terms-title {
@@ -1525,7 +1674,7 @@
 .pay__terms-copy {
   font-size: 0.88rem;
   line-height: 1.55;
-  color: #4a3f36;
+  color: #545e7c;
 }
 
 .pay__ack {
@@ -2116,15 +2265,12 @@
 
 /* ============================================================
    FALLBACKS for browsers without aspect-ratio (iOS < 15, older
-   Android WebView). Without these the portrait, video thumbnail and
+   Android WebView). Without these the video thumbnail and the
    about photo collapse to zero height — the "page full of missing
    images" failure. Fixed heights approximate the ratios at the
    column width; modern browsers never see these.
    ============================================================ */
 @supports not (aspect-ratio: 1 / 1) {
-  .avatar {
-    height: 500px;
-  }
   .film__media {
     height: 200px;
   }

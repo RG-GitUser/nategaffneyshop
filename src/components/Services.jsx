@@ -13,11 +13,6 @@ export default function Services() {
 
   return (
     <section className="section" id="services">
-      <div className="section__head">
-        <span className="eyebrow">Work with me</span>
-        <h2 className="section__title">Services</h2>
-      </div>
-
       <div className="offers">
         {services.map((s, i) => (
           <OfferCard

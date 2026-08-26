@@ -1,4 +1,3 @@
-import ThemeToggle from '../components/ThemeToggle.jsx'
 import { ArrowRight } from '../components/Icons.jsx'
 import { profile, footer } from '../content.js'
 
@@ -27,8 +26,6 @@ function Html({ as: Tag = 'p', html, ...rest }) {
 export default function LegalPage({ doc }) {
   return (
     <>
-      <ThemeToggle />
-
       <div className="legal">
         <div className="legal__inner">
           <a className="legal__back" href="/">

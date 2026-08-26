@@ -1,4 +1,3 @@
-import ThemeToggle from '../components/ThemeToggle.jsx'
 import BookingCalendar from '../components/BookingCalendar.jsx'
 import Footer from '../components/Footer.jsx'
 import { ArrowRight } from '../components/Icons.jsx'
@@ -14,8 +13,6 @@ import { profile, followup } from '../content.js'
 export default function FollowupPage() {
   return (
     <>
-      <ThemeToggle />
-
       <div className="page">
         <div className="shell">
           <header className="coaching-head rise">

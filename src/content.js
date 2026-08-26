@@ -12,15 +12,7 @@
  * ignored; any section missing from this list renders at the end, so
  * nothing can disappear by accident.
  */
-export const sections = [
-  'featuredVideo',
-  'offers',
-  'services',
-  'about',
-  'newsletter',
-  'testimonials',
-  'faqs',
-]
+export const sections = ['offers', 'services', 'coachingCard', 'aboutMe']
 
 /**
  * Custom containers added from the admin dashboard (Content tab →
@@ -31,30 +23,60 @@ export const custom = []
 
 /**
  * Archived section ids: kept with all their content but left off the
- * public page until restored from the dashboard.
+ * public page until restored from the dashboard. Nothing here is
+ * deleted — the copy further down this file is untouched and every one
+ * of these comes back the moment its id moves into `sections` above.
  *
- * 'booking' starts here: the coaching calendar lives on its own page at
- * /coaching/ (shared as a direct link) and is off the landing page by
- * default. Restore "Coaching / calendar" in the admin Content tab — or
- * move 'booking' back into `sections` above — to show it on the landing
- * page again; /coaching/ keeps working either way.
+ * Everything but the two things for sale is parked here for now, so the
+ * page is the portrait, the workbook, and the audit.
+ *
+ * 'booking' is the one that was already archived and should stay that
+ * way: the coaching calendar lives on its own page at /coaching/, shared
+ * as a direct link, and works from there whether or not it's on the
+ * landing page.
  */
-export const archived = ['booking']
+export const archived = [
+  'featuredVideo',
+  'about',
+  'newsletter',
+  'testimonials',
+  'faqs',
+  'booking',
+]
 
 /**
  * Service cards, managed entirely from the admin Services tab. Shaped
  * like offers: { title, description, price, tag, cta, href, accent }.
  * Empty list hides the section.
+ *
+ * The live dashboard is the source of truth — /api/services replaces
+ * this list wholesale on load. It's written out here so the audit still
+ * renders if the API is ever unreachable.
+ *
+ * `href: '#book'` points at the coaching calendar, which is archived (see
+ * `archived` above), so the card is a display price rather than a jump —
+ * same as it behaves in production.
  */
-export const services = []
+export const services = [
+  {
+    title: 'Content Audit',
+    description:
+      "A deep dive into your Instagram, delivered as a video walkthrough of what's working, what isn't, and what to do next. The Workbook is included.",
+    blurb: "A video walkthrough of what's working on your Instagram and what to do next.",
+    price: '$750 / Audit',
+    cta: 'Book',
+    href: '#book',
+    accent: 'navy',
+  },
+]
 
 export const profile = {
   name: 'Nate Gaffney',
   handle: '@nategaffney',
   // Short + human. This is the first thing someone reads after tapping your bio link.
-  tagline: 'Wolastoqey filmmaker. Nicheless Nomad.',
+  tagline: 'Wolastoqey filmmaker.',
   blurb:
-    'Obsessed with turning inner life into art. Director, writer, journaler, creative director — never just one thing.',
+    'Obsessed with turning inner life into art. Director, writer, journaler, creative director. Never just one thing.',
   // Web-sized copy (720×1280, ~100KB). The 3.8MB original is kept alongside
   // it as profilepicture-source.jpg for the OG image / print use.
   // If the file goes missing the page falls back to initials — nothing breaks.
@@ -99,46 +121,20 @@ export const featuredVideo = {
  */
 export const offers = [
   {
-    kind: 'product',
-    title: 'Content That Lands',
+    kind: 'pdf',
+    title: "Essential Creator's Workbook",
     description:
-      'A 60-page guide to hooks, pacing, and the structural stuff that makes a video work. Read it in an afternoon.',
-    price: '$39',
-    oldPrice: '$59',
-    cta: 'Get the guide',
+      'A PDF that replaces guessing what to post with a repeatable weekly system: your pillars, an ideas bank, and checklists for filming, editing and publishing.',
+    // One line for the card itself; the fuller description above stays
+    // for anywhere with room for it.
+    blurb: 'A repeatable weekly posting system, in one PDF.',
+    // Stored in the dashboard as a bare "25"; written with the symbol
+    // here because the card prints this string verbatim.
+    price: '$25',
+    cta: 'Get the PDF',
     href: '#',
     accent: 'navy',
-    tag: 'Most popular',
-  },
-  {
-    kind: 'product',
-    title: '1:1 Creator Consult',
-    description:
-      '45 minutes, just us. Bring your work, your rough cut, or the thing you can’t figure out. You leave with a plan.',
-    price: '$150',
-    cta: 'Book a call',
-    href: '#book', // the calendar — on this page when restored, else /coaching/
-    accent: 'umber',
-    rating: '5.0',
-  },
-  {
-    kind: 'product',
-    title: 'The Grade',
-    description:
-      'The color profiles and LUTs behind my last two years of work. Drop them straight into Premiere, Resolve, or Lightroom.',
-    price: '$29',
-    cta: 'Grab the pack',
-    href: '#',
-    accent: 'amber',
-  },
-  {
-    kind: 'link',
-    title: 'Hire me for a film',
-    description:
-      'Weddings, docs, and brand work through Wabanaki Media. Tell me what you’re making.',
-    cta: 'Start a project',
-    href: '#',
-    accent: 'olive',
+    tag: 'Perfect place to start',
   },
 ]
 
@@ -156,7 +152,7 @@ export const booking = {
   eyebrow: 'Book a session',
   title: '1:1 Coaching',
   description:
-    'Forty-five minutes on whatever’s actually in your way — a rough cut, pricing, burnout, the work you keep not making. Pick a time that works and tell me what you want to get out of it.',
+    'Forty-five minutes on whatever’s actually in your way: a rough cut, pricing, burnout, the work you keep not making. Pick a time that works and tell me what you want to get out of it.',
   duration: '45 min',
   price: '$150',
   // Fallback label, shown only when a browser can't convert timezones.
@@ -194,7 +190,7 @@ export const followup = {
   eyebrow: 'Follow-up',
   title: 'Follow-up call',
   description:
-    'A quick 15-minute check-in for people I’ve already worked with — where you’ve landed since the session, what’s stuck, and what to do next. Pick a time and I’ll confirm by email.',
+    'A quick 15-minute check-in for people I’ve already worked with: where you’ve landed since the session, what’s stuck, and what to do next. Pick a time and I’ll confirm by email.',
   duration: '15 min',
   price: '$50',
   finePrint:
@@ -214,11 +210,11 @@ export const newsletter = {
     'What I’m making, what’s working, and what flopped that week. Written the same way I’d text it to a friend who’s also figuring this out.',
   bullets: [
     'One idea you can use on your next shoot',
-    'A breakdown of something that performed — and why',
+    'A breakdown of something that performed, and why',
     'The honest numbers, including the bad ones',
   ],
   bonus:
-    'Join and I’ll send you The 7-Day Story Starter — one prompt a day until you’ve got something worth filming.',
+    'Join and I’ll send you The 7-Day Story Starter: one prompt a day until you’ve got something worth filming.',
   cta: 'Subscribe',
   placeholder: 'you@email.com',
   // Where the email goes. Point this at your ConvertKit / Beehiiv / Substack

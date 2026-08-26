@@ -294,7 +294,7 @@ export default function CommunityPanel({ notify }) {
         <h3 className="adm-h3">Call history</h3>
         <p className="adm-sub">
           {google?.configured
-            ? 'Google is connected on the server. Community calls over Google Meet are the next step — once calls are hosted from here, each one will be listed with its date and attendees.'
+            ? 'Google is connected on the server. Community calls over Google Meet are the next step. Once calls are hosted from here, each one will be listed with its date and attendees.'
             : 'Community calls will run on Google Meet. Once the Google console project is set up and connected on the server, calls hosted from here will be listed with their dates and attendees.'}
         </p>
       </section>

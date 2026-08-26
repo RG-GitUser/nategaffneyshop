@@ -154,13 +154,49 @@ export default function AccountPanel({ notify, me }) {
         </form>
       </section>
 
-      {/* Only rendered once GOOGLE_CLIENT_ID / SECRET exist on the server —
-          until then the section would just be setup instructions. */}
-      {google?.configured && (
+      {/* Always rendered. This used to be hidden until GOOGLE_CLIENT_ID and
+          GOOGLE_CLIENT_SECRET existed on the server, which meant the whole
+          Google Calendar section — the Connect button included — simply
+          wasn't there on a server that hadn't been set up yet, with nothing
+          on screen to say why or what was missing. Setup instructions are
+          the useful thing to show at that point, not an empty tab. */}
+      {google && (
         <section className="adm-group" style={{ maxWidth: 480 }}>
           <h3 className="adm-h3">Google Calendar</h3>
 
-          {google.connected ? (
+          {!google.configured ? (
+            <>
+              <p className="adm-sub">
+                Not set up on the server yet. Connecting needs an OAuth client
+                from the Google Cloud console, and the server has to be holding
+                its credentials before this can do anything.
+              </p>
+              <p className="adm-muted">
+                Add these to <code>server/.env</code> and restart the API:
+              </p>
+              <ul className="adm-muted">
+                <li>
+                  <code>GOOGLE_CLIENT_ID</code>
+                </li>
+                <li>
+                  <code>GOOGLE_CLIENT_SECRET</code>
+                </li>
+                <li>
+                  <code>GOOGLE_REDIRECT_URI</code> — must match the authorised
+                  redirect URI on the OAuth client exactly
+                </li>
+              </ul>
+              <p className="adm-muted">
+                server/.env.example carries the full walkthrough. Once they're
+                in, this section turns into the Connect button.
+              </p>
+              <div className="adm-actions" style={{ marginTop: 18 }}>
+                <button className="btn btn--primary adm-save" disabled>
+                  Connect Google Calendar
+                </button>
+              </div>
+            </>
+          ) : google.connected ? (
             <>
               <p className="adm-sub">
                 Connected{google.accountEmail ? (
