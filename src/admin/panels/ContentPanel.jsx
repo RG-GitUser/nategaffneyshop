@@ -119,6 +119,7 @@ function toForm(stored) {
       title: c.title || '',
       accent: ACCENTS.includes(c.accent) ? c.accent : 'navy',
       page: Boolean(c.page),
+      meta: c.meta || '',
       fields: (c.fields || []).map((f, i) => ({
         id: f.id || `${c.id}-f${i}`,
         label: f.label || '',
@@ -163,6 +164,7 @@ function toPayload(form) {
     title: c.title.trim(),
     accent: c.accent,
     page: Boolean(c.page),
+    meta: (c.meta || '').trim(),
     fields: c.fields
       .map((f) => ({ id: f.id, label: f.label.trim(), value: f.value, type: f.type }))
       .filter((f) => f.label || f.value.trim()),
@@ -319,6 +321,7 @@ export default function ContentPanel({ notify }) {
           id,
           title: '',
           accent: 'navy',
+          meta: '',
           fields: [{ id: `${id}-f0`, label: '', value: '' }],
         },
       ],
@@ -474,6 +477,25 @@ export default function ContentPanel({ notify }) {
           Link to page? The landing shows this as a card with a button, and
           the content opens on its own page titled with the name above.
         </label>
+      </div>
+
+      <div className="adm-field">
+        <label htmlFor={`${container.id}-meta`}>
+          Highlight line (the coloured line where a price would go)
+        </label>
+        <input
+          id={`${container.id}-meta`}
+          type="text"
+          placeholder="e.g. 1 min read, Free, New for 2026"
+          value={container.meta}
+          onChange={(e) => setCustom(container.id, { meta: e.target.value })}
+        />
+        <p className="adm-muted">
+          Sits between the blurb and the button, in the same colour the
+          product cards use for their prices. It shows once “Link to page?”
+          is ticked above, since that is what turns this container into a
+          card. Left blank, the card simply has no coloured line.
+        </p>
       </div>
 
       <div className="adm-field">

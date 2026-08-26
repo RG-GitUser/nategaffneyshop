@@ -30,6 +30,10 @@ export default function CustomSection({ container, full = false }) {
               title: container.title || 'Untitled',
               blurb: firstText ? firstText.value.split('\n')[0] : undefined,
               kind: 'link',
+              // The dashboard's "Highlight line" — the accent slot the
+              // product cards fill with a price. Undefined when blank, so
+              // the card renders nothing rather than an empty row.
+              meta: container.meta || undefined,
               cta: 'Take a look',
               href: `/page/?c=${encodeURIComponent(container.id)}`,
             }}

@@ -94,6 +94,11 @@ export default function OfferCard({ offer, index = 0 }) {
           </div>
         )}
 
+        {/* Takes the price's slot on a card that hasn't got one, so all
+            four containers keep the same title / blurb / accent line /
+            button rhythm. Carries the price colour deliberately. */}
+        {!isProduct && offer.meta && <p className="offer__meta">{offer.meta}</p>}
+
         {offer.rating && (
           <span className="offer__rating">
             <Star width={13} height={13} />

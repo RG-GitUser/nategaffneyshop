@@ -187,6 +187,20 @@
   font-size: 1.3rem;
 }
 
+/* The read-time line on the About Me card. Sits where the price sits on
+   the other three and borrows its colour, but not its size — it's a
+   quiet meta line, not a number the eye should land on first. */
+.offer__meta {
+  font-family: var(--display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--accent);
+  /* The price centres via justify-content on its flex row, which a bare
+     <p> gets nothing from — say it outright so the line sits on the
+     card's centre like everything else in the container. */
+  text-align: center;
+}
+
 .price__was {
   font-family: var(--mono);
   font-size: 0.88rem;
@@ -500,8 +514,14 @@
   padding: 20px;
   border-radius: 20px;
   /* Every card the same block: full column width from the grid, and one
-     shared height rather than each card hugging its own content. */
-  min-height: 220px;
+     shared height rather than each card hugging its own content.
+
+     233px is the tallest the four cards actually came out at when the
+     CTA was 52px — the floor has to clear the real copy or the taller
+     cards go on hugging their content and the row stops matching. Read
+     it together with .offer__cta: shortening the button frees height,
+     and this is what stops the cards collecting it. */
+  min-height: 233px;
   background: var(--surface);
   box-shadow: var(--shadow-md);
   transition: box-shadow 0.16s var(--ease), background-color 0.16s var(--ease),
@@ -737,7 +757,9 @@
 }
 
 /* The reference's big pill: a solid fill in the card's accent, spanning
-   the whole card width, tall enough to be the obvious tap target. */
+   the whole card width. Down from the original 52px — the card holds its
+   own height regardless (see .offer), so the space this frees goes to
+   breathing room rather than shrinking the container. */
 .offer__cta {
   width: 100%;
   margin-top: auto; /* rides the card's bottom edge — see .offer__body */
@@ -745,8 +767,8 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 52px;
-  padding: 14px 20px;
+  min-height: 38px;
+  padding: 8px 20px;
   border-radius: 14px;
   background: var(--card-accent);
   color: var(--on-card);
@@ -756,6 +778,15 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   transition: filter 0.16s var(--ease);
+}
+
+/* A mouse can hit 38px precisely; a thumb can't. Touch pointers get the
+   44px back — the cards have the headroom for it either way. */
+@media (pointer: coarse) {
+  .offer__cta {
+    min-height: 44px;
+    padding: 11px 20px;
+  }
 }
 
 /* ---------- About-me container ---------- */
