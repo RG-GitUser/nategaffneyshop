@@ -521,12 +521,15 @@
   /* Every card the same block: full column width from the grid, and one
      shared height rather than each card hugging its own content.
 
-     233px is the tallest the four cards actually came out at when the
-     CTA was 52px — the floor has to clear the real copy or the taller
-     cards go on hugging their content and the row stops matching. Read
-     it together with .offer__cta: shortening the button frees height,
-     and this is what stops the cards collecting it. */
-  min-height: 233px;
+     The floor has to clear the real copy or the taller cards go on
+     hugging their content and the row stops matching. Read it together
+     with .offer__cta: shortening the button frees height, and this is
+     what stops the cards collecting it. Down from 233px — the button
+     is a centred pill now rather than a full-width bar, and the cards
+     give back some of the air around it. 214px is where the tallest
+     card (title + two blurb lines + price + button) lands naturally;
+     lower floors just let the shorter cards fall out of line again. */
+  min-height: 214px;
   background: var(--surface);
   box-shadow: var(--shadow-md);
   transition: box-shadow 0.16s var(--ease), background-color 0.16s var(--ease),
@@ -751,16 +754,6 @@
   color: var(--amber);
 }
 
-/* Quiet, but present before the click — not a surprise at checkout. */
-.offer__note {
-  margin-top: 8px;
-  font-family: var(--mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-2);
-}
-
 .offer__error {
   margin-top: 10px;
   padding: 8px 11px;
@@ -776,7 +769,10 @@
    own height regardless (see .offer), so the space this frees goes to
    breathing room rather than shrinking the container. */
 .offer__cta {
-  width: 100%;
+  /* A centred pill rather than a bar spanning the whole card — caps at
+     260px and only shrinks below that when the card itself is narrower. */
+  width: min(100%, 260px);
+  margin-inline: auto;
   margin-top: auto; /* rides the card's bottom edge — see .offer__body */
   display: flex;
   align-items: center;

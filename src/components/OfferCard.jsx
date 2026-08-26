@@ -111,9 +111,10 @@ export default function OfferCard({ offer, index = 0 }) {
             an <a> is invalid markup with two competing click targets. */}
         <span className="offer__cta">{busy ? 'Opening…' : offer.cta}</span>
 
-        {isDownload && buyable && (
-          <p className="offer__note">Instant download · final sale, no refunds</p>
-        )}
+        {/* No final-sale line on the card itself — the checkout modal
+            makes the buyer acknowledge it before paying, and the terms
+            spell it out. The card stays title / blurb / price / button
+            like the other three. */}
 
         {error && <p className="offer__error">{error}</p>}
       </div>
