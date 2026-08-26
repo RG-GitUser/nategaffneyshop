@@ -912,6 +912,17 @@
   gap: 14px;
 }
 
+/* The service's card image, when one is set in the Services tab —
+   full card width, above the copy. */
+.audit__img {
+  width: calc(100% + 2 * clamp(24px, 5vw, 36px));
+  margin: calc(-1 * clamp(24px, 5vw, 36px));
+  margin-bottom: 0;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+}
+
 /* The audit copy renders through richtext.jsx — paragraphs, bullets,
    bold — all sharing the reading style. */
 .audit__copy {
