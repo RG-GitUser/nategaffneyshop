@@ -11,13 +11,15 @@
      onto his face — measured against the source, his cap starts at
      y=236 of 1288, which puts the head around 18% down the travel. */
   --avatar-size: 220px;
-  /* 38% (was 32%). The circle shows a 720px-tall window out of the
+  /* 54% (was 46%). The circle shows a 720px-tall window out of the
      1288px file, with 568px of travel — each percent moves the crop
-     ~5.7px down the source. His cap starts at y=236; 38% opens the
-     window at y=216, so only a ~20px sliver of siding rides above the
-     cap and his crossed arms come further into frame. Past ~40% the cap
-     starts grazing the top edge, so there's little travel left. */
-  --avatar-focus: 50% 38%;
+     ~5.7px down the source. 54% opens the window at y=307: the crown
+     of the cap is cropped away but the brim and the whole face stay,
+     and the frame runs down past the crossed arms toward the waist.
+     Chosen by rendering the candidate crops (38/46/54/62) and looking
+     at them — 62% starts cutting his eyes off, so 54% is the far end
+     of useful travel. */
+  --avatar-focus: 50% 54%;
 
   /* Both axes are stated, so this needs no aspect-ratio and no fallback
      for the browsers that lack it. */
@@ -514,8 +516,9 @@
   flex-wrap: wrap; /* lets an image banner take the full first row */
   gap: 16px;
   /* The Stan-store reference card: a soft big-radius container floating
-     on a shadow, no hard border, and room to breathe inside. */
-  padding: 20px;
+     on a shadow, no hard border, and room to breathe inside — trimmed
+     vertically so the cards run shorter. */
+  padding: 16px 20px;
   border-radius: 20px;
   /* Every card the same block: full column width from the grid, and one
      shared height rather than each card hugging its own content.
@@ -523,12 +526,12 @@
      The floor has to clear the real copy or the taller cards go on
      hugging their content and the row stops matching. Read it together
      with .offer__cta: shortening the button frees height, and this is
-     what stops the cards collecting it. Down from 233px — the button
-     is a centred pill now rather than a full-width bar, and the cards
-     give back some of the air around it. 214px is where the tallest
-     card (title + two blurb lines + price + button) lands naturally;
-     lower floors just let the shorter cards fall out of line again. */
-  min-height: 214px;
+     what stops the cards collecting it. Down from 233px in two steps —
+     pill button instead of a full-width bar, then tighter padding and
+     gaps. 196px is where the tallest card (title + two blurb lines +
+     price + button) lands naturally now; lower floors just let the
+     shorter cards fall out of line again. */
+  min-height: 200px;
   background: var(--surface);
   box-shadow: var(--shadow-md);
   transition: box-shadow 0.16s var(--ease), background-color 0.16s var(--ease),
@@ -617,7 +620,7 @@
      the same size regardless of how much sits above the button. */
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .offer__top {
