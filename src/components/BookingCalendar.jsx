@@ -78,14 +78,19 @@ function zonedInstant(date, hour, minute, tz) {
 }
 
 /**
- * One calendar, two kinds of booking. The default renders the full
+ * One calendar, three kinds of booking. The default renders the full
  * coaching session; `type="followup"` (the unlisted /followup/ page)
  * books the short paid check-in instead — same slots, same request→
  * confirm→pay flow, its own price and copy. `copy` overrides display
  * fields only (title, description, duration, price, …); the calendar
  * mechanics always come from `booking` in content.js.
+ *
+ * `link` (an object from /api/bookings/links/:slug) books through a
+ * custom share link instead: its price and length come straight from
+ * the link, and the request carries the link's slug so the server can
+ * stamp them onto the booking.
  */
-export default function BookingCalendar({ type = 'session', copy = null }) {
+export default function BookingCalendar({ type = 'session', copy = null, link = null }) {
   const today = useMemo(() => startOfDay(new Date()), [])
   const earliest = useMemo(
     () => addDays(today, booking?.leadTimeDays ?? 0),
@@ -109,13 +114,24 @@ export default function BookingCalendar({ type = 'session', copy = null }) {
   const sectionRef = useRef(null)
 
   useEffect(() => {
+    // A share link IS the price — no settings lookup, so an edit to the
+    // main session's price can never leak into a custom offer.
+    if (link) {
+      setPrice({
+        priceCents: link.priceCents ?? null,
+        currency: link.currency || 'cad',
+        durationMinutes: link.durationMinutes,
+        enabled: Boolean(link.priceCents),
+      })
+      return
+    }
     const API_ = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
     const query = type === 'session' ? '' : `?type=${type}`
     fetch(`${API_}/api/bookings/price${query}`)
       .then((r) => r.json())
       .then(setPrice)
       .catch(() => setPrice(null))
-  }, [type])
+  }, [type, link])
 
   /**
    * Slot times are written on Nate's clock (booking.timezoneName); the
@@ -214,7 +230,8 @@ export default function BookingCalendar({ type = 'session', copy = null }) {
           name: form.name,
           email: form.email,
           note: form.note,
-          type,
+          type: link ? 'custom' : type,
+          ...(link ? { link: link.slug } : {}),
         }),
       })
       const payload = await res.json().catch(() => null)

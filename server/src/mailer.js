@@ -408,8 +408,13 @@ export function notifyChatUnbanned(email) {
 }
 
 export function notifyNewBooking(booking) {
-  // "session" vs the short paid check-in booked through /followup/.
-  const kind = booking.type === 'followup' ? 'follow-up call' : 'session'
+  // "session" vs the short paid check-in booked through /followup/ vs a
+  // custom share link, which is named after the link itself.
+  const kind = booking.linkTitle
+    ? `"${booking.linkTitle}" session`
+    : booking.type === 'followup'
+      ? 'follow-up call'
+      : 'session'
   // to Nate
   send({
     to: config.smtp.notify,
