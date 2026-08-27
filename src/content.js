@@ -176,6 +176,9 @@ export const offers = [
 export const booking = {
   eyebrow: 'Book a session',
   title: '1:1 Coaching',
+  // The one-liner on the landing page's coaching card (the fuller
+  // description below lives on the booking page itself).
+  blurb: 'Forty-five minutes on whatever is actually in your way.',
   description:
     'Forty-five minutes on whatever’s actually in your way: a rough cut, pricing, burnout, the work you keep not making. Pick a time that works and tell me what you want to get out of it.',
   duration: '45 min',
