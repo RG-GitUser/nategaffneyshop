@@ -83,6 +83,11 @@ const FIELDS = [
     fields: [
       { key: 'title', label: 'Title' },
       {
+        key: 'blurb',
+        label: 'Card blurb',
+        hint: 'The one-liner on the coaching card on the landing page. The fuller description below shows on the booking page itself.',
+      },
+      {
         key: 'description',
         label: 'Description',
         textarea: true,
