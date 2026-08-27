@@ -67,6 +67,7 @@ export const collections = {
   shopItems: () => getDb().collection('shopItems'),
   services: () => getDb().collection('services'),
   bookings: () => getDb().collection('bookings'),
+  bookingLinks: () => getDb().collection('bookingLinks'),
   orders: () => getDb().collection('orders'),
   pageViews: () => getDb().collection('pageViews'),
   circleCodes: () => getDb().collection('circleCodes'),

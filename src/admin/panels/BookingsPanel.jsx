@@ -53,6 +53,96 @@ export default function BookingsPanel({ notify }) {
   const [calSettings, setCalSettings] = useState(null)
   const [sessionLen, setSessionLen] = useState('')
   const [savingLen, setSavingLen] = useState(false)
+  // Custom share links — private bookable offers, minted here.
+  const [links, setLinks] = useState([])
+  const [linkDraft, setLinkDraft] = useState(null)
+  const [savingLink, setSavingLink] = useState(false)
+
+  const loadLinks = () =>
+    api
+      .listBookingLinks()
+      .then(setLinks)
+      .catch(() => {})
+
+  const linkUrl = (l) => `${window.location.origin}/book/?k=${l.slug}`
+
+  async function copyLink(l) {
+    try {
+      await navigator.clipboard.writeText(linkUrl(l))
+      notify('Link copied. Send it to whoever it’s for.')
+    } catch {
+      notify(linkUrl(l)) // clipboard blocked — show it instead
+    }
+  }
+
+  async function toggleLink(l) {
+    try {
+      await api.updateBookingLink(l.id, { active: l.active === false })
+      loadLinks()
+    } catch (err) {
+      notify(err.message, 'error')
+    }
+  }
+
+  async function removeLink(l) {
+    const ok = await confirmDialog({
+      title: `Delete "${l.title}"?`,
+      message:
+        'The link stops working immediately for anyone who has it. Bookings already made through it are kept.',
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+    try {
+      await api.deleteBookingLink(l.id)
+      notify('Booking link deleted.')
+      loadLinks()
+    } catch (err) {
+      notify(err.message, 'error')
+    }
+  }
+
+  async function saveLink() {
+    if (!linkDraft.title.trim()) {
+      notify('Give the offer a title.', 'error')
+      return
+    }
+    const minutes = Number(linkDraft.durationMinutes)
+    if (!Number.isInteger(minutes) || minutes < 15 || minutes > 240) {
+      notify('Length must be between 15 and 240 minutes.', 'error')
+      return
+    }
+    const raw = String(linkDraft.amount ?? '').trim()
+    const priceCents = raw === '' ? null : Math.round(Number(raw) * 100)
+    if (priceCents !== null && (!Number.isFinite(priceCents) || priceCents < 50)) {
+      notify('Enter a price of at least $0.50, or leave it blank for free.', 'error')
+      return
+    }
+    const body = {
+      title: linkDraft.title.trim(),
+      description: linkDraft.description,
+      priceCents,
+      currency: 'cad',
+      durationMinutes: minutes,
+      active: Boolean(linkDraft.active),
+    }
+    setSavingLink(true)
+    try {
+      if (linkDraft.id) {
+        await api.updateBookingLink(linkDraft.id, body)
+        notify('Booking link updated.')
+      } else {
+        await api.createBookingLink(body)
+        notify('Booking link created — copy it from the list below.')
+      }
+      setLinkDraft(null)
+      loadLinks()
+    } catch (err) {
+      notify(err.message, 'error')
+    } finally {
+      setSavingLink(false)
+    }
+  }
 
   useEffect(() => {
     api
@@ -63,6 +153,7 @@ export default function BookingsPanel({ notify }) {
         setSessionLen(g.durationMinutes ? String(g.durationMinutes) : '')
       })
       .catch(() => {})
+    loadLinks()
     for (const { type } of PRICE_KINDS) {
       api
         .bookingPrice(type)
@@ -320,6 +411,193 @@ export default function BookingsPanel({ notify }) {
           ))}
         </div>
       </div>
+
+      <div className="adm-panel-head" style={{ marginTop: 26 }}>
+        <div>
+          <h3 className="adm-h3">Private booking links</h3>
+          <p className="adm-sub">
+            Extra bookable offers, each with its own price and length. They
+            never appear on the site — each one lives only at its own link,
+            for you to send to specific people. Same calendar, same
+            confirm-and-pay flow as regular sessions.
+          </p>
+        </div>
+        <button
+          className="btn btn--primary adm-save"
+          onClick={() =>
+            setLinkDraft({
+              title: '',
+              description: '',
+              amount: '',
+              durationMinutes: 60,
+              active: true,
+            })
+          }
+        >
+          New link
+        </button>
+      </div>
+
+      {links.length > 0 && (
+        <div className="adm-table-wrap">
+          <table className="adm-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Price</th>
+                <th>Length</th>
+                <th>Link</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {links.map((l) => (
+                <tr key={l.id}>
+                  <td>
+                    <strong>{l.title}</strong>
+                    {!l.active && <span className="adm-pill"> off</span>}
+                  </td>
+                  <td className="adm-nowrap">
+                    {l.priceCents ? `$${(l.priceCents / 100).toFixed(2)}` : 'free'}
+                  </td>
+                  <td className="adm-nowrap">{l.durationMinutes} min</td>
+                  <td>
+                    <button
+                      className="adm-mini"
+                      title={linkUrl(l)}
+                      onClick={() => copyLink(l)}
+                    >
+                      Copy link
+                    </button>
+                  </td>
+                  <td className="adm-actions">
+                    <button
+                      className="adm-mini"
+                      onClick={() => toggleLink(l)}
+                    >
+                      {l.active ? 'Turn off' : 'Turn on'}
+                    </button>
+                    <button
+                      className="adm-mini"
+                      onClick={() =>
+                        setLinkDraft({
+                          id: l.id,
+                          title: l.title,
+                          description: l.description || '',
+                          amount: l.priceCents ? (l.priceCents / 100).toFixed(2) : '',
+                          durationMinutes: l.durationMinutes,
+                          active: l.active !== false,
+                        })
+                      }
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="adm-mini adm-mini--danger"
+                      onClick={() => removeLink(l)}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {linkDraft && (
+        <div
+          className="adm-modal"
+          onClick={(e) => e.target === e.currentTarget && setLinkDraft(null)}
+        >
+          <div className="adm-modal__card adm-modal__card--wide">
+            <h3 className="adm-h3">
+              {linkDraft.id ? 'Edit booking link' : 'New booking link'}
+            </h3>
+
+            <div className="adm-grid">
+              <div className="adm-field adm-field--wide">
+                <label htmlFor="bl-title">Title</label>
+                <input
+                  id="bl-title"
+                  type="text"
+                  placeholder="e.g. 90-minute deep dive"
+                  value={linkDraft.title}
+                  onChange={(e) => setLinkDraft({ ...linkDraft, title: e.target.value })}
+                />
+              </div>
+
+              <div className="adm-field">
+                <label htmlFor="bl-amount">Price (blank = free)</label>
+                <input
+                  id="bl-amount"
+                  type="number"
+                  step="0.01"
+                  min="0.50"
+                  placeholder="free"
+                  value={linkDraft.amount}
+                  onChange={(e) => setLinkDraft({ ...linkDraft, amount: e.target.value })}
+                />
+              </div>
+
+              <div className="adm-field">
+                <label htmlFor="bl-dur">Length (minutes)</label>
+                <input
+                  id="bl-dur"
+                  type="number"
+                  min="15"
+                  max="240"
+                  step="5"
+                  value={linkDraft.durationMinutes}
+                  onChange={(e) =>
+                    setLinkDraft({ ...linkDraft, durationMinutes: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="adm-field adm-field--wide">
+                <label htmlFor="bl-desc">Description (shown on the booking page)</label>
+                <textarea
+                  id="bl-desc"
+                  rows={6}
+                  value={linkDraft.description}
+                  onChange={(e) =>
+                    setLinkDraft({ ...linkDraft, description: e.target.value })
+                  }
+                />
+                <p className="adm-hint">
+                  Style your text as you type: <strong>**word**</strong> shows as{' '}
+                  <strong>bold</strong>, <em>*word*</em> as <em>italics</em>, and
+                  any line that starts with <strong>-&nbsp;</strong> becomes a
+                  bullet point. Press Enter for a new paragraph.
+                </p>
+              </div>
+
+              <p className="adm-sub adm-field--wide">
+                Saving creates a private page for this offer. Nobody can find
+                it from the site — copy the link from the list and send it to
+                whoever it's for. When someone books, it lands in this
+                calendar like any other request, and confirming it emails
+                them a payment link for this offer's price.
+              </p>
+            </div>
+
+            <div className="adm-modal__actions">
+              <button className="adm-mini" onClick={() => setLinkDraft(null)}>
+                Cancel
+              </button>
+              <button
+                className="btn btn--primary adm-save"
+                onClick={saveLink}
+                disabled={savingLink}
+              >
+                {savingLink ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {draft && (
         <div className="adm-modal" onClick={(e) => e.target === e.currentTarget && setDraft(null)}>

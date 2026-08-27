@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { randomBytes } from 'node:crypto'
 import { ObjectId } from 'mongodb'
 import rateLimit from 'express-rate-limit'
 import { z } from 'zod'
@@ -77,7 +78,130 @@ const createSchema = z.object({
   name: z.string().min(1).max(120),
   email: z.string().email().max(200),
   note: z.string().max(2000).default(''),
-  type: z.enum(['session', 'followup']).default('session'),
+  type: z.enum(['session', 'followup', 'custom']).default('session'),
+  /** The share token of a custom booking link — required with type
+   *  'custom', ignored otherwise. */
+  link: z.string().min(6).max(64).optional(),
+})
+
+/**
+ * Custom booking links: extra bookable offers the admin mints in the
+ * dashboard, each with its own title, copy, price and length. They are
+ * never listed anywhere public — each lives only at /book/?k=<slug>,
+ * handed out person to person. Same slots, same request→confirm→pay
+ * flow as the main session; the price and duration are stamped onto the
+ * booking at request time so later edits to the link can't reprice an
+ * already-requested session.
+ */
+const linkSchema = z.object({
+  title: z.string().min(1).max(120),
+  description: z.string().max(4000).default(''),
+  priceCents: z.number().int().min(50).max(9999999).nullable().default(null),
+  currency: z.enum(['cad', 'usd']).default('cad'),
+  durationMinutes: z.number().int().min(15).max(240),
+  active: z.boolean().default(true),
+})
+
+const linkToClient = (d) => ({ ...d, id: d._id.toString(), _id: undefined })
+
+/** Public — what a share link offers. Only active links answer. */
+bookingsRouter.get('/links/:slug', async (req, res, next) => {
+  try {
+    const slug = String(req.params.slug)
+    if (!/^[a-f0-9]{8,64}$/i.test(slug)) {
+      return res.status(404).json({ error: 'No such booking link' })
+    }
+    const doc = await collections
+      .bookingLinks()
+      .findOne({ slug, active: { $ne: false } })
+    if (!doc) return res.status(404).json({ error: 'No such booking link' })
+    // Only what the public page needs — no ids, no timestamps.
+    res.json({
+      slug: doc.slug,
+      title: doc.title,
+      description: doc.description || '',
+      priceCents: doc.priceCents ?? null,
+      currency: doc.currency || 'cad',
+      durationMinutes: doc.durationMinutes,
+    })
+  } catch (err) {
+    next(err)
+  }
+})
+
+/** Admin — every link, newest first. */
+bookingsRouter.get('/links', requireAdmin, async (_req, res, next) => {
+  try {
+    const rows = await collections
+      .bookingLinks()
+      .find({})
+      .sort({ createdAt: -1 })
+      .toArray()
+    res.json(rows.map(linkToClient))
+  } catch (err) {
+    next(err)
+  }
+})
+
+/** Admin — mint a new link. The slug is random, so the URL can't be
+ *  guessed — being unlisted is the whole point. */
+bookingsRouter.post('/links', requireAdmin, async (req, res, next) => {
+  try {
+    const parsed = linkSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Invalid link', details: parsed.error.flatten() })
+    }
+    const doc = {
+      ...parsed.data,
+      slug: randomBytes(8).toString('hex'),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    const { insertedId } = await collections.bookingLinks().insertOne(doc)
+    await audit(req.admin.email, 'bookinglink.create', {
+      id: insertedId.toString(),
+      title: doc.title,
+    })
+    res.status(201).json(linkToClient({ ...doc, _id: insertedId }))
+  } catch (err) {
+    next(err)
+  }
+})
+
+/** Admin — edit a link. The slug never changes, so a URL already sent
+ *  to someone keeps working. */
+bookingsRouter.patch('/links/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const _id = parseId(req.params.id, res)
+    if (!_id) return
+    const parsed = linkSchema.partial().safeParse(req.body)
+    if (!parsed.success || Object.keys(parsed.data).length === 0) {
+      return res.status(400).json({ error: 'Invalid link update' })
+    }
+    const { matchedCount } = await collections
+      .bookingLinks()
+      .updateOne({ _id }, { $set: { ...parsed.data, updatedAt: new Date() } })
+    if (!matchedCount) return res.status(404).json({ error: 'Not found' })
+    await audit(req.admin.email, 'bookinglink.update', { id: req.params.id })
+    res.json(linkToClient(await collections.bookingLinks().findOne({ _id })))
+  } catch (err) {
+    next(err)
+  }
+})
+
+/** Admin — delete a link. Its URL goes dead; existing bookings made
+ *  through it keep their stamped price and length. */
+bookingsRouter.delete('/links/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const _id = parseId(req.params.id, res)
+    if (!_id) return
+    const { deletedCount } = await collections.bookingLinks().deleteOne({ _id })
+    if (!deletedCount) return res.status(404).json({ error: 'Not found' })
+    await audit(req.admin.email, 'bookinglink.delete', { id: req.params.id })
+    res.json({ ok: true })
+  } catch (err) {
+    next(err)
+  }
 })
 
 /** The public form is unauthenticated, so it needs its own throttle —
@@ -180,8 +304,9 @@ bookingsRouter.post('/', publicLimiter, async (req, res, next) => {
         .json({ error: 'That time was just taken. Please pick another.' })
     }
 
+    const { link: linkSlug, ...fields } = parsed.data
     const doc = {
-      ...parsed.data,
+      ...fields,
       status: 'pending',
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -190,6 +315,22 @@ bookingsRouter.post('/', publicLimiter, async (req, res, next) => {
     // length is stamped on the booking so the Google event gets it right.
     if (doc.type === 'followup') {
       doc.durationMinutes = (await bookingPrice('followup')).durationMinutes
+    }
+    // A custom share link carries its own title, price and length —
+    // stamped here so editing or deleting the link later can't reprice
+    // a session someone already requested.
+    if (doc.type === 'custom') {
+      const link = linkSlug
+        ? await collections.bookingLinks().findOne({ slug: linkSlug, active: { $ne: false } })
+        : null
+      if (!link) {
+        return res.status(404).json({ error: 'That booking link is no longer available.' })
+      }
+      doc.linkSlug = link.slug
+      doc.linkTitle = link.title
+      doc.durationMinutes = link.durationMinutes
+      doc.priceCents = link.priceCents ?? null
+      doc.currency = link.currency || 'cad'
     }
     const { insertedId } = await collections.bookings().insertOne(doc)
 
@@ -246,7 +387,13 @@ bookingsRouter.post('/admin', requireAdmin, async (req, res, next) => {
         .status(400)
         .json({ error: 'Invalid booking', details: parsed.error.flatten() })
     }
-    const { status, createEvent, notifyCustomer, ...fields } = parsed.data
+    const { status, createEvent, notifyCustomer, link: _link, ...fields } = parsed.data
+
+    // Manual entries are sessions or follow-ups; a custom-link booking
+    // only makes sense arriving through its own public page.
+    if (fields.type === 'custom') {
+      return res.status(400).json({ error: 'Manual bookings cannot use a share link type' })
+    }
 
     const taken = await collections.bookings().findOne({
       date: fields.date,
@@ -381,8 +528,12 @@ bookingsRouter.patch('/:id', requireAdmin, async (req, res, next) => {
      * The webhook marks the booking paid via the link's metadata.
      */
     if (becomingConfirmed && !before.paid && !before.payUrl && stripeReady) {
-      const { priceCents, currency } = await bookingPrice(before.type)
-      const product = typeOf(before).product
+      // A custom-link booking carries its own stamped price; the two
+      // standing types read theirs from settings.
+      const { priceCents, currency } = before.linkSlug
+        ? { priceCents: before.priceCents ?? null, currency: before.currency || 'cad' }
+        : await bookingPrice(before.type)
+      const product = before.linkTitle || typeOf(before).product
       if (priceCents) {
         try {
           const price = await stripe.prices.create(

@@ -95,6 +95,12 @@ export const api = {
   // type: 'session' (default) or 'followup' — the short paid check-in.
   bookingPrice: (type) => request(`/bookings/price${type ? `?type=${type}` : ''}`),
   saveBookingPrice: (body) => request('/bookings/price', { method: 'PUT', body }),
+  // custom share links — each a bookable offer with its own price/length
+  listBookingLinks: () => request('/bookings/links'),
+  createBookingLink: (body) => request('/bookings/links', { method: 'POST', body }),
+  updateBookingLink: (id, body) =>
+    request(`/bookings/links/${id}`, { method: 'PATCH', body }),
+  deleteBookingLink: (id) => request(`/bookings/links/${id}`, { method: 'DELETE' }),
 
   // analytics
   metricsSummary: (days = 30) => request(`/metrics/summary?days=${days}`),
