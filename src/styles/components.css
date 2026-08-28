@@ -1944,19 +1944,15 @@
   cursor: pointer;
 }
 
-/* Drawn by hand on a plain span rather than trusting the input: Safari
-   neither painted the native tick reliably nor renders pseudo-elements
-   on <input>, which left an invisible consent control at the exact
-   moment someone is about to pay. The real checkbox stays in the label
-   for keyboard and screen-reader behaviour, just not painted. Colours
-   are literal for the same reason as .pay__terms — this sits on the
-   checkout's white card in both themes. */
-.pay__ack input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
+/* The consent control is a button with role=checkbox — after native
+   ticks, input pseudo-elements and label forwarding all misbehaved in
+   Safari, this leaves nothing for a browser to interpret: a click
+   handler and a class swap. Colours are literal for the same reason as
+   .pay__terms — this sits on the checkout's white card in both themes. */
+.pay__ack {
+  text-align: left;
+  color: inherit;
+  padding: 0;
 }
 
 .pay__box {
@@ -1971,12 +1967,12 @@
   place-items: center;
 }
 
-.pay__ack input:checked + .pay__box {
+.pay__box--on {
   border-color: #000e3b;
   background: #000e3b;
 }
 
-.pay__ack input:checked + .pay__box::after {
+.pay__box--on::after {
   content: '';
   width: 5px;
   height: 10px;
@@ -1986,9 +1982,10 @@
   margin-top: -2px;
 }
 
-.pay__ack input:focus-visible + .pay__box {
+.pay__ack:focus-visible {
   outline: 2px solid #000e3b;
   outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .pay__frame {
