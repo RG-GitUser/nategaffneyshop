@@ -245,22 +245,29 @@ export default function CheckoutModal({
                   any other concern, email{' '}
                   <a href={`mailto:${SUPPORT}`}>{SUPPORT}</a> and we’ll put it right.
                 </p>
-                <label className="pay__ack">
-                  <input
-                    type="checkbox"
-                    checked={acked}
-                    onChange={(e) => setAcked(e.target.checked)}
+                {/* A button playing the checkbox role, not a native
+                    checkbox: Safari has now failed to paint the native
+                    tick, pseudo-elements on the input, AND label-forwarded
+                    toggling for some visitors. A button's own click
+                    handler and two CSS classes cannot be refused by any
+                    browser, and role/aria-checked keep it a checkbox to
+                    assistive tech. */}
+                <button
+                  type="button"
+                  className="pay__ack"
+                  role="checkbox"
+                  aria-checked={acked}
+                  onClick={() => setAcked((a) => !a)}
+                >
+                  <span
+                    className={`pay__box${acked ? ' pay__box--on' : ''}`}
+                    aria-hidden="true"
                   />
-                  {/* The box is this span, not the input: Safari won't
-                      reliably paint a native tick or pseudo-elements on
-                      the input itself, and an invisible consent control
-                      at the moment of payment is not acceptable. */}
-                  <span className="pay__box" aria-hidden="true" />
-                  <span>
+                  <span className="pay__ack-text">
                     I understand this purchase is final and non-refundable, and I want
                     the file straight away.
                   </span>
-                </label>
+                </button>
               </div>
             )}
 
