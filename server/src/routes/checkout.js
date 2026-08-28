@@ -40,6 +40,27 @@ const limiter = rateLimit({
 })
 
 /**
+ * A description sized for Stripe's checkout summary: whole sentences
+ * while they fit, then whole words, never a mid-word chop. Stripe shows
+ * it as one small plain-text block, so past ~300 characters it's noise.
+ */
+export function summarize(text, max = 300) {
+  const t = String(text || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (t.length <= max) return t
+  const slice = t.slice(0, max)
+  const sentence = Math.max(
+    slice.lastIndexOf('. '),
+    slice.lastIndexOf('! '),
+    slice.lastIndexOf('? '),
+  )
+  if (sentence > max * 0.4) return slice.slice(0, sentence + 1)
+  const word = slice.lastIndexOf(' ')
+  return `${slice.slice(0, word > 0 ? word : max).trimEnd()}…`
+}
+
+/**
  * Public config for the frontend: whether embedded checkout is on, and
  * the keys Stripe.js needs. Both values are public by design — the
  * publishable key can only tokenise, and the account id identifies, not
@@ -117,7 +138,7 @@ checkoutRouter.post('/session', limiter, async (req, res, next) => {
               unit_amount: item.priceCents,
               product_data: {
                 name: item.title,
-                ...(item.description ? { description: item.description.slice(0, 300) } : {}),
+                ...(item.description ? { description: summarize(item.description) } : {}),
               },
             },
           },

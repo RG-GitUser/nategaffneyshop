@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { config } from '../config.js'
 import { collections, audit } from '../db.js'
 import { requireAdmin, verifyDownloadToken } from '../middleware/auth.js'
-import { stripe, stripeReady, onBehalf } from './checkout.js'
+import { stripe, stripeReady, onBehalf, summarize } from './checkout.js'
 
 export const shopRouter = Router()
 
@@ -35,10 +35,12 @@ shopRouter.post('/:id/paylink', requireAdmin, async (req, res, next) => {
     }
 
     const currency = (item.currency || 'cad').toLowerCase()
+    const desc = item.description ? summarize(item.description) : ''
     if (
       item.payLinkUrl &&
       item.payLinkPriceCents === item.priceCents &&
-      item.payLinkCurrency === currency
+      item.payLinkCurrency === currency &&
+      (item.payLinkDesc || '') === desc
     ) {
       return res.json({ url: item.payLinkUrl, reused: true })
     }
@@ -53,11 +55,24 @@ shopRouter.post('/:id/paylink', requireAdmin, async (req, res, next) => {
       }
     }
 
+    /**
+     * A real Product rather than price product_data: the inline
+     * shorthand cannot carry a description, and the payment page shows
+     * one only when the Product has it — which is why shared links were
+     * arriving with a bare title.
+     */
+    const product = await stripe.products.create(
+      {
+        name: item.title,
+        ...(desc ? { description: desc } : {}),
+      },
+      ...onBehalf,
+    )
     const price = await stripe.prices.create(
       {
         currency,
         unit_amount: item.priceCents,
-        product_data: { name: item.title },
+        product: product.id,
       },
       ...onBehalf,
     )
@@ -93,6 +108,7 @@ shopRouter.post('/:id/paylink', requireAdmin, async (req, res, next) => {
           payLinkUrl: link.url,
           payLinkPriceCents: item.priceCents,
           payLinkCurrency: currency,
+          payLinkDesc: desc,
           updatedAt: new Date(),
         },
       },
