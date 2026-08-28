@@ -65,6 +65,20 @@ export async function loadContent() {
           delete content.booking[k]
         }
       }
+      /**
+       * The site's identity can't be blank. An old admin "Delete" wiped
+       * the stored profile fields to empty strings, which merged over
+       * the bundled name and photo and left the rail bare. A stored
+       * empty identity field means "nothing meaningful here", so it
+       * falls through to the bundled default instead. The other profile
+       * lines (tagline, trust, …) stay clearable on purpose.
+       */
+      if (content.profile && typeof content.profile === 'object') {
+        for (const k of ['name', 'handle', 'avatar']) {
+          if (!content.profile[k]) delete content.profile[k]
+        }
+      }
+
       for (const [key, value] of Object.entries(content)) {
         // Only keys with a matching object default can merge — anything
         // else (unknown or retired sections) is ignored.
