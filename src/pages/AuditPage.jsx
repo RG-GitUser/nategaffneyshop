@@ -171,6 +171,7 @@ export default function AuditPage() {
           itemType="service"
           title={audit.title}
           image={safeImageSrc(audit.image)}
+          description={audit.description}
           doneNote="Payment received. Your receipt is on its way to your email."
           onClose={() => setPaying(false)}
         />
