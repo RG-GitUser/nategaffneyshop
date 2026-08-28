@@ -139,6 +139,26 @@ export default function ShopPanel({ notify }) {
     }
   }
 
+  /** One tap swaps the card with its neighbour. Every row's order is
+   *  renumbered to its list position on the way, so ties (two items both
+   *  at 0) come apart the first time anything moves. */
+  async function move(i, delta) {
+    const j = i + delta
+    if (j < 0 || j >= items.length) return
+    const next = [...items]
+    ;[next[i], next[j]] = [next[j], next[i]]
+    try {
+      await Promise.all(
+        next
+          .map((it, idx) => (it.order === idx ? null : api.updateShopItem(it.id, { order: idx })))
+          .filter(Boolean),
+      )
+      load()
+    } catch (err) {
+      notify(err.message, 'error')
+    }
+  }
+
   return (
     <div>
       <div className="adm-panel-head">
@@ -186,9 +206,32 @@ export default function ShopPanel({ notify }) {
               </tr>
             </thead>
             <tbody>
-              {items.map((it) => (
+              {items.map((it, i) => (
                 <tr key={it.id}>
-                  <td>{it.order}</td>
+                  <td className="adm-nowrap">
+                    <span className="adm-move">
+                      <button
+                        type="button"
+                        className="adm-move__btn"
+                        title="Move up"
+                        aria-label={`Move ${it.title} up`}
+                        disabled={i === 0}
+                        onClick={() => move(i, -1)}
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        className="adm-move__btn"
+                        title="Move down"
+                        aria-label={`Move ${it.title} down`}
+                        disabled={i === items.length - 1}
+                        onClick={() => move(i, 1)}
+                      >
+                        ↓
+                      </button>
+                    </span>
+                  </td>
                   <td>
                     <strong>{it.title}</strong>
                     {it.kind === 'pdf' && <span className="adm-pill" style={{ marginLeft: 8 }}>PDF</span>}
