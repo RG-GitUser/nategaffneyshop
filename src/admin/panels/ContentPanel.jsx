@@ -75,6 +75,11 @@ const FIELDS = [
         image: true,
         hint: 'Optional. Sits beside the text. Without one the card stays text-only.',
       },
+      {
+        key: 'accent',
+        label: 'Accent (the About Me card’s button colour)',
+        accent: true,
+      },
     ],
   },
   {
@@ -108,6 +113,11 @@ const FIELDS = [
          The stored fallback text rides along untouched via toPayload. */
       { key: 'timezone', label: 'Timezone label' },
       { key: 'finePrint', label: 'Fine print', textarea: true },
+      {
+        key: 'accent',
+        label: 'Accent (the coaching card’s button colour)',
+        accent: true,
+      },
     ],
   },
 ]
@@ -480,7 +490,7 @@ export default function ContentPanel({ notify }) {
         >
           <div className="adm-field-head">
             <label htmlFor={`${group}-${f.key}`}>{f.label}</label>
-            {Boolean(form[group][f.key]) && (
+            {Boolean(form[group][f.key]) && !f.accent && (
               <button
                 type="button"
                 className="adm-clear"
@@ -492,7 +502,23 @@ export default function ContentPanel({ notify }) {
               </button>
             )}
           </div>
-          {f.image ? (
+          {f.accent ? (
+            <div className="adm-swatches">
+              {ACCENTS.map((a) => (
+                <button
+                  key={a}
+                  type="button"
+                  title={a}
+                  aria-label={`Accent ${a}`}
+                  aria-pressed={(form[group][f.key] || 'navy') === a}
+                  className={`adm-swatch adm-swatch--${a}${
+                    (form[group][f.key] || 'navy') === a ? ' is-active' : ''
+                  }`}
+                  onClick={() => setField(group, f.key, a)}
+                />
+              ))}
+            </div>
+          ) : f.image ? (
             <ImageDrop
               slot={`${group}-${f.key}`}
               value={form[group][f.key] || ''}

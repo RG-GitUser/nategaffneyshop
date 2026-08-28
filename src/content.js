@@ -176,6 +176,8 @@ export const offers = [
 export const booking = {
   eyebrow: 'Book a session',
   title: '1:1 Coaching',
+  // Accent for the coaching card on the landing page.
+  accent: 'navy',
   // The one-liner on the landing page's coaching card (the fuller
   // description below lives on the booking page itself).
   blurb: 'Forty-five minutes on whatever is actually in your way.',
@@ -260,6 +262,8 @@ export const newsletter = {
 export const about = {
   eyebrow: 'Hey, I’m Nate',
   heading: 'You were never just one thing.',
+  // Accent for the About Me card (button + coloured line).
+  accent: 'navy',
   paragraphs: [
     'I’m a Wolastoqey filmmaker obsessed with turning inner life into art.',
     'But I’m also a director, a writer, a journaler, a creative director, and I’ve never been able to fit into just one box. For a long time I thought that was a problem.',

@@ -43,6 +43,7 @@ export default function CoachingCard() {
             price,
             cta: 'Book a session',
             href: '/coaching/',
+            accent: booking.accent,
           }}
           index={2}
         />
