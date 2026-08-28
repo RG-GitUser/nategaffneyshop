@@ -97,12 +97,10 @@ export default function OfferCard({ offer, index = 0 }) {
       aria-busy={busy || undefined}
       style={{ animationDelay: `${120 + index * 60}ms` }}
     >
-      {image && (
-        <div className="offer__media">
-          <img src={image} alt="" loading="lazy" />
-        </div>
-      )}
-
+      {/* No image on the card itself — deliberately. The uploaded
+          cover shows in the checkout popup (and, for the audit, on its
+          own page); the landing cards stay the terse title / blurb /
+          price / button tiles. */}
       <div className="offer__body">
         <h3 className="offer__title">{offer.title}</h3>
 
