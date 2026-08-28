@@ -8,17 +8,21 @@ import CoachingCard from './components/CoachingCard.jsx'
 import CustomSection from './components/CustomSection.jsx'
 import { offers, sections, custom, archived } from './content.js'
 
+/**
+ * One SECTION per card, not one section holding them all: on the
+ * desktop grid every section is a tile, and a section carrying two
+ * stacked cards made its whole row that tall — leaving a card-sized
+ * hole under whatever shared the row. Flat tiles pack evenly.
+ */
 function Offers() {
   if (offers.length === 0) return null
-  return (
-    <section className="section">
+  return offers.map((offer, i) => (
+    <section className="section" key={offer.id || offer.title}>
       <div className="offers">
-        {offers.map((offer, i) => (
-          <OfferCard key={offer.title} offer={offer} index={i} />
-        ))}
+        <OfferCard offer={offer} index={i} />
       </div>
     </section>
-  )
+  ))
 }
 
 /** Every section the admin can reorder. Footer always stays last.
