@@ -1,7 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Star } from './Icons.jsx'
 import CheckoutModal, { checkoutMode } from './CheckoutModal.jsx'
 import { safeHref, safeImageSrc } from '../safeUrl.js'
+
+/** Reflect the open checkout in the address bar (?buy=<id>) so the URL
+ *  is shareable — visiting it opens this product's checkout directly. */
+function setBuyParam(id) {
+  const url = new URL(window.location.href)
+  if (id) url.searchParams.set('buy', id)
+  else url.searchParams.delete('buy')
+  window.history.replaceState(null, '', url)
+}
 
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
@@ -24,6 +33,22 @@ export default function OfferCard({ offer, index = 0 }) {
   const buyable = Boolean(offer.id && offer.priceCents)
   const image = safeImageSrc(offer.image)
 
+  // A shared ?buy=<id> link opens this product's checkout on arrival —
+  // embedded mode only; without it the visitor just sees the card.
+  useEffect(() => {
+    if (!buyable) return
+    const want = new URLSearchParams(window.location.search).get('buy')
+    if (want !== String(offer.id)) return
+    let cancelled = false
+    checkoutMode().then((cfg) => {
+      if (!cancelled && cfg?.embedded) setPaying(true)
+    })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buyable, offer.id])
+
   async function startCheckout(e) {
     e.preventDefault()
     if (busy || paying) return
@@ -37,6 +62,7 @@ export default function OfferCard({ offer, index = 0 }) {
     if (cfg?.embedded) {
       setBusy(false)
       setPaying(true)
+      setBuyParam(offer.id)
       return
     }
 
@@ -125,13 +151,17 @@ export default function OfferCard({ offer, index = 0 }) {
           itemType={offer.checkoutType || 'shop'}
           title={offer.title}
           image={image}
+          description={offer.description}
           digital={isDownload}
           doneNote={
             offer.kind === 'pdf'
               ? 'Payment received. Your download link and receipt are on their way to your email.'
               : 'Payment received. Your receipt is on its way to your email.'
           }
-          onClose={() => setPaying(false)}
+          onClose={() => {
+            setPaying(false)
+            setBuyParam(null)
+          }}
         />
       )}
     </a>

@@ -159,6 +159,18 @@ export default function ShopPanel({ notify }) {
     }
   }
 
+  /** The site link that opens this product's checkout popup directly —
+   *  cover, full description and payment form in one. */
+  async function copyPopupLink(item) {
+    const url = `${window.location.origin}/?buy=${item.id}`
+    try {
+      await navigator.clipboard.writeText(url)
+      notify('Popup link copied — it opens the site with this product’s checkout already open.')
+    } catch {
+      notify(url)
+    }
+  }
+
   /** One tap swaps the card with its neighbour. Every row's order is
    *  renumbered to its list position on the way, so ties (two items both
    *  at 0) come apart the first time anything moves. */
@@ -276,13 +288,22 @@ export default function ShopPanel({ notify }) {
                   </td>
                   <td className="adm-actions">
                     {Boolean(it.priceCents) && (
-                      <button
-                        className="adm-mini"
-                        title="Copy a direct Stripe payment link to DM to a customer. Delivery works exactly like a site purchase."
-                        onClick={() => copyPayLink(it)}
-                      >
-                        Copy pay link
-                      </button>
+                      <>
+                        <button
+                          className="adm-mini"
+                          title="Copy a link that opens the site with this product’s checkout popup already open — cover, full description and payment together."
+                          onClick={() => copyPopupLink(it)}
+                        >
+                          Copy popup link
+                        </button>
+                        <button
+                          className="adm-mini"
+                          title="Copy a bare Stripe-hosted payment page for this product. Delivery works exactly like a site purchase."
+                          onClick={() => copyPayLink(it)}
+                        >
+                          Copy pay link
+                        </button>
+                      </>
                     )}
                     <button
                       className="adm-mini"

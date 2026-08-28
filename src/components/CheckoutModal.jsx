@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import RichText from '../richtext.jsx'
 
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
@@ -76,6 +77,9 @@ export default function CheckoutModal({
   /** Cover/preview image URL — when set, the checkout splits in two:
    *  the preview beside the payment form. */
   image = null,
+  /** The product's full description, shown under the cover so the buyer
+   *  can read everything right where they pay. */
+  description = '',
   onPaid,
   onClose,
 }) {
@@ -160,7 +164,8 @@ export default function CheckoutModal({
 
   // The preview only makes sense while there is a payment form to sit
   // beside — the paid and error states go back to the single column.
-  const split = Boolean(image) && state !== 'paid' && state !== 'error'
+  const split =
+    Boolean(image || description) && state !== 'paid' && state !== 'error'
 
   // Portaled to <body>: the trigger lives inside the offer card's <a>,
   // and a dialog nested in an anchor is both invalid markup and a click
@@ -215,12 +220,17 @@ export default function CheckoutModal({
           className={`pay__body${split ? ' pay__body--split' : ''}`}
           style={{ display: state === 'paid' || state === 'error' ? 'none' : undefined }}
         >
-          {/* The cover: decorative — the dialog label already names the
-              item — so it hides from the accessibility tree. */}
+          {/* Cover on top, the FULL description under it, payment to the
+              right — the buyer reads everything right where they pay. */}
           {split && (
-            <div className="pay__preview" aria-hidden="true">
-              <img src={image} alt="" />
+            <div className="pay__preview">
+              {image && <img src={image} alt="" aria-hidden="true" />}
               <p className="pay__preview-title">{title}</p>
+              {description && (
+                <div className="pay__desc">
+                  <RichText text={description} />
+                </div>
+              )}
             </div>
           )}
 
