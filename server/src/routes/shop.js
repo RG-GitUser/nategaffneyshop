@@ -5,8 +5,104 @@ import { z } from 'zod'
 import { config } from '../config.js'
 import { collections, audit } from '../db.js'
 import { requireAdmin, verifyDownloadToken } from '../middleware/auth.js'
+import { stripe, stripeReady, onBehalf } from './checkout.js'
 
 export const shopRouter = Router()
+
+/**
+ * A direct Stripe Payment Link for one product, to DM to a customer
+ * instead of sending them through the site. Minted here — never by hand
+ * in the Stripe dashboard — because the webhook only records the order
+ * and delivers the PDF when the payment carries the item's metadata.
+ * The link is created once and reused; if the price has changed since,
+ * the stale link is deactivated and a fresh one minted, so a shared URL
+ * can never charge an old amount.
+ */
+shopRouter.post('/:id/paylink', requireAdmin, async (req, res, next) => {
+  try {
+    if (!stripeReady) {
+      return res.status(503).json({ error: 'Payments are not set up yet.' })
+    }
+    const _id = parseId(req.params.id, res)
+    if (!_id) return
+
+    const item = await collections.shopItems().findOne({ _id })
+    if (!item) return res.status(404).json({ error: 'Not found' })
+    if (!item.priceCents || item.priceCents < 50) {
+      return res
+        .status(400)
+        .json({ error: 'Set a charge amount first — a payment link needs a price.' })
+    }
+
+    const currency = (item.currency || 'cad').toLowerCase()
+    if (
+      item.payLinkUrl &&
+      item.payLinkPriceCents === item.priceCents &&
+      item.payLinkCurrency === currency
+    ) {
+      return res.json({ url: item.payLinkUrl, reused: true })
+    }
+
+    // Price changed since the last link — kill the old URL before a
+    // fresh one exists, so nobody can pay a stale amount in between.
+    if (item.payLinkId) {
+      try {
+        await stripe.paymentLinks.update(item.payLinkId, { active: false }, ...onBehalf)
+      } catch (sErr) {
+        console.error('[shop] could not deactivate old payment link:', sErr.message)
+      }
+    }
+
+    const price = await stripe.prices.create(
+      {
+        currency,
+        unit_amount: item.priceCents,
+        product_data: { name: item.title },
+      },
+      ...onBehalf,
+    )
+    const link = await stripe.paymentLinks.create(
+      {
+        line_items: [{ price: price.id, quantity: 1 }],
+        // The same metadata a site checkout carries — this is what makes
+        // the webhook record the order and email the download.
+        metadata: { itemId: item._id.toString(), itemType: 'shop', title: item.title },
+        // The site's checkout collects the final-sale acknowledgement
+        // with a checkbox; a direct link discloses it here instead.
+        ...(item.kind === 'pdf'
+          ? {
+              custom_text: {
+                submit: {
+                  message:
+                    'This is a digital download, emailed to you right after payment. ' +
+                    'Because a file cannot be returned, the sale is final and non-refundable. ' +
+                    'Questions: support@nategaffney.store',
+                },
+              },
+            }
+          : {}),
+      },
+      ...onBehalf,
+    )
+
+    await collections.shopItems().updateOne(
+      { _id },
+      {
+        $set: {
+          payLinkId: link.id,
+          payLinkUrl: link.url,
+          payLinkPriceCents: item.priceCents,
+          payLinkCurrency: currency,
+          updatedAt: new Date(),
+        },
+      },
+    )
+    await audit(req.admin.email, 'shop.paylink', { id: req.params.id, title: item.title })
+    res.json({ url: link.url })
+  } catch (err) {
+    next(err)
+  }
+})
 
 /**
  * Mirrors src/safeUrl.js on the frontend: link fields are free text in
@@ -171,13 +267,30 @@ shopRouter.put('/:id', requireAdmin, async (req, res, next) => {
         .json({ error: 'Invalid item', details: parsed.error.flatten() })
     }
 
+    /**
+     * A price change kills any shared Payment Link on the spot — a URL
+     * already sitting in someone's DMs must never charge the old
+     * amount. The next "Copy payment link" mints a fresh one.
+     */
+    const before = await collections.shopItems().findOne({ _id })
+    if (!before) return res.status(404).json({ error: 'Not found' })
+    const changes = { ...parsed.data, updatedAt: new Date() }
+    const priceChanged =
+      'priceCents' in parsed.data && parsed.data.priceCents !== before.priceCents
+    if (priceChanged && before.payLinkId && stripeReady) {
+      try {
+        await stripe.paymentLinks.update(before.payLinkId, { active: false }, ...onBehalf)
+      } catch (sErr) {
+        console.error('[shop] could not deactivate payment link:', sErr.message)
+      }
+      changes.payLinkId = null
+      changes.payLinkUrl = null
+      changes.payLinkPriceCents = null
+    }
+
     const result = await collections
       .shopItems()
-      .findOneAndUpdate(
-        { _id },
-        { $set: { ...parsed.data, updatedAt: new Date() } },
-        { returnDocument: 'after' },
-      )
+      .findOneAndUpdate({ _id }, { $set: changes }, { returnDocument: 'after' })
     if (!result) return res.status(404).json({ error: 'Not found' })
 
     await audit(req.admin.email, 'shop.update', { id: req.params.id })

@@ -139,6 +139,26 @@ export default function ShopPanel({ notify }) {
     }
   }
 
+  /**
+   * A direct Stripe link for this product, copied to the clipboard —
+   * for DMing a customer without sending them through the site. Minted
+   * server-side with the item's metadata so the download email and the
+   * Payments tab work exactly like a site purchase.
+   */
+  async function copyPayLink(item) {
+    try {
+      const { url } = await api.shopPayLink(item.id)
+      try {
+        await navigator.clipboard.writeText(url)
+        notify('Payment link copied — paste it straight into a DM or email.')
+      } catch {
+        notify(url) // clipboard blocked — show it to copy by hand
+      }
+    } catch (err) {
+      notify(err.message, 'error')
+    }
+  }
+
   /** One tap swaps the card with its neighbour. Every row's order is
    *  renumbered to its list position on the way, so ties (two items both
    *  at 0) come apart the first time anything moves. */
@@ -255,6 +275,15 @@ export default function ShopPanel({ notify }) {
                     </button>
                   </td>
                   <td className="adm-actions">
+                    {Boolean(it.priceCents) && (
+                      <button
+                        className="adm-mini"
+                        title="Copy a direct Stripe payment link to DM to a customer. Delivery works exactly like a site purchase."
+                        onClick={() => copyPayLink(it)}
+                      >
+                        Copy pay link
+                      </button>
+                    )}
                     <button
                       className="adm-mini"
                       onClick={() => setDraft({ ...it, amount: toDollars(it.priceCents) })}
