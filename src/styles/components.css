@@ -1918,13 +1918,44 @@
   cursor: pointer;
 }
 
+/* Drawn by hand rather than trusting the native checkbox: Safari was
+   accepting the click without ever painting the tick, which reads as a
+   broken control at the exact moment someone is about to pay. Colours
+   are literal for the same reason as .pay__terms — this sits on the
+   checkout's white card in both themes. */
 .pay__ack input {
   flex: none;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   margin-top: 1px;
-  accent-color: var(--navy-fill);
+  appearance: none;
+  -webkit-appearance: none;
+  border: 2px solid #93a1b8;
+  border-radius: 5px;
+  background: #ffffff;
   cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.pay__ack input:checked {
+  border-color: #000e3b;
+  background: #000e3b;
+}
+
+.pay__ack input:checked::after {
+  content: '';
+  width: 5px;
+  height: 10px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-top: -2px;
+}
+
+.pay__ack input:focus-visible {
+  outline: 2px solid #000e3b;
+  outline-offset: 2px;
 }
 
 .pay__frame {
