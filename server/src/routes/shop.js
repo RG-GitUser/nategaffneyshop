@@ -271,6 +271,35 @@ shopRouter.post('/', requireAdmin, async (req, res, next) => {
   }
 })
 
+/**
+ * Admin — download the uploaded PDF behind a product. The file lives
+ * outside the web root on purpose (buyers only ever get short-lived
+ * signed links), so this authenticated route is the owner's way back
+ * to their own upload.
+ */
+shopRouter.get('/:id/pdf', requireAdmin, async (req, res, next) => {
+  try {
+    const _id = parseId(req.params.id, res)
+    if (!_id) return
+    const item = await collections.shopItems().findOne({ _id })
+    if (!item) return res.status(404).json({ error: 'Not found' })
+    if (!item.pdfFile) {
+      return res.status(404).json({ error: 'This item has no PDF uploaded.' })
+    }
+    // basename() so a stored value can never walk out of pdfDir.
+    const file = join(config.pdfDir, basename(item.pdfFile))
+    const niceName = `${(item.title || 'download').replace(/[^\w\- ]+/g, '').trim() || 'download'}.pdf`
+    await audit(req.admin.email, 'shop.pdf-download', { id: req.params.id })
+    res.download(file, niceName, (err) => {
+      if (err && !res.headersSent) {
+        res.status(404).json({ error: 'The PDF file is missing on the server.' })
+      }
+    })
+  } catch (err) {
+    next(err)
+  }
+})
+
 shopRouter.put('/:id', requireAdmin, async (req, res, next) => {
   try {
     const _id = parseId(req.params.id, res)

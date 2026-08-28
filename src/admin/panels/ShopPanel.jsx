@@ -287,6 +287,15 @@ export default function ShopPanel({ notify }) {
                     </button>
                   </td>
                   <td className="adm-actions">
+                    {it.kind === 'pdf' && it.pdfFile && (
+                      <button
+                        className="adm-mini"
+                        title="Download your own copy of the uploaded PDF."
+                        onClick={() => window.open(api.shopPdfUrl(it.id), '_blank')}
+                      >
+                        Download PDF
+                      </button>
+                    )}
                     {Boolean(it.priceCents) && (
                       <>
                         <button

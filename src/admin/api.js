@@ -97,6 +97,9 @@ export const api = {
   saveBookingPrice: (body) => request('/bookings/price', { method: 'PUT', body }),
   // a direct Stripe Payment Link for one product, safe to DM
   shopPayLink: (id) => request(`/shop/${id}/paylink`, { method: 'POST' }),
+  // the admin's own copy of an uploaded PDF — opened as a top-level
+  // navigation so the session cookie rides along
+  shopPdfUrl: (id) => `${BASE}/api/shop/${id}/pdf`,
   // custom share links — each a bookable offer with its own price/length
   listBookingLinks: () => request('/bookings/links'),
   createBookingLink: (body) => request('/bookings/links', { method: 'POST', body }),
