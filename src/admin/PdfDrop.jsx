@@ -6,7 +6,7 @@ import { api } from './api.js'
  * server stores the file outside the public uploads directory; what comes
  * back is a private filename, not a URL.
  */
-export default function PdfDrop({ value, onUploaded, notify, hint }) {
+export default function PdfDrop({ value, onUploaded, onFile, notify, hint }) {
   const [busy, setBusy] = useState(false)
   const [over, setOver] = useState(false)
   const inputRef = useRef(null)
@@ -21,6 +21,8 @@ export default function PdfDrop({ value, onUploaded, notify, hint }) {
     try {
       const { filename, name } = await api.uploadPdf(file)
       onUploaded(filename, name)
+      // The raw file too, for callers that render a cover from page 1.
+      onFile?.(file)
     } catch (err) {
       notify(err.message, 'error')
     } finally {

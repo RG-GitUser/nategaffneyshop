@@ -3,6 +3,7 @@ import { api } from '../api.js'
 import ImageDrop from '../ImageDrop.jsx'
 import PdfDrop from '../PdfDrop.jsx'
 import { confirmDialog } from '../confirm.jsx'
+import { pdfCoverBlob } from '../pdfCover.js'
 
 const BLANK = {
   kind: 'product',
@@ -35,6 +36,42 @@ export default function ShopPanel({ notify }) {
   const [items, setItems] = useState([])
   const [draft, setDraft] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [makingCover, setMakingCover] = useState(false)
+
+  /**
+   * Page 1 of the book as the card image — rendered right here in the
+   * browser (the buyer-facing site can never read the paywalled PDF).
+   * The JPEG goes through the normal image upload, so the cover shows on
+   * the card and in the checkout popup like any other product image.
+   */
+  async function coverFromPdfData(arrayBuffer) {
+    setMakingCover(true)
+    try {
+      const blob = await pdfCoverBlob(arrayBuffer)
+      const file = new File([blob], 'cover.jpg', { type: 'image/jpeg' })
+      const { url } = await api.uploadImage(file, 'shop')
+      setDraft((d) => (d ? { ...d, image: url } : d))
+      notify('Cover made from the PDF’s first page. Save to keep it.')
+    } catch (err) {
+      notify(`Could not make a cover from the PDF: ${err.message}`, 'error')
+    } finally {
+      setMakingCover(false)
+    }
+  }
+
+  /** For a PDF already on the server: fetch it (admin-authenticated) and
+   *  render the cover from that. */
+  async function coverFromStoredPdf() {
+    setMakingCover(true)
+    try {
+      const res = await fetch(api.shopPdfUrl(draft.id), { credentials: 'include' })
+      if (!res.ok) throw new Error('Could not fetch the uploaded PDF.')
+      await coverFromPdfData(await res.arrayBuffer())
+    } catch (err) {
+      notify(err.message, 'error')
+      setMakingCover(false)
+    }
+  }
 
   async function load() {
     setLoading(true)
@@ -386,7 +423,8 @@ export default function ShopPanel({ notify }) {
                     onUploaded={(filename, name) =>
                       setDraft({ ...draft, pdfFile: filename, pdfName: name })
                     }
-                    hint="Kept private. Buyers get an emailed download link only after Stripe confirms their payment."
+                    onFile={(file) => file.arrayBuffer().then(coverFromPdfData)}
+                    hint="Kept private. Buyers get an emailed download link only after Stripe confirms their payment. The first page becomes the cover image automatically."
                   />
                 </div>
               )}
@@ -400,15 +438,28 @@ export default function ShopPanel({ notify }) {
                   onUploaded={(url) => setDraft({ ...draft, image: url })}
                   hint="Optional. Shown at the top of the card, cropped to 16:9."
                 />
-                {draft.image && (
-                  <button
-                    type="button"
-                    className="adm-mini adm-mini--danger"
-                    onClick={() => setDraft({ ...draft, image: '' })}
-                  >
-                    Remove image
-                  </button>
-                )}
+                <div className="adm-inline">
+                  {draft.kind === 'pdf' && draft.id && draft.pdfFile && (
+                    <button
+                      type="button"
+                      className="adm-mini"
+                      disabled={makingCover}
+                      title="Render the uploaded PDF’s first page and use it as this product’s cover."
+                      onClick={coverFromStoredPdf}
+                    >
+                      {makingCover ? 'Rendering…' : 'Use PDF page 1 as cover'}
+                    </button>
+                  )}
+                  {draft.image && (
+                    <button
+                      type="button"
+                      className="adm-mini adm-mini--danger"
+                      onClick={() => setDraft({ ...draft, image: '' })}
+                    >
+                      Remove image
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="adm-field adm-field--wide">
