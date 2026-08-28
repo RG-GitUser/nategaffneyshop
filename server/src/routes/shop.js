@@ -38,7 +38,7 @@ const itemSchema = z.object({
     .max(500)
     .refine(safeHref, 'Links must be http(s), mailto, tel, or site-relative')
     .default('#'),
-  accent: z.enum(['navy', 'umber', 'olive', 'amber']).default('navy'),
+  accent: z.enum(['navy', 'red', 'umber', 'olive', 'amber']).default('navy'),
   tag: z.string().max(40).optional().nullable(),
   rating: z.string().max(10).optional().nullable(),
   /** Uploaded card image URL (from /api/media). Optional. */

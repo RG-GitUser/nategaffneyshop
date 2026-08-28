@@ -222,7 +222,7 @@ export default function ServicesPanel({ notify }) {
                   value={draft.accent}
                   onChange={(e) => setDraft({ ...draft, accent: e.target.value })}
                 >
-                  {['navy', 'umber', 'olive', 'amber'].map((a) => (
+                  {['navy', 'red', 'umber', 'olive', 'amber'].map((a) => (
                     <option key={a} value={a}>
                       {a}
                     </option>

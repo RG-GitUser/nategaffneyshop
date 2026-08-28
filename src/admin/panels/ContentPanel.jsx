@@ -112,7 +112,9 @@ const FIELDS = [
   },
 ]
 
-const ACCENTS = ['navy', 'umber', 'olive', 'amber']
+// navy (the brand blue) and red (the off-red the prices use) lead;
+// the earthier three stay for variety.
+const ACCENTS = ['navy', 'red', 'umber', 'olive', 'amber']
 
 const FIELDS_BY_GROUP = Object.fromEntries(FIELDS.map((f) => [f.group, f]))
 /* Keys this panel edits. Anything else stored (retired sections like the
