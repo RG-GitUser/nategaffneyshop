@@ -273,13 +273,13 @@ export default function ServicesPanel({ notify }) {
               </div>
 
               <div className="adm-field adm-field--wide">
-                <label>Card image</label>
+                <label>Image</label>
                 <ImageDrop
                   slot="service"
                   value={draft.image || ''}
                   notify={notify}
                   onUploaded={(url) => setDraft({ ...draft, image: url })}
-                  hint="Optional. Shown at the top of the card, cropped to 16:9 — and on the audit's own page."
+                  hint="Optional. Shown in the purchase popup beside the checkout, and on the audit's own page — never on the landing card."
                 />
                 {draft.image && (
                   <button

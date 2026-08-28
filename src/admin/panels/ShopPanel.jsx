@@ -401,13 +401,13 @@ export default function ShopPanel({ notify }) {
               )}
 
               <div className="adm-field adm-field--wide">
-                <label>Card image</label>
+                <label>Cover image</label>
                 <ImageDrop
                   slot="shop"
                   value={draft.image || ''}
                   notify={notify}
                   onUploaded={(url) => setDraft({ ...draft, image: url })}
-                  hint="Optional. Shown at the top of the card, cropped to 16:9."
+                  hint="Shown ONLY in the purchase popup, beside the checkout — never on the landing card. For a PDF, the first page becomes this automatically."
                 />
                 <div className="adm-inline">
                   {draft.kind === 'pdf' && draft.id && draft.pdfFile && (
