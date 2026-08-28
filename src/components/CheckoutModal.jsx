@@ -241,6 +241,11 @@ export default function CheckoutModal({
                     checked={acked}
                     onChange={(e) => setAcked(e.target.checked)}
                   />
+                  {/* The box is this span, not the input: Safari won't
+                      reliably paint a native tick or pseudo-elements on
+                      the input itself, and an invisible consent control
+                      at the moment of payment is not acceptable. */}
+                  <span className="pay__box" aria-hidden="true" />
                   <span>
                     I understand this purchase is final and non-refundable, and I want
                     the file straight away.
