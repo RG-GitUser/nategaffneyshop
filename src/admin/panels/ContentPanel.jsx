@@ -344,6 +344,18 @@ export default function ContentPanel({ notify }) {
     else archiveSection(id)
   }
 
+  /** One tap moves a container one place up or down — the drag handle
+   *  still works, but arrows are unmissable and fine on touch. */
+  function moveSection(i, delta) {
+    setForm((f) => {
+      const s = [...f.sections]
+      const j = i + delta
+      if (j < 0 || j >= s.length) return f
+      ;[s[i], s[j]] = [s[j], s[i]]
+      return { ...f, sections: s }
+    })
+  }
+
   function archiveSection(id) {
     setForm((f) => ({
       ...f,
@@ -796,6 +808,28 @@ export default function ContentPanel({ notify }) {
                 >
                   ⠿
                 </button>
+                <span className="adm-move">
+                  <button
+                    type="button"
+                    className="adm-move__btn"
+                    title="Move up"
+                    aria-label={`Move ${meta.label} up`}
+                    disabled={i === 0}
+                    onClick={() => moveSection(i, -1)}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    className="adm-move__btn"
+                    title="Move down"
+                    aria-label={`Move ${meta.label} down`}
+                    disabled={i === form.sections.length - 1}
+                    onClick={() => moveSection(i, 1)}
+                  >
+                    ↓
+                  </button>
+                </span>
                 <div>
                   <h3 className="adm-h3">
                     <span className="adm-order mono">{i + 1}</span>
