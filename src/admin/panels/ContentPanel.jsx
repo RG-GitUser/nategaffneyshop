@@ -144,6 +144,13 @@ function toForm(stored) {
   for (const { group } of FIELDS) {
     out[group] = { ...(defaults[group] || {}), ...(stored[group] || {}) }
   }
+  // The identity fields can't sit blank (the public site falls back to
+  // the bundled values for them too — see liveContent.js). Refilling
+  // them here means the form shows what the site shows, and the next
+  // Save writes them back into the stored content.
+  for (const k of ['name', 'handle', 'avatar']) {
+    if (!out.profile[k]) out.profile[k] = defaults.profile?.[k] || ''
+  }
   out.about.paragraphsText = (out.about.paragraphs || []).join('\n')
 
   out.custom = (Array.isArray(stored.custom) ? stored.custom : [])
@@ -737,12 +744,9 @@ export default function ContentPanel({ notify }) {
             <p className="adm-muted">The side rail. Always shown first.</p>
           </div>
           <div className="adm-group-tools">
-            <button
-              className="adm-mini adm-mini--danger"
-              onClick={() => deleteSection('profile')}
-            >
-              Delete
-            </button>
+            {/* No Delete here: the profile is the site's identity — the
+                old button just blanked the name and photo while the box
+                stayed, which read as broken and left the rail empty. */}
             <button className="adm-mini adm-mini--save" onClick={save} disabled={saving}>
               {saving ? 'Saving…' : 'Save'}
             </button>
@@ -811,12 +815,19 @@ export default function ContentPanel({ notify }) {
                 >
                   Archive
                 </button>
-                <button
-                  className="adm-mini adm-mini--danger"
-                  onClick={() => deleteSection(id)}
-                >
-                  Delete
-                </button>
+                {/* Only custom containers can truly be deleted. On the
+                    built-in sections the old Delete just wiped whatever
+                    was typed in them while the box stayed put — all
+                    cost, no effect. Archive is how they come off the
+                    page. */}
+                {customContainer && (
+                  <button
+                    className="adm-mini adm-mini--danger"
+                    onClick={() => deleteSection(id)}
+                  >
+                    Delete
+                  </button>
+                )}
                 <button className="adm-mini adm-mini--save" onClick={save} disabled={saving}>
                   {saving ? 'Saving…' : 'Save'}
                 </button>
