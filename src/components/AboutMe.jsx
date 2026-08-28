@@ -47,6 +47,7 @@ export default function AboutMe() {
             meta: `${minutes} min read`,
             cta: 'Get to know me',
             href: '/about/',
+            accent: about?.accent,
           }}
           index={2}
         />
