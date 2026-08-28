@@ -90,6 +90,7 @@ const FIELDS = [
       {
         key: 'blurb',
         label: 'Card blurb',
+        wide: true,
         hint: 'The one-liner on the coaching card on the landing page. The fuller description below shows on the booking page itself.',
       },
       {
@@ -460,7 +461,7 @@ export default function ContentPanel({ notify }) {
           right now — instead of offering lookalike text fields that
           would be silently overridden. */}
       {group === 'booking' && (
-        <p className="adm-hint">
+        <p className="adm-hint adm-hint--section">
           The session length and price on the booking page
           {bookingLive?.durationMinutes || bookingLive?.priceCents ? (
             <>
@@ -485,7 +486,7 @@ export default function ContentPanel({ notify }) {
       <div className="adm-grid">
       {FIELDS_BY_GROUP[group].fields.map((f) => (
         <div
-          className={`adm-field${f.textarea || f.image ? ' adm-field--wide' : ''}`}
+          className={`adm-field${f.textarea || f.image || f.wide ? ' adm-field--wide' : ''}`}
           key={f.key}
         >
           <div className="adm-field-head">
