@@ -176,26 +176,6 @@ export default function ShopPanel({ notify }) {
     }
   }
 
-  /**
-   * A direct Stripe link for this product, copied to the clipboard —
-   * for DMing a customer without sending them through the site. Minted
-   * server-side with the item's metadata so the download email and the
-   * Payments tab work exactly like a site purchase.
-   */
-  async function copyPayLink(item) {
-    try {
-      const { url } = await api.shopPayLink(item.id)
-      try {
-        await navigator.clipboard.writeText(url)
-        notify('Payment link copied — paste it straight into a DM or email.')
-      } catch {
-        notify(url) // clipboard blocked — show it to copy by hand
-      }
-    } catch (err) {
-      notify(err.message, 'error')
-    }
-  }
-
   /** The site link that opens this product's checkout popup directly —
    *  cover, full description and payment form in one. */
   async function copyPopupLink(item) {
@@ -325,22 +305,13 @@ export default function ShopPanel({ notify }) {
                   </td>
                   <td className="adm-actions">
                     {Boolean(it.priceCents) && (
-                      <>
-                        <button
-                          className="adm-mini"
-                          title="Copy a link that opens the site with this product’s checkout popup already open — cover, full description and payment together."
-                          onClick={() => copyPopupLink(it)}
-                        >
-                          Copy popup link
-                        </button>
-                        <button
-                          className="adm-mini"
-                          title="Copy a bare Stripe-hosted payment page for this product. Delivery works exactly like a site purchase."
-                          onClick={() => copyPayLink(it)}
-                        >
-                          Copy pay link
-                        </button>
-                      </>
+                      <button
+                        className="adm-mini"
+                        title="Copy a link that opens the site with this product’s checkout popup already open — cover, full description and payment together."
+                        onClick={() => copyPopupLink(it)}
+                      >
+                        Copy popup link
+                      </button>
                     )}
                     <button
                       className="adm-mini"
