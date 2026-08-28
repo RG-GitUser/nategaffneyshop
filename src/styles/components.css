@@ -1805,6 +1805,49 @@
 
 /* Success flips the whole card to navy — unmistakably a different state
    from the white checkout form it replaces. */
+/* With a product image the checkout widens and splits: the cover on the
+   left, the payment form on the right; phones stack them, cover first. */
+.pay__card--split {
+  width: min(760px, 100%);
+}
+
+.pay__body--split {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.pay__preview img {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+}
+
+.pay__preview-title {
+  margin-top: 10px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  /* the card is white in both themes, so the label is too */
+  color: #4a5568;
+}
+
+@media (max-width: 679px) {
+  .pay__body--split {
+    grid-template-columns: 1fr;
+  }
+
+  .pay__preview img {
+    max-width: 190px;
+    margin-inline: auto;
+  }
+}
+
 .pay__card--paid {
   background: var(--navy-fill);
   border-top-color: var(--navy-fill);

@@ -73,6 +73,9 @@ export default function CheckoutModal({
   title,
   doneNote,
   digital = false,
+  /** Cover/preview image URL — when set, the checkout splits in two:
+   *  the preview beside the payment form. */
+  image = null,
   onPaid,
   onClose,
 }) {
@@ -155,13 +158,21 @@ export default function CheckoutModal({
     }
   }, [itemId, itemType, clientSecret])
 
+  // The preview only makes sense while there is a payment form to sit
+  // beside — the paid and error states go back to the single column.
+  const split = Boolean(image) && state !== 'paid' && state !== 'error'
+
   // Portaled to <body>: the trigger lives inside the offer card's <a>,
   // and a dialog nested in an anchor is both invalid markup and a click
   // hazard — every tap inside it would bubble into the link.
   return createPortal(
     <div className="pay" role="dialog" aria-modal="true" aria-label={`Buy ${title}`}>
       <div className="pay__scrim" onClick={state === 'ready' ? undefined : onClose} />
-      <div className={`pay__card${state === 'paid' ? ' pay__card--paid' : ''}`}>
+      <div
+        className={`pay__card${state === 'paid' ? ' pay__card--paid' : ''}${
+          split ? ' pay__card--split' : ''
+        }`}
+      >
         <button className="pay__close" onClick={onClose} aria-label="Close checkout">
           ×
         </button>
@@ -200,38 +211,53 @@ export default function CheckoutModal({
           </div>
         )}
 
-        {digital && state !== 'paid' && state !== 'error' && (
-          <div className="pay__terms">
-            <p className="pay__terms-title">This is a download, so the sale is final</p>
-            <p className="pay__terms-copy">
-              Your file is sent as soon as you pay. Because a file can’t be given
-              back, <strong>this purchase can’t be refunded or cancelled</strong>.
-              If it never arrives, or it’s faulty or not as described, or you have
-              any other concern, email{' '}
-              <a href={`mailto:${SUPPORT}`}>{SUPPORT}</a> and we’ll put it right.
-            </p>
-            <label className="pay__ack">
-              <input
-                type="checkbox"
-                checked={acked}
-                onChange={(e) => setAcked(e.target.checked)}
-              />
-              <span>
-                I understand this purchase is final and non-refundable, and I want
-                the file straight away.
-              </span>
-            </label>
-          </div>
-        )}
-
-        {/* Stripe mounts its iframe here; keep it in the tree during
-            'loading' so the mount target exists when init resolves. */}
         <div
-          ref={mountRef}
-          className={`pay__frame${acked ? '' : ' pay__frame--locked'}`}
-          aria-hidden={acked ? undefined : true}
-          style={{ display: state === 'paid' ? 'none' : undefined }}
-        />
+          className={`pay__body${split ? ' pay__body--split' : ''}`}
+          style={{ display: state === 'paid' || state === 'error' ? 'none' : undefined }}
+        >
+          {/* The cover: decorative — the dialog label already names the
+              item — so it hides from the accessibility tree. */}
+          {split && (
+            <div className="pay__preview" aria-hidden="true">
+              <img src={image} alt="" />
+              <p className="pay__preview-title">{title}</p>
+            </div>
+          )}
+
+          <div className="pay__main">
+            {digital && (
+              <div className="pay__terms">
+                <p className="pay__terms-title">This is a download, so the sale is final</p>
+                <p className="pay__terms-copy">
+                  Your file is sent as soon as you pay. Because a file can’t be given
+                  back, <strong>this purchase can’t be refunded or cancelled</strong>.
+                  If it never arrives, or it’s faulty or not as described, or you have
+                  any other concern, email{' '}
+                  <a href={`mailto:${SUPPORT}`}>{SUPPORT}</a> and we’ll put it right.
+                </p>
+                <label className="pay__ack">
+                  <input
+                    type="checkbox"
+                    checked={acked}
+                    onChange={(e) => setAcked(e.target.checked)}
+                  />
+                  <span>
+                    I understand this purchase is final and non-refundable, and I want
+                    the file straight away.
+                  </span>
+                </label>
+              </div>
+            )}
+
+            {/* Stripe mounts its iframe here; keep it in the tree during
+                'loading' so the mount target exists when init resolves. */}
+            <div
+              ref={mountRef}
+              className={`pay__frame${acked ? '' : ' pay__frame--locked'}`}
+              aria-hidden={acked ? undefined : true}
+            />
+          </div>
+        </div>
       </div>
     </div>,
     document.body,

@@ -124,6 +124,7 @@ export default function OfferCard({ offer, index = 0 }) {
           itemId={offer.id}
           itemType={offer.checkoutType || 'shop'}
           title={offer.title}
+          image={image}
           digital={isDownload}
           doneNote={
             offer.kind === 'pdf'
