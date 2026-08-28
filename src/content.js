@@ -142,7 +142,7 @@ export const featuredVideo = {
  * Everything else, in the order you want it shown.
  * Cards are auto-numbered 01, 02, 03 in the order below.
  * kind: 'product' (has a price) | 'link' (just goes somewhere)
- * accent: 'navy' | 'umber' | 'olive' | 'amber'
+ * accent: 'navy' | 'red' | 'umber' | 'olive' | 'amber'
  */
 export const offers = [
   {

@@ -565,6 +565,11 @@
   --card-accent: var(--amber);
   --card-wash: var(--amber-wash);
 }
+/* The brand off-red — same tone the prices are set in. */
+.offer--red {
+  --card-accent: var(--accent);
+  --card-wash: var(--accent-wash);
+}
 
 @media (hover: hover) {
   .offer:hover {
@@ -2509,6 +2514,10 @@
 
 .custom-copy--amber {
   border-left: 4px solid var(--amber);
+}
+
+.custom-copy--red {
+  border-left: 4px solid var(--accent);
 }
 
 .custom-copy__img {

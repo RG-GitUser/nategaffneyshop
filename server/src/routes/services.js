@@ -41,7 +41,7 @@ const serviceSchema = z.object({
     .max(500)
     .refine(safeHref, 'Links must be http(s), mailto, tel, or site-relative')
     .default('#book'),
-  accent: z.enum(['navy', 'umber', 'olive', 'amber']).default('navy'),
+  accent: z.enum(['navy', 'red', 'umber', 'olive', 'amber']).default('navy'),
   order: z.number().int().default(0),
   visible: z.boolean().default(true),
 })

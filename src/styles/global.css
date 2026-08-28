@@ -542,10 +542,14 @@ p {
   }
 
   /* An odd number of sections used to strand the last one beside an
-     empty cell that read as missing content. The straggler spans the
-     full row instead, closing the grid like the footer does. */
+     empty cell that read as missing content. The straggler takes the
+     full row but keeps a normal card's width, centred — closing the
+     grid without turning into a page-wide slab. */
   .shell:has(.rail) .stack > .section:last-child:nth-child(odd) {
     grid-column: 1 / -1;
+    justify-self: center;
+    /* one column's width: half the row minus half the 24px gap */
+    width: calc(50% - 12px);
   }
 
   /* the footer closes the whole shell — rail column included — so its
