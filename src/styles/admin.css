@@ -549,6 +549,38 @@
   cursor: grabbing;
 }
 
+/* One-tap reorder arrows beside the drag handle — obvious, and they
+   work on touch where dragging doesn't. */
+.adm-move {
+  display: inline-flex;
+  gap: 2px;
+  margin-right: 4px;
+}
+
+.adm-move__btn {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: none;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: color 0.16s var(--ease), border-color 0.16s var(--ease);
+}
+
+.adm-move__btn:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.adm-move__btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 .adm-order {
   display: inline-block;
   min-width: 1.6em;
