@@ -216,13 +216,14 @@
   color: var(--ink-faint);
 }
 
-/* Friendly guidance under a field: quiet — a thin rule and small muted
-   text, so help reads as a footnote rather than a warning box. */
+/* Friendly guidance under a field: a quiet bordered note in the same
+   language as the inputs around it — help, not a warning box. */
 .adm-hint {
   margin-top: 8px;
-  padding-left: 10px;
-  border-left: 2px solid var(--line);
-  font-size: 0.84rem;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  font-size: 0.83rem;
   line-height: 1.55;
   color: var(--ink-faint);
   max-width: 62ch;
@@ -235,6 +236,13 @@
 
 .adm-hint em {
   color: var(--ink-soft);
+}
+
+/* Section-level guidance (e.g. where the live price and length are
+   set): clear air between the section header above and the fields
+   below, so it reads as its own row rather than crowding either. */
+.adm-hint--section {
+  margin: 2px 0 18px;
 }
 
 .adm-nowrap {
