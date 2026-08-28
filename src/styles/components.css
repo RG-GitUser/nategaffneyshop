@@ -1918,32 +1918,39 @@
   cursor: pointer;
 }
 
-/* Drawn by hand rather than trusting the native checkbox: Safari was
-   accepting the click without ever painting the tick, which reads as a
-   broken control at the exact moment someone is about to pay. Colours
+/* Drawn by hand on a plain span rather than trusting the input: Safari
+   neither painted the native tick reliably nor renders pseudo-elements
+   on <input>, which left an invisible consent control at the exact
+   moment someone is about to pay. The real checkbox stays in the label
+   for keyboard and screen-reader behaviour, just not painted. Colours
    are literal for the same reason as .pay__terms — this sits on the
    checkout's white card in both themes. */
 .pay__ack input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pay__box {
   flex: none;
   width: 20px;
   height: 20px;
   margin-top: 1px;
-  appearance: none;
-  -webkit-appearance: none;
   border: 2px solid #93a1b8;
   border-radius: 5px;
   background: #ffffff;
-  cursor: pointer;
   display: grid;
   place-items: center;
 }
 
-.pay__ack input:checked {
+.pay__ack input:checked + .pay__box {
   border-color: #000e3b;
   background: #000e3b;
 }
 
-.pay__ack input:checked::after {
+.pay__ack input:checked + .pay__box::after {
   content: '';
   width: 5px;
   height: 10px;
@@ -1953,7 +1960,7 @@
   margin-top: -2px;
 }
 
-.pay__ack input:focus-visible {
+.pay__ack input:focus-visible + .pay__box {
   outline: 2px solid #000e3b;
   outline-offset: 2px;
 }
