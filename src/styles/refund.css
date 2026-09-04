@@ -1,0 +1,267 @@
+/* ============================================================
+   REFUND REQUEST PAGE
+   One column, one job. Same tokens as the rest of the site — this is
+   part of the journey, reached from a receipt or the footer, not a
+   detached document like the invoice.
+   ============================================================ */
+
+.rfd {
+  width: 100%;
+  max-width: 620px;
+  margin-inline: auto;
+  padding: clamp(20px, 5vw, 56px) var(--pad-x) clamp(48px, 9vw, 90px);
+}
+
+.rfd__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  transition: color 0.16s var(--ease), gap 0.16s var(--ease);
+}
+
+@media (hover: hover) {
+  .rfd__back:hover {
+    color: var(--accent);
+    gap: 11px;
+  }
+}
+
+.rfd__head {
+  margin-top: clamp(26px, 5vw, 40px);
+  padding-bottom: clamp(20px, 4vw, 28px);
+  border-bottom: 2px solid var(--accent);
+}
+
+.rfd__title {
+  font-size: clamp(2rem, 7vw, 2.8rem);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.022em;
+  line-height: 1;
+}
+
+.rfd__sub {
+  margin-top: 14px;
+  /* A measure, and then an even shape inside it: `balance` spreads the
+     words across the lines it needs instead of filling each one and
+     leaving a two-word orphan on the last. Purely visual, and browsers
+     without it just get the ragged version. */
+  max-width: 46ch;
+  text-wrap: balance;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+
+/* ---------- the form ---------- */
+.rfd__form {
+  margin-top: clamp(24px, 5vw, 36px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(20px, 4vw, 28px);
+}
+
+.rfd__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* fieldset carries browser defaults that a div does not */
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+/**
+ * `:not(.rfd__reason)` because each reason row IS a <label>, and a direct
+ * child of the fieldset — without it every option inherited the tiny
+ * uppercase mono meant for the field captions above them.
+ */
+.rfd__field > label:not(.rfd__reason),
+.rfd__field > legend {
+  padding: 0;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.rfd__field input,
+.rfd__field textarea {
+  width: 100%;
+  padding: 13px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.rfd__field textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.rfd__field input:focus,
+.rfd__field textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+.rfd__hint {
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--ink-faint);
+}
+
+/* ---------- the reasons ---------- */
+.rfd__reasons {
+  gap: 10px;
+}
+
+/**
+ * Full-width targets rather than a native radio list or a <select>. On a
+ * phone — where most of this site's traffic is — a select buries the
+ * options behind a tap and gives no room for the line of explanation
+ * that decides whether somebody picks the category that matches what
+ * actually happened.
+ */
+.rfd__reason {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 0.16s var(--ease), background 0.16s var(--ease);
+}
+
+.rfd__reason input {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  accent-color: var(--accent);
+}
+
+/* The whole row lights up, not just the dot — the dot is 18px and the
+   row is the thing being chosen. */
+.rfd__reason.is-on {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+}
+
+/* Keyboard focus lands on the hidden-ish radio, so the ring has to be
+   drawn on the row around it or it is invisible. */
+.rfd__reason:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+@media (hover: hover) {
+  .rfd__reason:hover {
+    border-color: var(--accent-border);
+  }
+}
+
+.rfd__reason-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.rfd__reason-label {
+  font-weight: 600;
+  font-size: 0.98rem;
+  line-height: 1.35;
+}
+
+.rfd__reason-hint {
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* ---------- submit ---------- */
+.rfd__submit {
+  align-self: flex-start;
+  padding: 14px 30px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--navy-fill);
+  color: var(--on-navy);
+  font-family: var(--body);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.16s var(--ease);
+}
+
+@media (hover: hover) {
+  .rfd__submit:hover:not(:disabled) {
+    background: var(--navy-fill-hover);
+  }
+}
+
+.rfd__submit:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.rfd__error {
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--red);
+  background: rgba(140, 54, 54, 0.08);
+  color: var(--red);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.rfd__foot {
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+.rfd__foot a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ---------- the thank-you ---------- */
+.rfd__done {
+  margin-top: clamp(30px, 7vw, 60px);
+  padding: clamp(24px, 5vw, 36px);
+  border-radius: var(--r-xl);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--accent);
+  background: var(--surface);
+}
+
+.rfd__done .rfd__sub + .rfd__sub {
+  margin-top: 16px;
+}
+
+.rfd__done a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

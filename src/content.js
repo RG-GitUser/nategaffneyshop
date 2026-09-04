@@ -308,6 +308,7 @@ export const footer = {
   links: [
     { label: 'Privacy', href: '/privacy/' },
     { label: 'Terms', href: '/terms/' },
+    { label: 'Refunds', href: '/refund/' },
     { label: 'Contact', href: 'mailto:support@nategaffney.store' },
   ],
 }

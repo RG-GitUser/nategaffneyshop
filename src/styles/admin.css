@@ -1407,3 +1407,441 @@
   overflow-x: auto;
   white-space: pre;
 }
+
+/* ============================================================
+   REFUND REQUESTS
+   The queue above the payments table. Cards rather than rows: a
+   request carries a paragraph of somebody's own words, and a table
+   cell either crushes that to a sliver or drags every row's height
+   with it.
+   ============================================================ */
+
+/**
+ * Collapsed by default. Payments is a tab people open to look at payments,
+ * and on most days there is nothing in here — so folded, the section is
+ * one row: a title, the open count, and the colour mix. Opened, it becomes
+ * the queue.
+ */
+.rq {
+  margin-bottom: 20px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.rq.is-open {
+  margin-bottom: 28px;
+}
+
+.rq-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px 0 0;
+}
+
+.rq-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  padding: 13px 16px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: var(--ui-font);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--r-lg);
+}
+
+@media (hover: hover) {
+  .rq-toggle:hover .rq-toggle__title {
+    color: var(--accent);
+  }
+}
+
+.rq-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.rq-toggle__title {
+  transition: color 0.14s var(--ease);
+}
+
+.rq-chev {
+  flex: none;
+  color: var(--ink-faint);
+  transition: transform 0.18s var(--ease);
+}
+
+.rq-chev.is-open {
+  transform: rotate(-180deg);
+}
+
+/* Sits beside the title, so the number is part of "Refund requests"
+   rather than a separate thing floating elsewhere. */
+.rq-count {
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  background: var(--st-pending-wash);
+  color: var(--st-pending);
+  font-family: var(--ui-font);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Nothing waiting. Still said out loud, because "no badge" and "I haven't
+   looked yet" are the same picture otherwise. */
+.rq-count--clear {
+  background: var(--bg-2);
+  color: var(--ink-faint);
+}
+
+.rq-body {
+  padding: 4px 16px 18px;
+  border-top: 1px solid var(--line);
+}
+
+.rq-body .adm-panel-head {
+  margin-top: 14px;
+}
+
+.rq-body .adm-sub {
+  max-width: 56ch;
+}
+
+/* ---------- the category mix ---------- */
+.rq-mix {
+  margin: 4px 0 20px;
+}
+
+/* In the collapsed header the mix is a fixed-width strip beside the
+   title: proportion only, no legend, and no claim on a whole row. It
+   drops out entirely on a narrow dashboard, where the title and the
+   count are the things that must survive. */
+.rq-mix--compact {
+  flex: none;
+  width: 150px;
+  margin: 0;
+}
+
+.rq-mix--compact .rq-mix__bar {
+  height: 8px;
+}
+
+@media (max-width: 640px) {
+  .rq-mix--compact {
+    display: none;
+  }
+}
+
+.rq-mix__bar {
+  display: flex;
+  height: 12px;
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  background: var(--bg-2);
+}
+
+.rq-mix__band {
+  /* No gap between bands: they are parts of one whole, and a gap would
+     read as separate bars that happen to sit in a row. The rounded ends
+     of the track are what separate this from the page. */
+  min-width: 3px;
+  transition: width 0.25s var(--ease);
+}
+
+.rq-mix__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-top: 12px;
+  list-style: none;
+  padding: 0;
+}
+
+.rq-mix__legend li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+.rq-mix__legend b {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.rq-mix__swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex: none;
+}
+
+/* ---------- the cards ---------- */
+.rq-list {
+  display: grid;
+  /* Wide enough that a sentence of theirs gets a real line length; the
+     grid falls to one column on a laptop's narrower dashboard rather
+     than squeezing two. */
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.rq-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  /* The category's colour, carried on the card's edge. It is the one
+     thing you are meant to be able to sort by eye across a grid, and a
+     tag alone is too small to do that at arm's length. */
+  border-left: 3px solid var(--rq-accent, var(--accent));
+}
+
+/* Settled requests stay legible but stop competing with open ones. */
+.rq-card.is-settled {
+  opacity: 0.62;
+}
+
+.rq-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rq-card__who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rq-card__who strong {
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.rq-card__who .adm-muted {
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
+.rq-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  max-width: 48%;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ink-2);
+}
+
+/* The dot is the colour; the text stays ink. Tinting the label to match
+   would put six different low-contrast colours on the panel — the bar
+   already carries the palette. */
+.rq-tag__dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--rq-accent, var(--accent));
+}
+
+.rq-card__when {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -4px 0 0;
+  font-size: 0.76rem;
+  color: var(--ink-faint);
+}
+
+.rq-card__msg {
+  margin: 0;
+  padding: 11px 13px;
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+  /* Their own words, at whatever length they wrote them. Long ones scroll
+     inside the card so one essay cannot stretch a whole grid row. */
+  max-height: 9.6em;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.rq-card__order {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 0.82rem;
+}
+
+.rq-card__item {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.rq-card__amount {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+}
+
+/* Anything the dashboard inferred rather than knows. Deliberately plain
+   and quiet — it is a caveat on the line above, not an alarm. */
+.rq-card__guess {
+  flex-basis: 100%;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
+
+.rq-card__actions {
+  margin-top: auto;
+  padding-top: 2px;
+}
+
+/* ---------- receipt modal ---------- */
+/* A definition list rather than a table: it is a handful of label/value
+   pairs, and it has to stay readable when the modal narrows on a phone —
+   where the two columns collapse into stacked rows. */
+.adm-receipt {
+  margin: 16px 0 0;
+  border-top: 1px solid var(--line);
+}
+
+.adm-receipt > div {
+  display: grid;
+  grid-template-columns: 8.5rem 1fr;
+  gap: 4px 18px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.adm-receipt dt {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding-top: 2px;
+}
+
+.adm-receipt dd {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.adm-receipt dd.mono {
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 520px) {
+  .adm-receipt > div {
+    grid-template-columns: 1fr;
+  }
+}
+
+/**
+ * The receipt carries four actions, and at 420px two of them wrapped onto
+ * a second line inside their own buttons — "OPEN IN / STRIPE". Wide enough
+ * that every label sits on one line, and the labels are told not to wrap
+ * so a longer one widens the button rather than breaking inside it.
+ */
+.adm-modal__card--receipt {
+  max-width: 620px;
+}
+
+.adm-modal__card--receipt .adm-modal__actions {
+  flex-wrap: wrap;
+}
+
+.adm-modal__card--receipt .adm-modal__actions .adm-mini {
+  white-space: nowrap;
+}
+
+/* Close is the way out, not one of the four things to do — pushed to the
+   far left so the actions group together on the right. */
+.adm-modal__card--receipt .adm-modal__actions > :first-child {
+  margin-right: auto;
+}
+
+/* Status tabs on the refund queue. Same segmented-control shape as the
+   Analytics range toggle, so the two read as the same kind of control. */
+.rq-tabs {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+}
+
+.rq-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border: 0;
+  background: none;
+  border-radius: calc(var(--r-md) - 2px);
+  font-family: var(--ui-font);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: color 0.15s var(--ease), background-color 0.15s var(--ease);
+}
+
+.rq-tabs button.is-active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+
+/* The count is the reason to look at a tab you are not on, so it stays
+   legible rather than fading with the label. Tabular figures keep the
+   tabs from twitching sideways as numbers change. */
+.rq-tabs button b {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+
+.rq-tabs button.is-active b {
+  color: var(--ink-2);
+}
