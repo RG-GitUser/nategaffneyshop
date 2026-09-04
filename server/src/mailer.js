@@ -18,6 +18,10 @@ import {
 
 const enabled = Boolean(config.smtp.host && config.smtp.user)
 
+/** One address for refunds, problems and questions — repeated in every
+ *  customer-facing message so nobody has to hunt for where to write. */
+const SUPPORT = 'support@nategaffney.store'
+
 const transport = enabled
   ? nodemailer.createTransport({
       host: config.smtp.host,
@@ -25,6 +29,16 @@ const transport = enabled
       // 465 is implicit TLS; 587 upgrades via STARTTLS.
       secure: config.smtp.port === 465,
       auth: { user: config.smtp.user, pass: config.smtp.pass },
+      /**
+       * Bounded, because the Stripe webhook now WAITS on the download
+       * email before answering. Nodemailer's defaults run to minutes; a
+       * hung mail server would hold the webhook open past Stripe's own
+       * timeout, which reads as a failure anyway but costs the retry a
+       * clean error to act on. Better to fail in ten seconds and retry.
+       */
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 20_000,
     })
   : null
 
@@ -41,7 +55,20 @@ if (!enabled) {
 async function send({ to, subject, text, html }) {
   if (!transport || !to) return false
   try {
-    await transport.sendMail({ from: config.smtp.from, to, subject, text, html })
+    await transport.sendMail({
+      from: config.smtp.from,
+      /**
+       * Several of these messages tell the customer to "reply to this
+       * email", and MAIL_FROM is often a noreply@ mailbox nobody reads.
+       * Pointing replies at support keeps that promise honest whatever
+       * the from address happens to be.
+       */
+      replyTo: SUPPORT,
+      to,
+      subject,
+      text,
+      html,
+    })
     return true
   } catch (err) {
     // Never let a mail failure break the request that triggered it.
@@ -70,10 +97,6 @@ const when = (b) => `${b.date} at ${b.time}`
  * appears throughout the terms and privacy policy.
  */
 const SELLER = 'Wabanaki Software Solutions Inc.'
-
-/** One address for refunds, problems and questions — repeated in every
- *  customer-facing message so nobody has to hunt for where to write. */
-const SUPPORT = 'support@nategaffney.store'
 
 const money = (cents, currency = 'cad') =>
   new Intl.NumberFormat('en-CA', {
@@ -633,3 +656,4 @@ export function notifyBookingCancelled(booking) {
     }),
   })
 }
+

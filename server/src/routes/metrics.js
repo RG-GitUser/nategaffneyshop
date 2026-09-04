@@ -102,7 +102,9 @@ metricsRouter.get('/summary', requireAdmin, async (req, res, next) => {
         .toArray(),
       collections
         .orders()
-        .find({}, { projection: { sessionId: 0, paymentIntent: 0 } })
+        // sessionId rides along now: it is what the resend route addresses an
+        // order by, and this endpoint is admin-only.
+        .find({}, { projection: { paymentIntent: 0 } })
         .sort({ createdAt: -1 })
         // A few extra so hiding the test rows still leaves ten to show.
         .limit(14)
@@ -217,6 +219,14 @@ metricsRouter.get('/summary', requireAdmin, async (req, res, next) => {
             amount: o.amount,
             currency: o.currency,
             createdAt: o.createdAt,
+            // Enough for the table to say whether the file actually
+            // reached the buyer, and to offer a resend when it did not.
+            sessionId: o.sessionId ?? null,
+            digital: Boolean(o.digital),
+            refunded: Boolean(o.refunded),
+            downloadEmailSent: Boolean(o.downloadEmailSent),
+            downloadEmailFailed: Boolean(o.downloadEmailFailed),
+            downloadFailReason: o.downloadFailReason ?? null,
           })),
       },
       chat: {

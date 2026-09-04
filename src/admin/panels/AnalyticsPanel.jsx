@@ -57,16 +57,87 @@ export default function AnalyticsPanel({ notify }) {
   const [metric, setMetric] = useState('traffic')
   const [pagesView, setPagesView] = useState('share')
   const [salesView, setSalesView] = useState('share')
+  /* The order currently being re-sent, so its button alone shows the wait. */
+  const [resending, setResending] = useState(null)
 
-  useEffect(() => {
+  const load = () => {
     setLoading(true)
     api
       .metricsSummary(days)
       .then(setData)
       .catch((err) => notify(err.message, 'error'))
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days])
+
+  /**
+   * Re-send a paid download. The prompt is deliberate rather than a
+   * silent resend: the commonest reason a file never arrived is a
+   * mistyped address, and that is exactly the moment to offer a
+   * correction. Cancelling the prompt cancels the resend; leaving it
+   * unchanged sends to the address that paid.
+   */
+  const resend = async (order) => {
+    const to = window.prompt(
+      `Re-send "${order.title || 'the download'}" to:`,
+      order.email || '',
+    )
+    if (to === null) return
+    const address = to.trim()
+    if (!address) return notify('Give an address to send to.', 'error')
+
+    setResending(order.id)
+    try {
+      await api.resendDownload(order.sessionId, address)
+      notify(`Download re-sent to ${address}.`)
+      load()
+    } catch (err) {
+      notify(err.message, 'error')
+    } finally {
+      setResending(null)
+    }
+  }
+
+  /**
+   * Whether the file actually reached the buyer — the one thing the
+   * orders table could never say. A paid download that never sent is a
+   * customer owed a product, so it gets a pill loud enough to notice
+   * and a button to fix it on the spot.
+   */
+  const delivery = (o) => {
+    if (!o.digital) return <span className="adm-muted">—</span>
+    if (o.refunded) return <span className="adm-pill adm-pill--cancelled">Refunded</span>
+
+    const button = o.sessionId ? (
+      <button
+        type="button"
+        className="adm-mini"
+        disabled={resending === o.id}
+        onClick={() => resend(o)}
+      >
+        {resending === o.id ? 'Sending…' : 'Resend'}
+      </button>
+    ) : null
+
+    return (
+      <span className="adm-inline">
+        {o.downloadEmailFailed ? (
+          <span className="adm-pill adm-pill--cancelled" title={o.downloadFailReason || ''}>
+            Failed
+          </span>
+        ) : o.downloadEmailSent ? (
+          <span className="adm-pill adm-pill--confirmed">Sent</span>
+        ) : (
+          <span className="adm-pill adm-pill--pending">Not sent</span>
+        )}
+        {button}
+      </span>
+    )
+  }
 
   if (loading && !data) return <p className="adm-muted">Loading…</p>
   if (!data) return <p className="adm-muted">No data yet.</p>
@@ -218,7 +289,7 @@ export default function AnalyticsPanel({ notify }) {
           <div className="adm-table-wrap">
             <table className="adm-table">
               <thead>
-                <tr><th>When</th><th>Item</th><th>Buyer</th><th>Amount</th></tr>
+                <tr><th>When</th><th>Item</th><th>Buyer</th><th>Amount</th><th>Delivery</th></tr>
               </thead>
               <tbody>
                 {sales.recent.map((o) => (
@@ -231,6 +302,7 @@ export default function AnalyticsPanel({ notify }) {
                       <span className="adm-muted">{o.email || '—'}</span>
                     </td>
                     <td className="adm-nowrap">{money(o.amount, o.currency)}</td>
+                    <td>{delivery(o)}</td>
                   </tr>
                 ))}
               </tbody>

@@ -51,6 +51,14 @@ export const api = {
   getContent: () => request('/content'),
   saveContent: (data) => request('/content', { method: 'PUT', body: data }),
 
+  // orders
+  /** Re-send a paid PDF's download email, optionally to a corrected address. */
+  resendDownload: (sessionId, email) =>
+    request(`/checkout/orders/${encodeURIComponent(sessionId)}/resend`, {
+      method: 'POST',
+      body: email ? { email } : {},
+    }),
+
   // shop
   listShop: () => request('/shop/all'),
   createShopItem: (item) => request('/shop', { method: 'POST', body: item }),
