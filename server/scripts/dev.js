@@ -213,9 +213,22 @@ if (DEMO) {
   console.log(`  DEMO     ${demoCount} invented sales seeded — Payments shows fake data`)
   console.log('')
 }
-console.log('  API      http://localhost:8080')
+/**
+ * The API knows its own port and cannot know Vite's. Both used to be
+ * hardcoded here, and the site one goes stale the moment 5173 is busy:
+ * Vite takes a free port instead (autoPort, .claude/launch.json), nothing
+ * tells the API, and the banner then sends you to a URL with nothing on
+ * it. ALLOWED_ORIGINS is the closest the API has to an answer, since that
+ * is the origin its own CORS check accepts, so name it as the expectation
+ * and say plainly where the real answer comes from.
+ */
+const site =
+  (process.env.ALLOWED_ORIGINS || '').split(',')[0].trim() || 'http://localhost:5173'
+console.log(`  API      http://localhost:${process.env.PORT}`)
 console.log(`  Sign in  ${DEV_EMAIL} / ${DEV_PASSWORD}`)
-console.log('  Admin UI http://localhost:5173/admin/  (run `npm run dev` in the project root)')
+console.log(`  Admin UI ${site}/admin/`)
+console.log('           (run `npm run dev` in the project root — if it reports')
+console.log('            a different port, 5173 was taken; use the one it printed)')
 console.log('')
 console.log('  Data persists in server/.devdb — delete that folder to reset.')
 console.log('')
