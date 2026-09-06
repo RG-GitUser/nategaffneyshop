@@ -51,6 +51,14 @@ export const api = {
   getContent: () => request('/content'),
   saveContent: (data) => request('/content', { method: 'PUT', body: data }),
 
+  // orders
+  /** Re-send a paid PDF's download email, optionally to a corrected address. */
+  resendDownload: (sessionId, email) =>
+    request(`/checkout/orders/${encodeURIComponent(sessionId)}/resend`, {
+      method: 'POST',
+      body: email ? { email } : {},
+    }),
+
   // shop
   listShop: () => request('/shop/all'),
   createShopItem: (item) => request('/shop', { method: 'POST', body: item }),
@@ -83,7 +91,16 @@ export const api = {
     request('/payments/invoice-link', { method: 'POST', body: { paymentIntents } }),
   getPayment: (id) => request(`/payments/${id}`),
   refund: (id, body) => request(`/payments/${id}/refund`, { method: 'POST', body }),
+  /** Re-send the original receipt email, unchanged, to the address that paid. */
+  resendReceipt: (id) => request(`/payments/${id}/resend-receipt`, { method: 'POST' }),
   paymentSummary: () => request('/payments/stats/summary'),
+
+  // refund requests — a separate router from /payments on purpose, so the
+  // queue still loads when Stripe is unconfigured
+  listRefundRequests: (status = 'open') =>
+    request(`/refund-requests?status=${encodeURIComponent(status)}`),
+  updateRefundRequest: (id, body) =>
+    request(`/refund-requests/${id}`, { method: 'PATCH', body }),
 
   // google calendar
   googleStatus: () => request('/google/status'),

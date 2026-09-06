@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { api } from '../api.js'
 import { confirmDialog } from '../confirm.jsx'
+import RefundRequests from './RefundRequests.jsx'
 
 const money = (cents, currency = 'cad') =>
   new Intl.NumberFormat('en-CA', {
@@ -30,7 +31,12 @@ export default function PaymentsPanel({ notify }) {
   const [loading, setLoading] = useState(true)
   const [refunding, setRefunding] = useState(null) // { id, amount, max, currency }
   const [invoiceUrl, setInvoiceUrl] = useState(null) // link handed back to a customer
+  const [receipt, setReceipt] = useState(null) // the row whose receipt is open
+  const [resending, setResending] = useState(false)
   const [picking, setPicking] = useState(null) // { customer, purchases, chosen:Set }
+  // Bumped to make the refund queue re-read itself after a refund
+  // resolves one of its cards.
+  const [refundsKey, setRefundsKey] = useState(0)
 
   const [unconfigured, setUnconfigured] = useState(false)
 
@@ -192,6 +198,87 @@ export default function PaymentsPanel({ notify }) {
     }
   }
 
+  /**
+   * Re-send the receipt the customer was originally emailed.
+   *
+   * Confirmed first, and the address is named in the prompt: this puts a
+   * message in somebody's inbox, and the commonest reason a receipt never
+   * arrived is that the address on the order is wrong — in which case
+   * sending it again achieves nothing and the prompt is the moment to
+   * notice.
+   */
+  async function resendReceipt() {
+    const ok = await confirmDialog({
+      title: 'Re-send this receipt?',
+      message:
+        `It goes to ${receipt.customerEmail || 'the address on the order'}, ` +
+        'exactly as it was first sent — same reference, same date, same total.',
+      confirmLabel: 'Re-send',
+    })
+    if (!ok) return
+
+    setResending(true)
+    try {
+      const { to } = await api.resendReceipt(receipt.id)
+      notify(`Receipt re-sent to ${to}.`)
+      setReceipt(null)
+    } catch (err) {
+      notify(err.message, 'error')
+    } finally {
+      setResending(false)
+    }
+  }
+
+  /**
+   * A request card's Refund button opens that payment's receipt, not the
+   * refund dialog.
+   *
+   * Somebody has asked for money back and the card carries their side of
+   * it — their words, their category, our best guess at which purchase
+   * they mean. The receipt is the other side: the reference, the date, the
+   * actual total. Refunding straight from the card would mean moving money
+   * having seen only the half the customer wrote, and the guessed match
+   * is exactly the thing worth checking first.
+   *
+   * Fetched fresh rather than read off the table, because the payment a
+   * request points at is usually not on the page currently loaded.
+   */
+  async function openReceiptForRequest(request) {
+    try {
+      const p = await api.getPayment(request.paymentIntent)
+      // Carried through so a refund that started here closes the request
+      // it answered, instead of leaving it open to be worked twice.
+      setReceipt({ ...p, requestId: request.id })
+    } catch (err) {
+      notify(err.message, 'error')
+    }
+  }
+
+  /**
+   * Step from a receipt to refunding it. The remaining balance is computed
+   * here rather than trusted from anywhere else — a partial refund may
+   * already have gone out, and the dialog must never offer to hand back
+   * money that is no longer there.
+   */
+  function refundFromReceipt() {
+    const remaining = receipt.amount - (receipt.amountRefunded || 0)
+    if (remaining <= 0) {
+      notify('That payment has already been fully refunded.', 'error')
+      return
+    }
+    setRefunding({
+      id: receipt.id,
+      amount: (remaining / 100).toFixed(2),
+      max: remaining,
+      currency: receipt.currency,
+      digital: receipt.digital,
+      requestId: receipt.requestId,
+    })
+    // One dialog at a time — the refund dialog replaces the receipt rather
+    // than stacking on top of it.
+    setReceipt(null)
+  }
+
   async function submitRefund() {
     const cents = Math.round(Number(refunding.amount) * 100)
     if (!Number.isFinite(cents) || cents <= 0 || cents > refunding.max) {
@@ -218,6 +305,22 @@ export default function PaymentsPanel({ notify }) {
     try {
       await api.refund(refunding.id, { amount: cents })
       notify(`Refunded ${money(cents, refunding.currency)}.`)
+
+      /**
+       * The money moved; the bookkeeping that follows must not be able to
+       * undo that. A failure here leaves the request open — which is
+       * merely untidy — so it is logged rather than reported as if the
+       * refund itself had gone wrong.
+       */
+      if (refunding.requestId) {
+        try {
+          await api.updateRefundRequest(refunding.requestId, { status: 'resolved' })
+        } catch (err) {
+          console.error('[payments] refund issued but request not closed:', err.message)
+        }
+        setRefundsKey((k) => k + 1)
+      }
+
       setRefunding(null)
       load()
     } catch (err) {
@@ -312,6 +415,15 @@ export default function PaymentsPanel({ notify }) {
         </div>
       )}
 
+      {/* Above the table, and outside the Stripe gate below it: a request
+          is a person waiting, and it has to be visible even on a day when
+          Stripe is the thing that is broken. */}
+      <RefundRequests
+        notify={notify}
+        onOpenReceipt={openReceiptForRequest}
+        reloadKey={refundsKey}
+      />
+
       {unconfigured ? (
         <p className="adm-alert adm-alert--warn">
           Stripe isn’t connected yet. Add <code>STRIPE_SECRET_KEY</code> (plus{' '}
@@ -401,15 +513,15 @@ export default function PaymentsPanel({ notify }) {
                       </span>
                     </td>
                     <td className="adm-actions">
-                      {p.receiptUrl && (
-                        <a
-                          className="adm-mini"
-                          href={p.receiptUrl}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                        >
+                      {/* Opens the receipt rather than jumping straight to
+                          Stripe: the reference number the customer quotes
+                          is ours, not Stripe's, and it lives nowhere else
+                          in this dashboard. Stripe is one click further
+                          in. */}
+                      {(p.receiptNumber || p.receiptUrl) && (
+                        <button className="adm-mini" onClick={() => setReceipt(p)}>
                           Receipt
-                        </a>
+                        </button>
                       )}
                       {/* Opens a picker of this customer's purchases. One
                           invoice can cover several of them, so this is a
@@ -547,6 +659,113 @@ export default function PaymentsPanel({ notify }) {
               >
                 Get link
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {receipt && (
+        <div className="adm-modal" role="dialog" aria-modal="true">
+          <div className="adm-modal__card adm-modal__card--receipt">
+            <h3 className="adm-h3">Receipt</h3>
+            <p className="adm-sub">
+              {receipt.requestId
+                ? 'The purchase this refund request is about. Check it is the right one before refunding.'
+                : 'What the customer was emailed when they paid.'}
+            </p>
+
+            <dl className="adm-receipt">
+              <div>
+                <dt>Reference</dt>
+                <dd className="mono">
+                  {receipt.receiptNumber || (
+                    <span className="adm-muted">
+                      No order recorded, so this payment never produced a receipt
+                      from here.
+                    </span>
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt>Date</dt>
+                <dd>{whenParts(receipt.created).join(', ')}</dd>
+              </div>
+              <div>
+                <dt>Customer</dt>
+                <dd>
+                  {receipt.customerName || '—'}
+                  {receipt.customerEmail && (
+                    <>
+                      <br />
+                      <span className="adm-muted">{receipt.customerEmail}</span>
+                    </>
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt>Item</dt>
+                <dd>{receipt.label || '—'}</dd>
+              </div>
+              <div>
+                <dt>Total paid</dt>
+                <dd>
+                  {money(receipt.amount, receipt.currency)}
+                  {/* The receipt itself records the payment and says
+                      nothing about refunds — but the person reading this
+                      screen needs to know, so it is shown here and only
+                      here. */}
+                  {receipt.amountRefunded > 0 && (
+                    <>
+                      <br />
+                      <span className="adm-muted">
+                        −{money(receipt.amountRefunded, receipt.currency)} refunded
+                        since
+                      </span>
+                    </>
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt>Paid by</dt>
+                <dd>
+                  {receipt.cardBrand
+                    ? `${receipt.cardBrand} ···· ${receipt.cardLast4}`
+                    : '—'}
+                </dd>
+              </div>
+            </dl>
+
+            <div className="adm-modal__actions">
+              <button className="adm-mini" onClick={() => setReceipt(null)}>
+                Close
+              </button>
+              {receipt.receiptUrl && (
+                <a
+                  className="adm-mini"
+                  href={receipt.receiptUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  Open in Stripe
+                </a>
+              )}
+              {/* Nothing to re-send without an order row behind it — the
+                  receipt is built from what we stored, not from Stripe. */}
+              {receipt.receiptNumber && (
+                <button
+                  className="adm-mini"
+                  disabled={resending}
+                  onClick={resendReceipt}
+                >
+                  {resending ? 'Sending…' : 'Re-send to customer'}
+                </button>
+              )}
+              {receipt.status === 'succeeded' &&
+                receipt.amount - (receipt.amountRefunded || 0) > 0 && (
+                  <button className="adm-mini adm-mini--danger" onClick={refundFromReceipt}>
+                    Send refund
+                  </button>
+                )}
             </div>
           </div>
         </div>

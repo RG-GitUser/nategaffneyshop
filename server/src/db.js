@@ -46,6 +46,11 @@ export async function connect() {
   await db.collection('chatMembers').createIndex({ email: 1 }, { unique: true })
   await db.collection('chatBans').createIndex({ email: 1 }, { unique: true })
 
+  // Refund requests. Queried as "everything still open, newest first",
+  // and by email when the same person writes twice about one purchase.
+  await db.collection('refundRequests').createIndex({ status: 1, createdAt: -1 })
+  await db.collection('refundRequests').createIndex({ email: 1 })
+
   return db
 }
 
@@ -77,6 +82,7 @@ export const collections = {
   chatMessages: () => getDb().collection('chatMessages'),
   chatMembers: () => getDb().collection('chatMembers'),
   chatBans: () => getDb().collection('chatBans'),
+  refundRequests: () => getDb().collection('refundRequests'),
   audit: () => getDb().collection('auditLog'),
 }
 

@@ -15,7 +15,8 @@
     "check-mail": "node scripts/check-mail.js",
     "setup-webhook": "node scripts/setup-webhook.js",
     "check-stripe": "node scripts/check-stripe.js",
-    "create-admin": "node scripts/create-admin.js"
+    "create-admin": "node scripts/create-admin.js",
+    "test": "node --test"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

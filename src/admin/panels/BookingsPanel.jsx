@@ -417,7 +417,7 @@ export default function BookingsPanel({ notify }) {
           <h3 className="adm-h3">Private booking links</h3>
           <p className="adm-sub">
             Extra bookable offers, each with its own price and length. They
-            never appear on the site — each one lives only at its own link,
+            never appear on the site. Each one lives only at its own link,
             for you to send to specific people. Same calendar, same
             confirm-and-pay flow as regular sessions.
           </p>

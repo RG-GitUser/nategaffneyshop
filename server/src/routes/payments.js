@@ -5,6 +5,7 @@ import { config } from '../config.js'
 import { audit, collections } from '../db.js'
 import { markOrderRefunded } from '../orders.js'
 import { requireAdmin, signInvoiceToken } from '../middleware/auth.js'
+import { receiptNumber, sendReceipt } from '../mailer.js'
 import { isHiddenTestTitle, notHiddenTestOrder } from '../hiddenTestData.js'
 import { devStripe, devStripeEnabled, devSalesCount } from '../devStripe.js'
 
@@ -165,6 +166,9 @@ async function fetchPage(params) {
               digital: 1,
               sessionId: 1,
               invoice: 1,
+              createdAt: 1,
+              email: 1,
+              name: 1,
             },
           },
         )
@@ -238,6 +242,23 @@ async function scanPayments({ q, kind, item }) {
         // Whether an invoice link can be minted for this row at all —
         // it needs the checkout session the order was written from.
         invoiceable: Boolean(order?.sessionId),
+        /**
+         * The reference on the receipt the customer was emailed.
+         *
+         * Recomputed rather than stored — it is a pure function of the
+         * session id and the moment the order was written. Crucially it
+         * is derived from `order.createdAt`, NOT from pi.created: the
+         * webhook passed that exact timestamp to sendReceipt, and the two
+         * can fall on different sides of midnight UTC, which would print
+         * a number the customer has never seen.
+         *
+         * Null for a payment with no order row — one taken through a link
+         * made by hand in Stripe never produced a receipt from here.
+         */
+        receiptNumber:
+          order?.sessionId && order?.createdAt
+            ? receiptNumber(order.sessionId, new Date(order.createdAt))
+            : null,
       }
 
       all.push(row)
@@ -458,20 +479,130 @@ paymentsRouter.post('/invoice-link', async (req, res, next) => {
   }
 })
 
-/** One payment, with its refund history. */
+/**
+ * Re-send the receipt for one payment.
+ *
+ * Every figure comes from the stored order, never from the live Stripe
+ * object, so the re-sent receipt is byte-for-byte the one the customer was
+ * originally emailed — same reference number, same date, same total. A
+ * "receipt" that disagreed with the first one would be worse than none: it
+ * is the document somebody hands to an accountant.
+ *
+ * Refunds are deliberately NOT reflected. This records a payment that
+ * happened; the refund is its own event, and rewriting history to hide it
+ * would make the two documents contradict each other.
+ */
+paymentsRouter.post('/:id/resend-receipt', async (req, res, next) => {
+  try {
+    /**
+     * Demo mode invents its customers, and every one of them lives at a
+     * reserved example.* domain that accepts no mail. Sending would earn a
+     * bounce against the real sending domain for a sale that never
+     * happened — so this is the one Stripe action the demo refuses
+     * outright rather than faking.
+     */
+    if (devStripeEnabled) {
+      return res.status(400).json({
+        error:
+          'Demo mode. These sales are invented and their addresses are not ' +
+          'deliverable, so nothing was sent.',
+      })
+    }
+
+    const order = await collections.orders().findOne({ paymentIntent: req.params.id })
+    if (!order) {
+      return res.status(404).json({
+        error:
+          'No order was recorded for that payment, so there is no receipt to re-send. ' +
+          'Payments taken through a link made by hand in the Stripe dashboard look ' +
+          'like this. Stripe’s own receipt is the one to send.',
+      })
+    }
+    if (order.status !== 'paid') {
+      return res.status(400).json({ error: 'That order is not paid, so it has no receipt.' })
+    }
+    if (!order.email) {
+      return res.status(400).json({ error: 'That order carries no email address to send to.' })
+    }
+
+    /**
+     * The invoice link is minted fresh rather than reused. It is a signed
+     * token with its own long expiry, and the customer following it lands
+     * on the same order either way — but a link cut two years ago has less
+     * life left in it than one cut today.
+     */
+    const site = (config.allowedOrigins[0] || '').replace(/\/$/, '')
+    const sent = await sendReceipt({
+      to: order.email,
+      name: order.name,
+      title: order.title,
+      amountCents: order.amount,
+      currency: order.currency,
+      sessionId: order.sessionId,
+      paidAt: new Date(order.createdAt),
+      digital: Boolean(order.digital),
+      invoiceUrl:
+        site && order.sessionId
+          ? `${site}/invoice/?token=${signInvoiceToken(order.sessionId)}`
+          : null,
+    })
+
+    if (!sent) {
+      return res.status(502).json({
+        error: 'The receipt email could not be sent. Check the mail settings.',
+      })
+    }
+
+    await collections
+      .orders()
+      .updateOne({ paymentIntent: req.params.id }, { $set: { receiptResentAt: new Date() } })
+
+    await audit(req.admin.email, 'payment.receipt-resent', {
+      paymentIntent: req.params.id,
+      to: order.email,
+    })
+
+    res.json({ ok: true, to: order.email })
+  } catch (err) {
+    next(err)
+  }
+})
+
+/**
+ * One payment, with its refund history.
+ *
+ * Carries the same order-derived fields the list does — what was bought,
+ * the receipt reference, whether it was a download. A refund request card
+ * opens this payment's receipt directly, and that payment is very often
+ * not on the page of the table currently loaded, so this has to be able to
+ * furnish the whole receipt on its own.
+ */
 paymentsRouter.get('/:id', async (req, res, next) => {
   try {
-    const pi = await stripe.paymentIntents.retrieve(
-      req.params.id,
-      { expand: ['latest_charge'] },
-      ...onBehalf,
-    )
+    const [pi, order] = await Promise.all([
+      stripe.paymentIntents.retrieve(
+        req.params.id,
+        { expand: ['latest_charge'] },
+        ...onBehalf,
+      ),
+      collections.orders().findOne({ paymentIntent: req.params.id }),
+    ])
     const refunds = await stripe.refunds.list(
       { payment_intent: pi.id, limit: 20 },
       ...onBehalf,
     )
     res.json({
       ...summarise(pi),
+      label: order?.title || pi.description || null,
+      kind: orderKind(order),
+      digital: Boolean(order?.digital),
+      invoicedTo: order?.invoice?.billTo?.name || null,
+      // Same derivation as the list — from order.createdAt, so the
+      // reference matches the one the customer was actually emailed.
+      receiptNumber:
+        order?.sessionId && order?.createdAt
+          ? receiptNumber(order.sessionId, new Date(order.createdAt))
+          : null,
       refunds: refunds.data.map((r) => ({
         id: r.id,
         amount: r.amount,

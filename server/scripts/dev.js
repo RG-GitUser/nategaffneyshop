@@ -102,6 +102,86 @@ if (DEMO) {
     })),
   )
   demoCount = rows.length
+
+  /**
+   * A handful of refund requests, matched against the invented sales
+   * above, so the queue in the Payments tab has something in it. Seeded
+   * only once — working through them locally should stick, the same way
+   * edited content does.
+   *
+   * Written straight to the collection rather than posted to the API on
+   * purpose: the real route emails support and the customer, and a demo
+   * database filling up somebody's inbox would be a bad trade.
+   */
+  const requests = client.db(process.env.MONGODB_DB).collection('refundRequests')
+  if ((await requests.countDocuments()) === 0) {
+    const hoursAgo = (h) => new Date(Date.now() - h * 60 * 60 * 1000)
+    const pick = (i) => rows[i % rows.length]
+    const invented = [
+      {
+        name: 'Priya Raghunathan',
+        category: 'never-arrived',
+        message:
+          'Paid on Tuesday and the download email has never turned up. Not in spam either. Could you send it over, or put the money back?',
+        hours: 3,
+      },
+      {
+        name: 'Dan Whitcombe',
+        category: 'duplicate',
+        message: 'I think my card got charged twice — there are two of these on my statement.',
+        hours: 9,
+      },
+      {
+        name: '',
+        category: 'technical',
+        message: 'The PDF downloads but only the first page renders. Everything after it is blank.',
+        hours: 26,
+      },
+      {
+        name: 'Marisol Fuentes',
+        category: 'cant-attend',
+        message: 'Something has come up at work and I cannot make Thursday. Happy to rebook instead if that is easier.',
+        hours: 50,
+      },
+      {
+        name: 'Tom Beazley',
+        category: 'never-arrived',
+        message: 'Same as my last email — still nothing.',
+        hours: 71,
+      },
+      {
+        name: 'Aoife Lenihan',
+        category: 'not-as-described',
+        message:
+          'I was expecting the weekly planning system the page describes, and what I got reads more like a short intro. Not what I thought I was buying.',
+        hours: 96,
+      },
+    ]
+
+    await requests.insertMany(
+      invented.map((r, i) => {
+        const order = pick(i * 3)
+        return {
+          email: `${(r.name || 'someone').split(' ')[0].toLowerCase()}@example.com`,
+          name: r.name,
+          reference: '',
+          category: r.category,
+          message: r.message,
+          status: 'open',
+          paymentIntent: order.paymentIntent,
+          orderTitle: order.title,
+          orderAmount: order.amount,
+          orderCurrency: order.currency,
+          orderPaidAt: order.createdAt,
+          orderDigital: Boolean(order.digital),
+          orderCount: (i % 3) + 1,
+          matchedByReference: false,
+          createdAt: hoursAgo(r.hours),
+          updatedAt: hoursAgo(r.hours),
+        }
+      }),
+    )
+  }
 }
 
 /**
@@ -133,9 +213,22 @@ if (DEMO) {
   console.log(`  DEMO     ${demoCount} invented sales seeded — Payments shows fake data`)
   console.log('')
 }
-console.log('  API      http://localhost:8080')
+/**
+ * The API knows its own port and cannot know Vite's. Both used to be
+ * hardcoded here, and the site one goes stale the moment 5173 is busy:
+ * Vite takes a free port instead (autoPort, .claude/launch.json), nothing
+ * tells the API, and the banner then sends you to a URL with nothing on
+ * it. ALLOWED_ORIGINS is the closest the API has to an answer, since that
+ * is the origin its own CORS check accepts, so name it as the expectation
+ * and say plainly where the real answer comes from.
+ */
+const site =
+  (process.env.ALLOWED_ORIGINS || '').split(',')[0].trim() || 'http://localhost:5173'
+console.log(`  API      http://localhost:${process.env.PORT}`)
 console.log(`  Sign in  ${DEV_EMAIL} / ${DEV_PASSWORD}`)
-console.log('  Admin UI http://localhost:5173/admin/  (run `npm run dev` in the project root)')
+console.log(`  Admin UI ${site}/admin/`)
+console.log('           (run `npm run dev` in the project root — if it reports')
+console.log('            a different port, 5173 was taken; use the one it printed)')
 console.log('')
 console.log('  Data persists in server/.devdb — delete that folder to reset.')
 console.log('')

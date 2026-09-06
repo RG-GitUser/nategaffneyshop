@@ -18,6 +18,31 @@ import {
 
 const enabled = Boolean(config.smtp.host && config.smtp.user)
 
+/** One address for refunds, problems and questions — repeated in every
+ *  customer-facing message so nobody has to hunt for where to write. */
+const SUPPORT = 'support@nategaffney.store'
+
+/**
+ * The public site, for the one link a customer-facing email needs to point
+ * at. Blank in a dev shell with no ALLOWED_ORIGINS, and every use below
+ * falls back to the plain support address rather than emitting a href to
+ * nowhere.
+ */
+const SITE = (config.allowedOrigins[0] || '').replace(/\/$/, '')
+const REFUND_URL = SITE ? `${SITE}/refund/` : ''
+
+/** Where to send someone who wants their money back.
+ *
+ *  The form is preferred because it asks for the reason as one of a fixed
+ *  set, which is what lets the dashboard see what is actually going wrong
+ *  — but the mailbox is named in the same breath every time. Somebody
+ *  upset about a charge should never have to use a particular form to be
+ *  heard, and a form is no use at all to a customer whose complaint is
+ *  that the site is broken. */
+const refundRoute = REFUND_URL
+  ? `ask for a refund at ${REFUND_URL}, or email ${SUPPORT}`
+  : `email ${SUPPORT}`
+
 const transport = enabled
   ? nodemailer.createTransport({
       host: config.smtp.host,
@@ -25,6 +50,16 @@ const transport = enabled
       // 465 is implicit TLS; 587 upgrades via STARTTLS.
       secure: config.smtp.port === 465,
       auth: { user: config.smtp.user, pass: config.smtp.pass },
+      /**
+       * Bounded, because the Stripe webhook now WAITS on the download
+       * email before answering. Nodemailer's defaults run to minutes; a
+       * hung mail server would hold the webhook open past Stripe's own
+       * timeout, which reads as a failure anyway but costs the retry a
+       * clean error to act on. Better to fail in ten seconds and retry.
+       */
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 20_000,
     })
   : null
 
@@ -41,7 +76,20 @@ if (!enabled) {
 async function send({ to, subject, text, html }) {
   if (!transport || !to) return false
   try {
-    await transport.sendMail({ from: config.smtp.from, to, subject, text, html })
+    await transport.sendMail({
+      from: config.smtp.from,
+      /**
+       * Several of these messages tell the customer to "reply to this
+       * email", and MAIL_FROM is often a noreply@ mailbox nobody reads.
+       * Pointing replies at support keeps that promise honest whatever
+       * the from address happens to be.
+       */
+      replyTo: SUPPORT,
+      to,
+      subject,
+      text,
+      html,
+    })
     return true
   } catch (err) {
     // Never let a mail failure break the request that triggered it.
@@ -70,10 +118,6 @@ const when = (b) => `${b.date} at ${b.time}`
  * appears throughout the terms and privacy policy.
  */
 const SELLER = 'Wabanaki Software Solutions Inc.'
-
-/** One address for refunds, problems and questions — repeated in every
- *  customer-facing message so nobody has to hunt for where to write. */
-const SUPPORT = 'support@nategaffney.store'
 
 const money = (cents, currency = 'cad') =>
   new Intl.NumberFormat('en-CA', {
@@ -128,8 +172,8 @@ export function sendReceipt({
   const item = title || 'Your order'
 
   const policy = digital
-    ? `Digital downloads are final sale — once the download link has been sent the file cannot be returned, so it cannot be refunded. That does not affect your rights if a file is faulty, not as described, or never arrives. For a refund, a problem, or any concern at all, email ${SUPPORT}.`
-    : `To change, cancel or ask for a refund — or with any concern at all — email ${SUPPORT}. The cancellation terms are on the site.`
+    ? `Digital downloads are final sale. Once the download link has been sent the file cannot be returned, so it cannot be refunded. That does not affect your rights if a file is faulty, not as described, or never arrives. For a refund, a problem, or any concern at all, ${refundRoute}.`
+    : `To change, cancel or ask for a refund, or with any concern at all, ${refundRoute}. The cancellation terms are on the site.`
 
   return send({
     to,
@@ -630,6 +674,113 @@ export function notifyBookingCancelled(booking) {
         details([row('Was', when(booking))]) +
         paragraph('If this was a mistake, or you’d like another time, just reply.') +
         muted('— Nate'),
+    }),
+  })
+}
+
+/**
+ * To support — somebody has asked for their money back.
+ *
+ * Goes to the support mailbox, not ADMIN_NOTIFY_EMAIL, because that is
+ * where refund requests have always landed and this must not quietly move
+ * them somewhere else. The dashboard is the place to work through them;
+ * this is the nudge that says there is something to work through.
+ *
+ * The matched purchase is included when there is one, and named as a guess
+ * when it is a guess — reading "Content Audit, $250" and acting on it,
+ * only to find the request was about a different order, is exactly the
+ * mistake this line exists to prevent.
+ */
+export function notifyRefundRequest({
+  email,
+  name,
+  categoryLabel,
+  message,
+  reference,
+  orderTitle,
+  orderAmount,
+  orderCurrency,
+  orderCount,
+  matchedByReference,
+}) {
+  const who = name ? `${name} (${email})` : email
+  const match = orderTitle
+    ? `${orderTitle}, ${money(orderAmount, orderCurrency)}${
+        matchedByReference
+          ? ''
+          : orderCount > 1
+            ? ` (their most recent of ${orderCount} purchases, so check it is the right one)`
+            : ''
+      }`
+    : 'No matching order found for that address'
+
+  send({
+    to: SUPPORT,
+    subject: `Refund request: ${categoryLabel} (${email})`,
+    text: [
+      `${who} has asked for a refund.`,
+      ``,
+      `Reason     ${categoryLabel}`,
+      `Purchase   ${match}`,
+      ...(reference ? [`Reference  ${reference}`] : []),
+      ``,
+      ...(message ? [`What they said:`, message, ``] : []),
+      `It is in the Payments tab of the dashboard, where you can refund it`,
+      `and mark it done.`,
+    ].join('\n'),
+    html: wrap({
+      eyebrow: 'Refund request',
+      title: categoryLabel,
+      preheader: `${who}: ${categoryLabel}`,
+      body:
+        paragraph(`${who} has asked for a refund.`) +
+        details([
+          row('Reason', categoryLabel),
+          row('Purchase', match),
+          ...(reference ? [row('Reference', reference)] : []),
+          ...(message ? [row('What they said', message)] : []),
+        ]) +
+        muted(
+          'It is waiting in the Payments tab of the dashboard, where you can refund it and mark it done.',
+        ),
+    }),
+  })
+}
+
+/**
+ * To the customer — their request landed.
+ *
+ * Sent because the alternative is silence: somebody who has just asked for
+ * money back and hears nothing assumes the form ate it, and writes again,
+ * or writes somewhere louder. It promises a reply from a person, and
+ * promises nothing about the outcome, which is not this email's to decide.
+ */
+export function acknowledgeRefundRequest({ to, name, categoryLabel }) {
+  send({
+    to,
+    subject: 'We have your refund request',
+    text: [
+      `Hi${name ? ` ${name}` : ''},`,
+      ``,
+      `Your refund request has reached us, logged as "${categoryLabel}".`,
+      ``,
+      `A real person reads every one of these, and you'll get a reply.`,
+      `If anything else is relevant, just reply to this email and it will`,
+      `land on the same request.`,
+      ``,
+      `Nate`,
+    ].join('\n'),
+    html: wrap({
+      eyebrow: 'Refund request',
+      title: 'We have your request',
+      preheader: `Logged as "${categoryLabel}". A person will reply.`,
+      body:
+        paragraph(`Hi${name ? ` ${name}` : ''},`) +
+        paragraph(`Your refund request has reached us, logged as “${categoryLabel}”.`) +
+        paragraph(
+          'A real person reads every one of these, and you’ll get a reply. If anything else is relevant, reply to this email and it will land on the same request.',
+        ) +
+        muted('Nate'),
     }),
   })
 }

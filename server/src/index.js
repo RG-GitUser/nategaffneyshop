@@ -19,6 +19,7 @@ import { googleRouter } from './routes/google.js'
 import { checkoutRouter } from './routes/checkout.js'
 import { metricsRouter } from './routes/metrics.js'
 import { invoiceRouter } from './routes/invoice.js'
+import { refundsRouter } from './routes/refunds.js'
 
 const app = express()
 
@@ -98,6 +99,7 @@ app.use('/api/google', googleRouter)
 app.use('/api/checkout', checkoutRouter)
 app.use('/api/metrics', metricsRouter)
 app.use('/api/invoice', invoiceRouter)
+app.use('/api/refund-requests', refundsRouter)
 
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }))
 
