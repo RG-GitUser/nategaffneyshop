@@ -105,7 +105,7 @@ export const profile = {
   // Web-sized copy (720×1280, ~100KB). The 3.8MB original is kept alongside
   // it as profilepicture-source.jpg for the OG image / print use.
   // If the file goes missing the page falls back to initials — nothing breaks.
-  avatar: '/images/profilepicture.jpg',
+  avatar: '/images/nate-logo.svg',
   location: 'Wabanaki territory',
   // Social proof line under the name. Set to null to hide it.
   trust: 'Co-owner of Wabanaki Media · Indigenous storytelling & media production',
