@@ -256,6 +256,25 @@
   background: var(--surface);
 }
 
+/**
+ * The lede's measure does not survive being put in a box.
+ *
+ * `.rfd__sub` is capped at 46ch and balanced, which is right where it is
+ * a lede sitting loose in a 620px column. Inside this card it is neither:
+ * the panel's own padding already sets the measure, so the cap just
+ * strands text short of the edge, and `balance` — built for headings,
+ * and capped by browsers at a handful of lines — then squares three
+ * lines off against each other rather than letting them fill.
+ *
+ * So: fill the card, and swap to `pretty`, which is the one meant for
+ * running text. It leaves line lengths alone and only refuses to end a
+ * paragraph on a lonely word.
+ */
+.rfd__done .rfd__sub {
+  max-width: none;
+  text-wrap: pretty;
+}
+
 .rfd__done .rfd__sub + .rfd__sub {
   margin-top: 16px;
 }
