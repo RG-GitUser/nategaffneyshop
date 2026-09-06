@@ -133,6 +133,10 @@ export default function RefundRequests({ notify, onOpenReceipt, reloadKey }) {
   const [counts, setCounts] = useState({})
   const [open, setOpen] = useState(0)
   const [expanded, setExpanded] = useState(false)
+  // Which request is opened out. One at a time: an expanded card takes
+  // the full width of the grid row, and several at once would shuffle
+  // every other card around on each click.
+  const [openId, setOpenId] = useState(null)
   const [tab, setTab] = useState('open')
   const [totals, setTotals] = useState({ open: 0, resolved: 0, declined: 0 })
   const [loading, setLoading] = useState(true)
@@ -164,6 +168,7 @@ export default function RefundRequests({ notify, onOpenReceipt, reloadKey }) {
    * first click would leave the collapsed state with nothing to show.
    */
   useEffect(() => {
+    setOpenId(null)
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, reloadKey])
@@ -270,111 +275,142 @@ export default function RefundRequests({ notify, onOpenReceipt, reloadKey }) {
             <ul className="rq-list">
               {rows.map((r) => {
                 const cat = refundCategory(r.category)
+                const isOpen = openId === r.id
                 return (
                   <li
                     key={r.id}
-                    className={`rq-card${r.status !== 'open' ? ' is-settled' : ''}`}
+                    className={`rq-card${r.status !== 'open' ? ' is-settled' : ''}${
+                      isOpen ? ' is-expanded' : ''
+                    }`}
                     style={{ '--rq-accent': cat.color }}
                   >
-                    <div className="rq-card__head">
-                      <div className="rq-card__who">
-                        <strong>{r.name || r.email}</strong>
-                        {r.name && <span className="adm-muted">{r.email}</span>}
-                      </div>
-                      <span className="rq-tag">
-                        <span className="rq-tag__dot" />
-                        {r.categoryLabel || cat.label}
+                    {/* The whole face of the card is the control. Who is
+                        waiting and how long they have been waiting is enough
+                        to choose which one to deal with next; the rest only
+                        matters once you have chosen, so it stays a click
+                        away and the queue stays scannable. */}
+                    <button
+                      type="button"
+                      className="rq-card__front"
+                      aria-expanded={isOpen}
+                      aria-controls={`rq-detail-${r.id}`}
+                      onClick={() => setOpenId((v) => (v === r.id ? null : r.id))}
+                    >
+                      <span className="rq-card__name">{r.name || r.email}</span>
+                      {/* Relative on the face of it, because the queue is a
+                          clock; the exact date rides along on hover, for
+                          when it is the date itself that is in question. */}
+                      <span
+                        className="rq-card__date"
+                        title={new Date(r.createdAt).toLocaleString('en-CA')}
+                      >
+                        {ago(r.createdAt)}
                       </span>
-                    </div>
+                      <Chevron open={isOpen} />
+                    </button>
 
-                    <p className="rq-card__when">
-                      {ago(r.createdAt)}
-                      {r.status !== 'open' && (
-                        <span
-                          className={`adm-pill adm-pill--${
-                            r.status === 'resolved' ? 'confirmed' : 'cancelled'
-                          }`}
-                        >
-                          {r.status}
-                        </span>
-                      )}
-                    </p>
+                    {isOpen && (
+                      <div id={`rq-detail-${r.id}`} className="rq-card__detail">
+                        <div className="rq-card__head">
+                          <div className="rq-card__who">
+                            {/* Only worth repeating when the face of the
+                                card showed a name instead of this. */}
+                            {r.name && <span className="adm-muted">{r.email}</span>}
+                          </div>
+                          <div className="rq-card__marks">
+                            {r.status !== 'open' && (
+                              <span
+                                className={`adm-pill adm-pill--${
+                                  r.status === 'resolved' ? 'confirmed' : 'cancelled'
+                                }`}
+                              >
+                                {r.status}
+                              </span>
+                            )}
+                            <span className="rq-tag">
+                              <span className="rq-tag__dot" />
+                              {r.categoryLabel || cat.label}
+                            </span>
+                          </div>
+                        </div>
 
-                    {/* Their own words, kept verbatim and kept whole. The
-                        category is for counting; this is what actually tells
-                        you what happened. */}
-                    {r.message && <p className="rq-card__msg">{r.message}</p>}
+                        {/* Their own words, kept verbatim and kept whole. The
+                            category is for counting; this is what actually tells
+                            you what happened. */}
+                        {r.message && <p className="rq-card__msg">{r.message}</p>}
 
-                    <div className="rq-card__order">
-                      {r.orderTitle ? (
-                        <>
-                          <span className="rq-card__item">{r.orderTitle}</span>
-                          <span className="rq-card__amount">
-                            {money(r.orderAmount, r.orderCurrency)}
-                          </span>
-                          {/* An unreferenced match is the newest of several
-                              purchases — a guess. Say so, or the amount above
-                              reads as fact and gets refunded as one. */}
-                          {!r.matchedByReference && r.orderCount > 1 && (
+                        <div className="rq-card__order">
+                          {r.orderTitle ? (
+                            <>
+                              <span className="rq-card__item">{r.orderTitle}</span>
+                              <span className="rq-card__amount">
+                                {money(r.orderAmount, r.orderCurrency)}
+                              </span>
+                              {/* An unreferenced match is the newest of several
+                                  purchases — a guess. Say so, or the amount above
+                                  reads as fact and gets refunded as one. */}
+                              {!r.matchedByReference && r.orderCount > 1 && (
+                                <span className="rq-card__guess">
+                                  most recent of {r.orderCount}, check this is the
+                                  right one
+                                </span>
+                              )}
+                            </>
+                          ) : (
                             <span className="rq-card__guess">
-                              most recent of {r.orderCount}, check this is the
-                              right one
+                              No paid order found for that address
+                              {r.reference ? ` or reference “${r.reference}”` : ''}.
                             </span>
                           )}
-                        </>
-                      ) : (
-                        <span className="rq-card__guess">
-                          No paid order found for that address
-                          {r.reference ? ` or reference “${r.reference}”` : ''}.
-                        </span>
-                      )}
-                    </div>
+                        </div>
 
-                    <div className="adm-actions rq-card__actions">
-                      {/* Opens the receipt for the matched purchase, which
-                          is where refunding actually happens. The match is
-                          often a guess, and this is the screen that lets
-                          you check it against a reference and a total
-                          before any money moves. */}
-                      {r.paymentIntent && r.status === 'open' && (
-                        <button
-                          className="adm-mini adm-mini--danger"
-                          disabled={busy === r.id}
-                          onClick={() => onOpenReceipt(r)}
-                        >
-                          Refund…
-                        </button>
-                      )}
-                      {r.status === 'open' ? (
-                        <>
-                          <button
-                            className="adm-mini"
-                            disabled={busy === r.id}
-                            onClick={() => settle(r, 'resolved')}
-                          >
-                            Resolved
-                          </button>
-                          <button
-                            className="adm-mini"
-                            disabled={busy === r.id}
-                            onClick={() => settle(r, 'declined')}
-                          >
-                            Decline
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          className="adm-mini"
-                          disabled={busy === r.id}
-                          onClick={() => settle(r, 'open')}
-                        >
-                          Reopen
-                        </button>
-                      )}
-                      <a className="adm-mini" href={`mailto:${r.email}`}>
-                        Email them
-                      </a>
-                    </div>
+                        <div className="adm-actions rq-card__actions">
+                          {/* Opens the receipt for the matched purchase, which
+                              is where refunding actually happens. The match is
+                              often a guess, and this is the screen that lets
+                              you check it against a reference and a total
+                              before any money moves. */}
+                          {r.paymentIntent && r.status === 'open' && (
+                            <button
+                              className="adm-mini adm-mini--danger"
+                              disabled={busy === r.id}
+                              onClick={() => onOpenReceipt(r)}
+                            >
+                              Refund…
+                            </button>
+                          )}
+                          {r.status === 'open' ? (
+                            <>
+                              <button
+                                className="adm-mini"
+                                disabled={busy === r.id}
+                                onClick={() => settle(r, 'resolved')}
+                              >
+                                Resolved
+                              </button>
+                              <button
+                                className="adm-mini"
+                                disabled={busy === r.id}
+                                onClick={() => settle(r, 'declined')}
+                              >
+                                Decline
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              className="adm-mini"
+                              disabled={busy === r.id}
+                              onClick={() => settle(r, 'open')}
+                            >
+                              Reopen
+                            </button>
+                          )}
+                          <a className="adm-mini" href={`mailto:${r.email}`}>
+                            Email them
+                          </a>
+                        </div>
+                      </div>
+                    )}
                   </li>
                 )
               })}
