@@ -229,9 +229,9 @@ export default function RefundRequests({ notify, onOpenReceipt, reloadKey }) {
         <div id="rq-body" className="rq-body">
           <div className="adm-panel-head">
             <p className="adm-sub">
-              Sent from the form at <code>/refund/</code>. Every one also goes to
-              the support mailbox. This is the same request, with the reason as
-              something countable.
+              Here are your refund requests. Customers send them with the
+              Refunds link in the footer of your landing page. Every one also
+              arrives in the support mailbox.
             </p>
             <div className="adm-toolbar">
               {/* Every request is in exactly one of these three, so the set
