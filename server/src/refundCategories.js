@@ -17,14 +17,31 @@
  */
 export const REFUND_CATEGORIES = [
   { id: 'duplicate', label: 'Charged twice' },
-  { id: 'not-as-described', label: 'Not what I expected' },
   { id: 'never-arrived', label: 'Never received it' },
   { id: 'technical', label: 'A file or link didn’t work' },
   { id: 'cant-attend', label: 'Can’t make the session' },
   { id: 'other', label: 'Something else' },
 ]
 
+/**
+ * Retired: no longer offered on the form, but still stored on requests
+ * that were made while it was.
+ *
+ * Kept because an id that is stored must stay readable — dropping the
+ * row outright would not delete those requests, it would silently
+ * relabel them "Something else" in the dashboard, the tally and the
+ * emails, turning a reason somebody actually gave into an absence of
+ * one. Retired ids are excluded from REFUND_CATEGORY_IDS below, so the
+ * form can no longer submit them.
+ */
+export const RETIRED_REFUND_CATEGORIES = [
+  { id: 'not-as-described', label: 'Not what I expected' },
+]
+
+/** What a new request may be submitted with — selectable only. */
 export const REFUND_CATEGORY_IDS = REFUND_CATEGORIES.map((c) => c.id)
 
+/** Display, so it has to resolve the retired ones too. */
 export const refundCategoryLabel = (id) =>
-  REFUND_CATEGORIES.find((c) => c.id === id)?.label ?? 'Something else'
+  [...REFUND_CATEGORIES, ...RETIRED_REFUND_CATEGORIES].find((c) => c.id === id)?.label ??
+  'Something else'

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
-import { REFUND_CATEGORIES, refundCategory } from '../../refundCategories.js'
+import { ALL_REFUND_CATEGORIES, refundCategory } from '../../refundCategories.js'
 
 const money = (cents, currency = 'cad') =>
   new Intl.NumberFormat('en-CA', {
@@ -71,7 +71,11 @@ function Chevron({ open }) {
  */
 function CategoryBar({ counts, total, compact = false }) {
   if (!total) return null
-  const bands = REFUND_CATEGORIES.map((c) => ({ ...c, count: counts[c.id] || 0 })).filter(
+  /* Retired categories are in here too, so a queue still holding older
+     requests keeps drawing their real band. Zero-count bands are
+     dropped just below, so a retired reason nobody ever picked — or
+     one that has since been cleared out — costs nothing. */
+  const bands = ALL_REFUND_CATEGORIES.map((c) => ({ ...c, count: counts[c.id] || 0 })).filter(
     (c) => c.count > 0,
   )
 

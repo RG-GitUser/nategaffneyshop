@@ -14,11 +14,29 @@
  */
 export const REFUND_CATEGORIES = [
   { id: 'duplicate', label: 'Charged twice', color: 'var(--viz-1)' },
-  { id: 'not-as-described', label: 'Not what I expected', color: 'var(--viz-2)' },
   { id: 'never-arrived', label: 'Never received it', color: 'var(--viz-3)' },
   { id: 'technical', label: 'A file or link didn’t work', color: 'var(--viz-4)' },
   { id: 'cant-attend', label: 'Can’t make the session', color: 'var(--viz-5)' },
   { id: 'other', label: 'Something else', color: 'var(--viz-other)' },
+]
+
+/**
+ * Retired: off the form, still on older requests. Mirrors the server's
+ * list of the same name — see the reasoning there.
+ *
+ * It keeps var(--viz-2), the slot it always had. That is exactly what
+ * assigning colours by id rather than by position was for: a bar drawn
+ * over historical requests looks the same after the retirement as it
+ * did before it.
+ */
+export const RETIRED_REFUND_CATEGORIES = [
+  { id: 'not-as-described', label: 'Not what I expected', color: 'var(--viz-2)' },
+]
+
+/** Everything a stored request could be, for reading rather than picking. */
+export const ALL_REFUND_CATEGORIES = [
+  ...REFUND_CATEGORIES,
+  ...RETIRED_REFUND_CATEGORIES,
 ]
 
 /**
@@ -29,7 +47,6 @@ export const REFUND_CATEGORIES = [
  */
 export const REFUND_CATEGORY_HINTS = {
   duplicate: 'The same thing was charged more than once.',
-  'not-as-described': 'It wasn’t what the page led you to expect.',
   'never-arrived': 'You paid and nothing came through.',
   technical: 'It arrived, but wouldn’t open, download or play.',
   'cant-attend': 'Something came up and the time no longer works.',
@@ -37,7 +54,7 @@ export const REFUND_CATEGORY_HINTS = {
 }
 
 export const refundCategory = (id) =>
-  REFUND_CATEGORIES.find((c) => c.id === id) ?? {
+  ALL_REFUND_CATEGORIES.find((c) => c.id === id) ?? {
     id: 'other',
     label: 'Something else',
     color: 'var(--viz-other)',

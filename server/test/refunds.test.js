@@ -370,3 +370,26 @@ test('every stored category is one the browser can label', async () => {
     'server and browser category ids have drifted apart',
   )
 })
+
+test('a retired category is unpickable but still readable', async () => {
+  const srv = await import('../src/refundCategories.js')
+  const web = await import('../../src/refundCategories.js')
+
+  assert.deepEqual(
+    srv.RETIRED_REFUND_CATEGORIES.map((c) => c.id),
+    web.RETIRED_REFUND_CATEGORIES.map((c) => c.id),
+    'the retired lists have drifted apart',
+  )
+
+  for (const { id, label } of srv.RETIRED_REFUND_CATEGORIES) {
+    // Off the form, and refused by the API if posted anyway.
+    assert.ok(!srv.REFUND_CATEGORY_IDS.includes(id), `${id} is still selectable`)
+    assert.equal((await post({ ...valid, category: id })).status, 400)
+
+    // But a request already stored with it still reads back as itself,
+    // rather than collapsing into "Something else".
+    assert.equal(srv.refundCategoryLabel(id), label)
+    assert.equal(web.refundCategory(id).label, label)
+    assert.ok(web.refundCategory(id).color, `${id} lost its colour`)
+  }
+})
